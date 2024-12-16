@@ -12,5 +12,8 @@ Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])-
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index']);
-    Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index']);
+    Route::prefix('/products')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ProductController::class, 'index'])->name('product.index');
+        Route::post('/', [\App\Http\Controllers\ProductController::class, 'store'])->name('product.store');
+    });
 });
