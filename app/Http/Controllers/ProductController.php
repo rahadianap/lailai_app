@@ -13,12 +13,15 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $data = Product::where('is_aktif', 1)->get();
+        $perPage = $request->input('per_page', 10);
+
+        $data = Product::with('details')->where('is_aktif', 1)->paginate(perPage: $perPage);
         return Inertia::render('Products/Index', [
             'data' => $data
         ]);
@@ -48,60 +51,38 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'kode_barcode' => 'required',
-            'nama_barang' => 'required',
-            'satuan' => 'required',
-            'kategori' => 'required',
-            'isi_barang' => 'required',
-            'is_taxable' => 'required',
-            'details.saldo_awal' => 'required',
-            'details.harga_jual_karton' => 'required',
-            'details.harga_jual_eceran' => 'required',
-            'details.harga_beli_karton' => 'required',
-            'details.harga_beli_eceran' => 'required',
-            'details.hpp_avg_karton' => 'required',
-            'details.hpp_avg_eceran' => 'required',
-            'details.current_stock' => 'required',
-            'details.nilai_akhir' => 'required'
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
-
         try {
-            DB::beginTransaction();
-            $product = new Product();
-            $product->kode_barang = $this->getKodeBarang();
-            $product->kode_barcode = $request->input('kode_barcode');
-            $product->nama_barang = $request->input('nama_barang');
-            $product->satuan = $request->input('satuan');
-            $product->kategori = $request->input('kategori');
-            $product->isi_barang = $request->input('isi_barang');
-            $product->is_taxable = $request->input('is_taxable');
-            $product->is_aktif = 1;
-            $product->created_by = Auth()->user()->name;
-            $product->save();
+            $validatedData = $this->validateProductData($request);
 
-            $detail = new DetailProduct();
-            $detail->nama_barang = $request->input('nama_barang');
-            $detail->saldo_awal = $request->details['saldo_awal'];
-            $detail->harga_jual_karton = $request->details['harga_jual_karton'];
-            $detail->harga_jual_eceran = $request->details['harga_jual_eceran'];
-            $detail->harga_beli_karton = $request->details['harga_beli_karton'];
-            $detail->harga_beli_eceran = $request->details['harga_beli_eceran'];
-            $detail->hpp_avg_karton = $request->details['hpp_avg_karton'];
-            $detail->hpp_avg_eceran = $request->details['hpp_avg_eceran'];
-            $detail->current_stock = $request->details['current_stock'];
-            $detail->nilai_akhir = $request->details['nilai_akhir'];
-            $detail->created_by = Auth()->user()->name;
+            $exist = Product::where('kode_barcode', $validatedData['kode_barcode'])->exists();
+
+            if ($exist) {
+                return back()->withErrors($exist)->withInput();
+            }
+
+            DB::beginTransaction();
+
+            $product = Product::create([
+                'kode_barang' => $this->getKodeBarang(),
+                'kode_barcode' => $validatedData['kode_barcode'],
+                'nama_barang' => $validatedData['nama_barang'],
+                'satuan' => $validatedData['satuan'],
+                'kategori' => $validatedData['kategori'],
+                'isi_barang' => $validatedData['isi_barang'],
+                'is_taxable' => $validatedData['is_taxable'],
+            ]);
+
+            $product->details()->create($validatedData['details']);
+
             DB::commit();
 
-            return redirect()->back()->with('success', 'Product created successfully');
+            return redirect()->back()->with('success', 'Product Create Successful.');
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            DB::rollback();
-            throw $e;
+            DB::rollBack();
+            return response()->json(['message' => 'An error occurred while creating the product', 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -133,5 +114,27 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return 'PRD-' . Str::uuid()->toString();
         }
+    }
+
+    private function validateProductData(Request $request)
+    {
+        return $request->validate([
+            'kode_barcode' => 'required|string|max:255|unique:mstbarang,kode_barcode,' . ($request->id ?? 'NULL') . ',id',
+            'nama_barang' => 'required|string|max:255',
+            'satuan' => 'required|exists:mstsatuanbarang,id',
+            'kategori' => 'required|exists:mstkategoribarang,id',
+            'isi_barang' => 'required|numeric|min:0',
+            'is_taxable' => 'required|boolean',
+            'details.nama_barang' => 'required|string|max:255',
+            'details.saldo_awal' => 'required|numeric|min:0',
+            'details.harga_jual_karton' => 'required|numeric|min:0',
+            'details.harga_jual_eceran' => 'required|numeric|min:0',
+            'details.harga_beli_karton' => 'required|numeric|min:0',
+            'details.harga_beli_eceran' => 'required|numeric|min:0',
+            'details.hpp_avg_karton' => 'required|numeric|min:0',
+            'details.hpp_avg_eceran' => 'required|numeric|min:0',
+            'details.current_stock' => 'required|numeric|min:0',
+            'details.nilai_akhir' => 'required|numeric|min:0',
+        ]);
     }
 }

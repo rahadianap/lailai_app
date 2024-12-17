@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create('mstdetailbarang', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('barang_id');
             $table->string('nama_barang');
             $table->integer('saldo_awal');
             $table->integer('harga_jual_karton');
@@ -30,6 +31,8 @@ return new class extends Migration {
             $table->string('deleted_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('barang_id')->references('id')->on('mstbarang')->onDelete('cascade');
         });
     }
 

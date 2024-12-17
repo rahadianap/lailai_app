@@ -54,14 +54,25 @@ import SearchableSelect from "../../components/SearchableSelect.vue";
 import { useForm } from "@inertiajs/vue3";
 import Swal from "sweetalert2";
 import { router } from "@inertiajs/vue3";
-import { CheckCircleIcon, MinusCircleIcon } from "lucide-vue-next";
-import Filter from "../../components/Filter.vue";
+import {
+    ChevronRightIcon,
+    ChevronLeftIcon,
+    DoubleArrowLeftIcon,
+    DoubleArrowRightIcon,
+} from "@radix-icons/vue";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const props = defineProps({
     data: Array,
 });
 
-const data = props.data;
+const data = props.data.data;
 
 const showDialog = ref(false);
 
@@ -140,24 +151,24 @@ const columns = [
         },
     },
     {
-        accessorKey: "satuan",
+        accessorKey: "nama_satuan",
         header: () => h("div", { class: "text-left" }, "Satuan"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("satuan"),
+                row.getValue("nama_satuan"),
             );
         },
     },
     {
-        accessorKey: "kategori",
+        accessorKey: "nama_kategori",
         header: () => h("div", { class: "text-left" }, "Kategori"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kategori"),
+                row.getValue("nama_kategori"),
             );
         },
     },
@@ -254,7 +265,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            route("product.index"),
+            "/products",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -269,66 +280,9 @@ const table = useVueTable({
             { preserveState: false, preserveScroll: true },
         );
     },
-    onSortingChange: (updaterOrValue) => {
-        if (typeof updaterOrValue === "function") {
-            sorting.value = updaterOrValue(sorting.value);
-        } else {
-            sorting.value = updaterOrValue;
-        }
-        let filters = {};
-        if (columnFilters.value) {
-            filters = columnFilters.value.reduce((acc, filter) => {
-                acc[filter.id] = filter.value;
-                return acc;
-            }, {});
-        }
-        router.get(
-            "/product.index",
-            {
-                page: pagination.value.pageIndex + 1,
-                per_page: pagination.value.pageSize,
-                sort_field: sorting.value[0]?.id,
-                sort_direction:
-                    sorting.value.length == 0
-                        ? undefined
-                        : sorting.value[0]?.desc
-                          ? "desc"
-                          : "asc",
-                ...filters,
-            },
-            { preserveState: false, preserveScroll: true },
-        );
-    },
-    onColumnFiltersChange: (updaterOrValue) => {
-        if (typeof updaterOrValue === "function") {
-            columnFilters.value = updaterOrValue(columnFilters.value);
-        } else {
-            columnFilters.value = updaterOrValue;
-        }
-        let filters = {};
-        if (columnFilters.value) {
-            filters = columnFilters.value.reduce((acc, filter) => {
-                acc[filter.id] = filter.value;
-                return acc;
-            }, {});
-        }
-        router.get(
-            "/product.index",
-            {
-                page: pagination.value.pageIndex + 1,
-                per_page: pagination.value.pageSize,
-                sort_field: sorting.value[0]?.id,
-                sort_direction:
-                    sorting.value.length == 0
-                        ? undefined
-                        : sorting.value[0]?.desc
-                          ? "desc"
-                          : "asc",
-                ...filters,
-            },
-            { preserveState: false, preserveScroll: true },
-        );
-    },
+    onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
+    onColumnFiltersChange: (updaterOrValue) =>
+        valueUpdater(updaterOrValue, columnFilters),
     onColumnVisibilityChange: (updaterOrValue) =>
         valueUpdater(updaterOrValue, columnVisibility),
     onRowSelectionChange: (updaterOrValue) =>
@@ -351,35 +305,19 @@ const table = useVueTable({
         get expanded() {
             return expanded.value;
         },
+        get pagination() {
+            return pagination.value;
+        },
     },
 });
-
-const filter_status = {
-    title: "Filter Status",
-    column: "is_aktif",
-    data: [
-        {
-            value: "1",
-            label: "Active",
-            icon: h(CheckCircleIcon),
-        },
-        {
-            value: "0",
-            label: "Inactive",
-            icon: h(MinusCircleIcon),
-        },
-    ],
-};
-
-const filter_toolbar = [filter_status];
 
 const errors = ref({});
 
 const form = useForm({
     kode_barcode: "",
     nama_barang: "",
-    satuan: "",
-    kategori: "",
+    nama_satuan: "",
+    nama_kategori: "",
     isi_barang: 0,
     is_taxable: 0,
     details: {
@@ -396,8 +334,8 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.satuan = selectedUnitId;
-    form.kategori = selectedCategoryId;
+    form.nama_satuan = selectedUnitId;
+    form.nama_kategori = selectedCategoryId;
     form.post("/products", {
         preserveState: true,
         onError: (error) => {
@@ -441,13 +379,6 @@ const submit = () => {
                         table.getColumn('kode_barcode')?.setFilterValue($event)
                     "
                 />
-                <div v-for="filter in filter_toolbar" :key="filter.title">
-                    <Filter
-                        :column="table.getColumn(filter.column)"
-                        :title="filter.title"
-                        :options="filter.data"
-                    ></Filter>
-                </div>
                 <Button class="ml-4" variant="outline" @click="showDialogCreate"
                     ><PlusCircledIcon class="h-5 w-5"></PlusCircledIcon>Create
                     New</Button
@@ -547,23 +478,79 @@ const submit = () => {
                     {{ table.getFilteredRowModel().rows.length }} row(s)
                     selected.
                 </div>
+                <div class="flex items-center space-x-2">
+                    <p class="text-sm font-medium">Rows per page</p>
+                    <Select
+                        :model-value="
+                            table.getState().pagination.pageSize.toString()
+                        "
+                        @update:model-value="
+                            (value) => table.setPageSize(Number(value))
+                        "
+                    >
+                        <SelectTrigger class="h-8 w-[70px]">
+                            <SelectValue
+                                :placeholder="
+                                    table
+                                        .getState()
+                                        .pagination.pageSize.toString()
+                                "
+                            />
+                        </SelectTrigger>
+                        <SelectContent side="top">
+                            <SelectItem
+                                v-for="pageSize in pageSizes"
+                                :key="pageSize"
+                                :value="pageSize.toString()"
+                            >
+                                {{ pageSize }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div
+                    class="flex w-[100px] items-center justify-center text-sm font-medium"
+                >
+                    Page {{ table.getState().pagination.pageIndex + 1 }} of
+                    {{ table.getPageCount() }}
+                </div>
                 <div class="space-x-2">
-                    <Button
-                        :disabled="!table.getCanPreviousPage()"
-                        size="sm"
-                        variant="outline"
-                        @click="table.previousPage()"
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        :disabled="!table.getCanNextPage()"
-                        size="sm"
-                        variant="outline"
-                        @click="table.nextPage()"
-                    >
-                        Next
-                    </Button>
+                    <div class="flex items-center space-x-2">
+                        <Button
+                            variant="outline"
+                            class="hidden h-8 w-8 p-0 lg:flex"
+                            :disabled="!table.getCanPreviousPage()"
+                            @click="table.setPageIndex(0)"
+                        >
+                            <DoubleArrowLeftIcon class="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            class="h-8 w-8 p-0"
+                            :disabled="!table.getCanPreviousPage()"
+                            @click="table.previousPage()"
+                        >
+                            <ChevronLeftIcon class="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            class="h-8 w-8 p-0"
+                            :disabled="!table.getCanNextPage()"
+                            @click="table.nextPage()"
+                        >
+                            <ChevronRightIcon class="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            class="hidden h-8 w-8 p-0 lg:flex"
+                            :disabled="!table.getCanNextPage()"
+                            @click="
+                                table.setPageIndex(table.getPageCount() - 1)
+                            "
+                        >
+                            <DoubleArrowRightIcon class="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -606,7 +593,7 @@ const submit = () => {
                             >
                         </div>
                         <div>
-                            <Label for="satuan"> Satuan </Label>
+                            <Label for="nama_satuan"> Satuan </Label>
                             <SearchableSelect
                                 required
                                 v-model="selectedUnitId"
@@ -629,7 +616,7 @@ const submit = () => {
                             >
                         </div>
                         <div>
-                            <Label for="kategori"> Kategori Barang </Label>
+                            <Label for="nama_kategori"> Kategori Barang </Label>
                             <SearchableSelect
                                 v-model="selectedCategoryId"
                                 placeholder="Search categories..."

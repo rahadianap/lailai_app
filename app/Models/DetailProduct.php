@@ -13,6 +13,7 @@ class DetailProduct extends Model
     protected $table = 'mstdetailbarang';
     protected $primaryKey = 'id';
     protected $fillable = [
+        'barang_id',
         'nama_barang',
         'saldo_awal',
         'harga_jual_karton',
@@ -30,4 +31,9 @@ class DetailProduct extends Model
         'updated_by',
         'deleted_by'
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 }
