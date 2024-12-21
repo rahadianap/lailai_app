@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('kode_supplier');
             $table->string('no_ktp')->nullable();
             $table->string('npwp')->nullable();
-            $table->string('nama_rekanan');
+            $table->string('nama_supplier');
             $table->string('alamat')->nullable();
             $table->string('tgl_lahir')->nullable();
             $table->string('no_hp1')->nullable();

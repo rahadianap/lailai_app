@@ -2,12 +2,6 @@
 import Layout from "../../Layout/App.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
     Table,
@@ -18,7 +12,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { valueUpdater } from "@/lib/utils";
-import { PlusCircledIcon, ChevronDownIcon } from "@radix-icons/vue";
+import { PlusCircledIcon } from "@radix-icons/vue";
 import {
     FlexRender,
     getCoreRowModel,
@@ -38,16 +32,9 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import {
     Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import SearchableSelect from "../../components/SearchableSelect.vue";
@@ -80,10 +67,8 @@ const showDialogCreate = () => {
     showCreate.value = true;
 };
 
-const selectedCategoryId = ref(null);
 const selectedCategory = ref(null);
 
-const selectedUnitId = ref(null);
 const selectedUnit = ref(null);
 
 const onCategorySelect = (category) => {
@@ -96,87 +81,36 @@ const onUnitSelect = (unit) => {
 
 const columns = [
     {
-        accessorKey: "kode_barang",
+        accessorKey: "kode_pembelian",
         header: () => h("div", { class: "text-left" }, "Kode Barang"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kode_barang"),
+                row.getValue("kode_pembelian"),
             );
         },
     },
     {
-        accessorKey: "kode_barcode",
+        accessorKey: "nama_supplier",
         header: () => h("div", { class: "text-left" }, "Kode Barcode"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kode_barcode"),
+                row.getValue("nama_supplier"),
             );
         },
     },
     {
-        accessorKey: "nama_barang",
+        accessorKey: "kode_po",
         header: () => h("div", { class: "text-left" }, "Nama Barang"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("nama_barang"),
+                row.getValue("kode_po"),
             );
-        },
-    },
-    {
-        accessorKey: "nama_satuan",
-        header: () => h("div", { class: "text-left" }, "Satuan"),
-        cell: ({ row }) => {
-            return h(
-                "div",
-                { class: "text-left font-medium" },
-                row.getValue("nama_satuan"),
-            );
-        },
-    },
-    {
-        accessorKey: "nama_kategori",
-        header: () => h("div", { class: "text-left" }, "Kategori"),
-        cell: ({ row }) => {
-            return h(
-                "div",
-                { class: "text-left font-medium" },
-                row.getValue("nama_kategori"),
-            );
-        },
-    },
-    {
-        accessorKey: "isi_barang",
-        header: () => h("div", { class: "text-center" }, "Isi Barang"),
-        cell: ({ row }) => {
-            const amount = Number.parseInt(row.getValue("isi_barang"));
-
-            return h("div", { class: "text-center font-medium" }, amount);
-        },
-    },
-    {
-        accessorKey: "is_taxable",
-        header: () => h("div", { class: "text-center" }, "BKP"),
-        cell: ({ row }) => {
-            const taxable = row.getValue("is_taxable");
-            if (taxable == true) {
-                return h(
-                    "div",
-                    { class: "text-center font-medium" },
-                    h(Badge, "BKP"),
-                );
-            } else {
-                return h(
-                    "div",
-                    { class: "text-center font-medium" },
-                    h(Badge, { variant: "outline" }, "Non-BKP"),
-                );
-            }
         },
     },
     {
@@ -242,7 +176,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/products",
+            "/purchasing",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -292,12 +226,7 @@ const errors = ref({});
 
 const form = useForm({
     id: null,
-    kode_barcode: "",
-    nama_barang: "",
-    nama_satuan: "",
-    nama_kategori: "",
-    isi_barang: 0,
-    is_taxable: true,
+    nama_supplier: "",
     details: {
         saldo_awal: 0,
         harga_jual_karton: 0,
@@ -316,7 +245,7 @@ const resetForm = () => {
 }
 
 const submit = () => {
-    const url = form.id ? `/products/${form.id}` : '/products';
+    const url = form.id ? `/purchasing/${form.id}` : '/purchasing';
     const method = form.id ? 'put' : 'post';
     form[method](url, {
         preserveState: true,
@@ -347,7 +276,7 @@ const onEdit = async (id) => {
   //Open Dialog
   showCreate.value = true 
   try {
-    const res = await fetch(`/products/${id}`, {
+    const res = await fetch(`/purchasing/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -393,12 +322,12 @@ const formatPrice = (price) => {
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
-                        table.getColumn('kode_barcode')?.getFilterValue()
+                        table.getColumn('kode_pembelian')?.getFilterValue()
                     "
                     class="max-w-sm"
-                    placeholder="Filter kode barcode..."
+                    placeholder="Filter kode pembelian..."
                     @update:model-value="
-                        table.getColumn('kode_barcode')?.setFilterValue($event)
+                        table.getColumn('kode_pembelian')?.setFilterValue($event)
                     "
                 />
                 <Button class="ml-4" variant="outline" @click="showDialogCreate"
@@ -589,100 +518,27 @@ const formatPrice = (price) => {
                     </DialogHeader>
                     <div class="grid grid-cols-5 gap-4">
                         <div>
-                            <Label for="kode_barcode"> Kode Barcode </Label>
-                            <Input
-                                id="kode_barcode"
-                                v-model="form.kode_barcode"
-                                class="col-span-3"
-                                required
-                            />
-                            <span
-                                v-if="errors?.kode_barcode"
-                                class="text-sm text-red-500"
-                                >{{ errors.kode_barcode }}</span
-                            >
-                        </div>
-                        <div>
-                            <Label for="nama_barang"> Nama Barang </Label>
-                            <Input
-                                id="nama_barang"
-                                v-model="form.nama_barang"
-                                class="col-span-3"
-                                required
-                            />
-                            <span
-                                v-if="errors?.nama_barang"
-                                class="text-sm text-red-500"
-                                >{{ errors.nama_barang }}</span
-                            >
-                        </div>
-                        <div>
-                            <Label for="nama_satuan"> Satuan </Label>
+                            <Label for="nama_supplier"> Supplier </Label>
                             <SearchableSelect
                                 required
-                                v-model="form.nama_satuan"
-                                placeholder="Search units..."
-                                api-endpoint="http://127.0.0.1:8000/api/products/units"
-                                value-field="nama_satuan"
-                                display-field="nama_satuan"
+                                v-model="form.nama_supplier"
+                                placeholder="Search suppliers..."
+                                api-endpoint="http://127.0.0.1:8000/api/purchasing/suppliers"
+                                value-field="nama_supplier"
+                                display-field="nama_supplier"
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
-                                loading-text="Loading units..."
-                                no-results-text="No units found"
-                                load-more-text="Load more units"
+                                loading-text="Loading suppliers..."
+                                no-results-text="No suppliers found"
+                                load-more-text="Load more suppliers"
                                 @select="onUnitSelect"
                             />
                             <span
-                                v-if="errors?.nama_satuan"
+                                v-if="errors?.nama_supplier"
                                 class="text-sm text-red-500"
-                                >{{ errors.nama_satuan }}</span
+                                >{{ errors.nama_supplier }}</span
                             >
-                        </div>
-                        <div>
-                            <Label for="nama_kategori"> Kategori Barang </Label>
-                            <SearchableSelect
-                                v-model="form.nama_kategori"
-                                placeholder="Search categories..."
-                                api-endpoint="http://127.0.0.1:8000/api/products/categories"
-                                value-field="nama_kategori"
-                                display-field="nama_kategori"
-                                search-param="search"
-                                :per-page="10"
-                                :debounce-time="300"
-                                loading-text="Loading categories..."
-                                no-results-text="No categories found"
-                                load-more-text="Load more categories"
-                                @select="onCategorySelect"
-                            />
-                            <span
-                                v-if="errors?.nama_kategori"
-                                class="text-sm text-red-500"
-                                >{{ errors.nama_kategori }}</span
-                            >
-                        </div>
-                        <div>
-                            <Label for="isi_barang"> Isi Barang </Label>
-                            <Input
-                                id="isi_barang"
-                                v-model="form.isi_barang"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                            <span
-                                v-if="errors?.isi_barang"
-                                class="text-sm text-red-500"
-                                >{{ errors.isi_barang }}</span
-                            >
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <Checkbox 
-                                id="is_taxable" 
-                                :checked="form.is_taxable"
-                                @update:checked="form.is_taxable = $event"
-                                />
-                            <Label for="is_taxable">Barang Kena Pajak</Label>
                         </div>
                     </div>
                     <DialogHeader class="mt-4">
