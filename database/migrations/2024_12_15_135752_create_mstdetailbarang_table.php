@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -21,8 +22,8 @@ return new class extends Migration {
             $table->integer('harga_beli_eceran');
             $table->decimal('hpp_avg_karton', total: 10, places: 2);
             $table->decimal('hpp_avg_eceran', total: 10, places: 2);
-            $table->decimal('hpp_fifo_karton', total: 10, places: 2);
-            $table->decimal('hpp_fifo_eceran', total: 10, places: 2);
+            $table->decimal('hpp_fifo_karton', total: 10, places: 2)->nullable();
+            $table->decimal('hpp_fifo_eceran', total: 10, places: 2)->nullable();
             $table->integer('current_stock');
             $table->decimal('nilai_akhir', total: 10, places: 2);
             $table->boolean('is_aktif')->default(true);

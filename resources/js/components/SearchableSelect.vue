@@ -8,7 +8,7 @@
                 :id="id"
                 v-model="displayValue"
                 type="text"
-                class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                class="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border rounded-md shadow-sm h-9 border-input file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 :placeholder="placeholder"
                 @focus="onFocus"
                 @input="onInput"
@@ -19,7 +19,7 @@
                 @click="toggleOptions"
             >
                 <svg
-                    class="h-5 w-5 text-gray-400"
+                    class="w-5 h-5 text-gray-400"
                     viewBox="0 0 20 20"
                     fill="currentColor"
                 >
@@ -32,14 +32,14 @@
             </button>
             <div
                 v-if="showOptions"
-                class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                class="absolute z-10 w-full mt-1 overflow-auto bg-white border border-gray-300 rounded-md shadow-lg max-h-60"
             >
                 <ul>
                     <li
                         v-for="option in options"
                         :key="option[valueField]"
                         @click="selectOption(option)"
-                        class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        class="px-4 py-2 cursor-pointer hover:bg-gray-100"
                     >
                         {{ option[displayField] }}
                     </li>
@@ -220,33 +220,41 @@ const handleClickOutside = (event) => {
     }
 };
 
-// Watch for changes in modelValue
-watch(
-    () => props.modelValue,
-    (newValue) => {
-        if (newValue === null) {
-            selectedOption.value = null;
-            search.value = "";
-        } else if (
-            !selectedOption.value ||
-            newValue !== selectedOption.value[props.valueField]
-        ) {
-            // Fetch the selected option if it's not already loaded
-            fetchSelectedOption(newValue);
-        }
-    },
-    { immediate: true },
-);
-
 const fetchSelectedOption = async (value) => {
-    try {
-        const response = await fetch(`${props.apiEndpoint}/${value}`);
-        const data = await response.json();
-        selectedOption.value = data;
-    } catch (error) {
-        console.error("Error fetching selected option:", error);
+  try {
+    const response = await fetch(`${props.apiEndpoint}?${props.valueField}=${value}`)
+    const data = await response.json()
+    // Assuming the API returns an array of options
+    const option = data.data.find(item => item[props.valueField] == value)
+    if (option) {
+      selectedOption.value = option
+      search.value = option[props.displayField]
+    } else {
+      console.error('Selected option not found in API response')
+      selectedOption.value = null
+      search.value = ''
     }
-};
+  } catch (error) {
+    console.error('Error fetching selected option:', error)
+    selectedOption.value = null
+    search.value = ''
+  }
+}
+
+watch(() => props.modelValue, (newValue) => {
+  if (newValue === null) {
+    selectedOption.value = null
+    search.value = ''
+  } else if (!selectedOption.value || newValue != selectedOption.value[props.valueField]) {
+    fetchSelectedOption(newValue)
+  }
+}, { immediate: true })
+
+watch(selectedOption, (newValue) => {
+  if (newValue) {
+    search.value = newValue[props.displayField]
+  }
+})
 
 onMounted(() => {
     document.addEventListener("click", handleClickOutside);

@@ -8,28 +8,28 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-  use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
-  protected $table = 'mstbarang';
-  protected $primaryKey = 'id';
-  protected $fillable = [
-    'kode_barang',
-    'kode_barcode',
-    'nama_barang',
-    'satuan_id',
-    'nama_satuan',
-    'kategori_id',
-    'nama_kategori',
-    'is_taxable',
-    'isi_barang',
-    'is_aktif',
-    'created_by',
-    'updated_by',
-    'deleted_by'
-  ];
+    protected $table = 'mstbarang';
 
-  public function details()
-  {
-    return $this->hasOne(DetailProduct::class);
-  }
+    protected $primaryKey = 'id';
+
+    protected $fillable = [
+        'kode_barang',
+        'kode_barcode',
+        'nama_barang',
+        'nama_satuan',
+        'nama_kategori',
+        'is_taxable',
+        'isi_barang',
+        'is_aktif',
+        'created_by',
+        'updated_by',
+        'deleted_by',
+    ];
+
+    public function details()
+    {
+        return $this->hasOne(DetailProduct::class, 'barang_id');
+    }
 }

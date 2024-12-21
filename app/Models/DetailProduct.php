@@ -11,7 +11,9 @@ class DetailProduct extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'mstdetailbarang';
+
     protected $primaryKey = 'id';
+
     protected $fillable = [
         'barang_id',
         'nama_barang',
@@ -29,7 +31,7 @@ class DetailProduct extends Model
         'is_aktif',
         'created_by',
         'updated_by',
-        'deleted_by'
+        'deleted_by',
     ];
 
     public function product()

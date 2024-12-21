@@ -29,7 +29,7 @@ import {
     useVueTable,
 } from "@tanstack/vue-table";
 import { h, ref } from "vue";
-import DropdownAction from "../Products/DataTableDemoColumn.vue";
+import DropdownAction from "../Products/DataTableDropdown.vue";
 import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
@@ -74,10 +74,10 @@ const props = defineProps({
 
 const data = props.data.data;
 
-const showDialog = ref(false);
+const showCreate = ref(false);
 
 const showDialogCreate = () => {
-    showDialog.value = true;
+    showCreate.value = true;
 };
 
 const selectedCategoryId = ref(null);
@@ -88,12 +88,10 @@ const selectedUnit = ref(null);
 
 const onCategorySelect = (category) => {
     selectedCategory.value = category;
-    console.log("Selected category:", category.nama_kategori);
 };
 
 const onUnitSelect = (unit) => {
     selectedUnit.value = unit;
-    console.log("Selected unit:", unit.nama_kategori);
 };
 
 const columns = [
@@ -225,10 +223,11 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const payment = row.original;
+            const product = row.original;
 
             return h(DropdownAction, {
-                payment,
+                product,
+                onEdit,
                 onExpand: row.toggleExpanded,
             });
         },
@@ -256,8 +255,6 @@ const table = useVueTable({
     getExpandedRowModel: getExpandedRowModel(),
     pageCount: props.data.last_page,
     manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
     onPaginationChange: (updater) => {
         if (typeof updater === "function") {
             pagination.value = updater(pagination.value);
@@ -319,7 +316,7 @@ const form = useForm({
     nama_satuan: "",
     nama_kategori: "",
     isi_barang: 0,
-    is_taxable: 0,
+    is_taxable: true,
     details: {
         saldo_awal: 0,
         harga_jual_karton: 0,
@@ -334,8 +331,6 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.nama_satuan = selectedUnitId;
-    form.nama_kategori = selectedCategoryId;
     form.post("/products", {
         preserveState: true,
         onError: (error) => {
@@ -347,7 +342,7 @@ const submit = () => {
             });
         },
         onSuccess: () => {
-            showDialog.value = false;
+            showCreate.value = false;
             Swal.fire({
                 title: "Yeay!",
                 text: "Your work has been saved",
@@ -360,6 +355,46 @@ const submit = () => {
         },
     });
 };
+
+const onEdit = async (id) => {
+  //Open Dialog
+  showCreate.value = true 
+  try {
+    const res = await fetch(`/products/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    if (!res.ok) {
+      console.error('Error ');
+    }
+    const data = await res.json();
+    console.log(data)
+    // Set to form 
+    form.kode_barcode = data.data.kode_barcode;
+    form.nama_barang = data.data.nama_barang;
+    form.nama_satuan = data.data.nama_satuan;
+    form.nama_kategori = data.data.nama_kategori;
+    form.isi_barang = data.data.isi_barang;
+    form.is_taxable = data.data.is_taxable === "1" ? true : false;
+    form.details.saldo_awal = data.data.details['saldo_awal'];
+    form.details.harga_jual_karton = data.data.details['harga_jual_karton'];
+    form.details.harga_jual_eceran = data.data.details['harga_jual_eceran'];
+    form.details.harga_beli_karton = data.data.details['harga_beli_karton'];
+    form.details.harga_beli_eceran = data.data.details['harga_beli_eceran'];
+    form.details.hpp_avg_karton = data.data.details['hpp_avg_karton'];
+    form.details.hpp_avg_eceran = data.data.details['hpp_avg_eceran'];
+    form.details.current_stock = data.data.details['current_stock'];
+    form.details.nilai_akhir = data.data.details['nilai_akhir'];
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(price);
+};
 </script>
 
 <template>
@@ -368,7 +403,7 @@ const submit = () => {
             <h1 class="text-lg font-semibold md:text-2xl">Products</h1>
         </div>
         <div class="w-full">
-            <div class="flex items-center py-4">
+            <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
                         table.getColumn('kode_barcode')?.getFilterValue()
@@ -380,36 +415,11 @@ const submit = () => {
                     "
                 />
                 <Button class="ml-4" variant="outline" @click="showDialogCreate"
-                    ><PlusCircledIcon class="h-5 w-5"></PlusCircledIcon>Create
+                    ><PlusCircledIcon class="w-5 h-5"></PlusCircledIcon>Create
                     New</Button
                 >
-                <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                        <Button class="ml-auto" variant="outline">
-                            Columns
-                            <ChevronDownIcon class="ml-2 h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuCheckboxItem
-                            v-for="column in table
-                                .getAllColumns()
-                                .filter((column) => column.getCanHide())"
-                            :key="column.id"
-                            :checked="column.getIsVisible()"
-                            class="capitalize"
-                            @update:checked="
-                                (value) => {
-                                    column.toggleVisibility(!!value);
-                                }
-                            "
-                        >
-                            {{ column.id }}
-                        </DropdownMenuCheckboxItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
             </div>
-            <div class="rounded-md border">
+            <div class="border rounded-md">
                 <Table>
                     <TableHeader>
                         <TableRow
@@ -453,7 +463,34 @@ const submit = () => {
                                     <TableCell
                                         :colspan="row.getAllCells().length"
                                     >
-                                        {{ JSON.stringify(row.original) }}
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                            <TableHead>Saldo Awal</TableHead>
+                                            <TableHead>Harga Jual (Karton)</TableHead>
+                                            <TableHead>Harga Jual (Eceran)</TableHead>
+                                            <TableHead>Harga Beli (Karton)</TableHead>
+                                            <TableHead>Harga Beli (Eceran)</TableHead>
+                                            <TableHead>HPP (Karton)</TableHead>
+                                            <TableHead>HPP (Eceran)</TableHead>
+                                            <TableHead>Current Stock</TableHead>
+                                            <TableHead>Nilai Akhir</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            <TableRow>
+                                            <TableCell class="font-medium">{{ row.original.details['saldo_awal'] }}</TableCell>
+                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_jual_karton']) }}</TableCell>
+                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_jual_eceran']) }}</TableCell>
+                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_beli_karton']) }}</TableCell>
+                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_beli_eceran']) }}</TableCell>
+                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['hpp_avg_karton']) }}</TableCell>
+                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['hpp_avg_eceran']) }}</TableCell>
+                                            <TableCell class="font-medium">{{ row.original.details['current_stock'] }}</TableCell>
+                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['nilai_akhir']) }}</TableCell>
+                                            </TableRow>
+                                        </TableBody>
+                                        </Table>
                                     </TableCell>
                                 </TableRow>
                             </template>
@@ -471,7 +508,7 @@ const submit = () => {
                 </Table>
             </div>
 
-            <div class="flex items-center justify-end space-x-2 py-4">
+            <div class="flex items-center justify-end py-4 space-x-2">
                 <div class="flex-1 text-sm text-muted-foreground">
                     {{ table.getFilteredSelectedRowModel().rows.length }}
                     of
@@ -518,43 +555,43 @@ const submit = () => {
                     <div class="flex items-center space-x-2">
                         <Button
                             variant="outline"
-                            class="hidden h-8 w-8 p-0 lg:flex"
+                            class="hidden w-8 h-8 p-0 lg:flex"
                             :disabled="!table.getCanPreviousPage()"
                             @click="table.setPageIndex(0)"
                         >
-                            <DoubleArrowLeftIcon class="h-4 w-4" />
+                            <DoubleArrowLeftIcon class="w-4 h-4" />
                         </Button>
                         <Button
                             variant="outline"
-                            class="h-8 w-8 p-0"
+                            class="w-8 h-8 p-0"
                             :disabled="!table.getCanPreviousPage()"
                             @click="table.previousPage()"
                         >
-                            <ChevronLeftIcon class="h-4 w-4" />
+                            <ChevronLeftIcon class="w-4 h-4" />
                         </Button>
                         <Button
                             variant="outline"
-                            class="h-8 w-8 p-0"
+                            class="w-8 h-8 p-0"
                             :disabled="!table.getCanNextPage()"
                             @click="table.nextPage()"
                         >
-                            <ChevronRightIcon class="h-4 w-4" />
+                            <ChevronRightIcon class="w-4 h-4" />
                         </Button>
                         <Button
                             variant="outline"
-                            class="hidden h-8 w-8 p-0 lg:flex"
+                            class="hidden w-8 h-8 p-0 lg:flex"
                             :disabled="!table.getCanNextPage()"
                             @click="
                                 table.setPageIndex(table.getPageCount() - 1)
                             "
                         >
-                            <DoubleArrowRightIcon class="h-4 w-4" />
+                            <DoubleArrowRightIcon class="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
             </div>
         </div>
-        <Dialog v-model:open="showDialog">
+        <Dialog v-model:open="showCreate">
             <Form>
                 <DialogContent class="w-[1500px]">
                     <DialogHeader>
@@ -574,7 +611,7 @@ const submit = () => {
                             />
                             <span
                                 v-if="errors?.kode_barcode"
-                                class="text-red-500 text-sm"
+                                class="text-sm text-red-500"
                                 >{{ errors.kode_barcode }}</span
                             >
                         </div>
@@ -588,7 +625,7 @@ const submit = () => {
                             />
                             <span
                                 v-if="errors?.nama_barang"
-                                class="text-red-500 text-sm"
+                                class="text-sm text-red-500"
                                 >{{ errors.nama_barang }}</span
                             >
                         </div>
@@ -596,7 +633,7 @@ const submit = () => {
                             <Label for="nama_satuan"> Satuan </Label>
                             <SearchableSelect
                                 required
-                                v-model="selectedUnitId"
+                                v-model="form.nama_satuan"
                                 placeholder="Search units..."
                                 api-endpoint="http://127.0.0.1:8000/api/products/units"
                                 value-field="nama_satuan"
@@ -610,15 +647,15 @@ const submit = () => {
                                 @select="onUnitSelect"
                             />
                             <span
-                                v-if="errors?.selectedUnitId"
-                                class="text-red-500 text-sm"
-                                >{{ errors.selectedUnitId }}</span
+                                v-if="errors?.nama_satuan"
+                                class="text-sm text-red-500"
+                                >{{ errors.nama_satuan }}</span
                             >
                         </div>
                         <div>
                             <Label for="nama_kategori"> Kategori Barang </Label>
                             <SearchableSelect
-                                v-model="selectedCategoryId"
+                                v-model="form.nama_kategori"
                                 placeholder="Search categories..."
                                 api-endpoint="http://127.0.0.1:8000/api/products/categories"
                                 value-field="nama_kategori"
@@ -632,9 +669,9 @@ const submit = () => {
                                 @select="onCategorySelect"
                             />
                             <span
-                                v-if="errors?.selectedCategoryId"
-                                class="text-red-500 text-sm"
-                                >{{ errors.selectedCategoryId }}</span
+                                v-if="errors?.nama_kategori"
+                                class="text-sm text-red-500"
+                                >{{ errors.nama_kategori }}</span
                             >
                         </div>
                         <div>
@@ -648,32 +685,17 @@ const submit = () => {
                             />
                             <span
                                 v-if="errors?.isi_barang"
-                                class="text-red-500 text-sm"
+                                class="text-sm text-red-500"
                                 >{{ errors.isi_barang }}</span
                             >
                         </div>
                         <div class="flex items-center space-x-2">
-                            <FormField
-                                v-slot="{ value, handleChange }"
-                                v-model="form.is_taxable"
-                                type="checkbox"
-                                name="is_taxable"
-                            >
-                                <FormItem
-                                    class="flex flex-row items-start gap-x-3 space-y-0 rounded-md border p-4"
-                                >
-                                    <FormControl>
-                                        <Checkbox
-                                            :checked="value"
-                                            @update:checked="handleChange"
-                                        />
-                                    </FormControl>
-                                    <div class="space-y-1 leading-none">
-                                        <FormLabel>Barang Kena Pajak</FormLabel>
-                                        <FormMessage />
-                                    </div>
-                                </FormItem>
-                            </FormField>
+                            <Checkbox 
+                                id="is_taxable" 
+                                :checked="form.is_taxable"
+                                @update:checked="form.is_taxable = $event"
+                                />
+                            <Label for="is_taxable">Barang Kena Pajak</Label>
                         </div>
                     </div>
                     <DialogHeader class="mt-4">
@@ -682,110 +704,108 @@ const submit = () => {
                             Data detail barang
                         </DialogDescription>
                     </DialogHeader>
-                    <div class="grid grid-cols-5 gap-4">
-                        <div>
-                            <Label for="saldo_awal"> Saldo Awal </Label>
-                            <Input
-                                id="saldo_awal"
-                                v-model="form.details['saldo_awal']"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label for="harga_jual_karton">
-                                Harga Jual (Karton)
-                            </Label>
-                            <Input
-                                id="harga_jual_karton"
-                                v-model="form.details.harga_jual_karton"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label for="harga_jual_eceran">
-                                Harga Jual (Eceran)
-                            </Label>
-                            <Input
-                                id="harga_jual_eceran"
-                                v-model="form.details.harga_jual_eceran"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label for="harga_beli_karton">
-                                Harga Beli (Karton)
-                            </Label>
-                            <Input
-                                id="harga_beli_karton"
-                                v-model="form.details.harga_beli_karton"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label for="harga_beli_eceran">
-                                Harga Beli (Eceran)
-                            </Label>
-                            <Input
-                                id="harga_beli_eceran"
-                                v-model="form.details.harga_beli_eceran"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label for="hpp_avg_karton"> HPP (Karton) </Label>
-                            <Input
-                                id="hpp_avg_karton"
-                                v-model="form.details.hpp_avg_karton"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label for="hpp_avg_eceran"> HPP (Eceran) </Label>
-                            <Input
-                                id="hpp_avg_eceran"
-                                v-model="form.details.hpp_avg_eceran"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label for="current_stock"> Current Stock </Label>
-                            <Input
-                                id="current_stock"
-                                v-model="form.details.current_stock"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <Label for="nilai_akhir">
-                                Nilai Akhir Persediaan
-                            </Label>
-                            <Input
-                                id="nilai_akhir"
-                                v-model="form.details.nilai_akhir"
-                                type="number"
-                                class="col-span-3"
-                                required
-                            />
-                        </div>
-                    </div>
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Saldo Awal</TableHead>
+                            <TableHead>Harga Jual (Karton)</TableHead>
+                            <TableHead>Harga Jual (Eceran)</TableHead>
+                            <TableHead>Harga Beli (Karton)</TableHead>
+                            <TableHead>Harga Beli (Eceran)</TableHead>
+                            <TableHead>HPP (Karton)</TableHead>
+                            <TableHead>HPP (Eceran)</TableHead>
+                            <TableHead>Current Stock</TableHead>
+                            <TableHead>Nilai Akhir Persediaan</TableHead>
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        <TableRow>
+                            <TableCell>
+                                <Input
+                                    id="saldo_awal"
+                                    v-model="form.details.saldo_awal"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    id="harga_jual_karton"
+                                    v-model="form.details.harga_jual_karton"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    id="harga_jual_eceran"
+                                    v-model="form.details.harga_jual_eceran"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    id="harga_beli_karton"
+                                    v-model="form.details.harga_beli_karton"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    id="harga_beli_eceran"
+                                    v-model="form.details.harga_beli_eceran"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    id="hpp_avg_karton"
+                                    v-model="form.details.hpp_avg_karton"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    id="hpp_avg_eceran"
+                                    v-model="form.details.hpp_avg_eceran"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    id="current_stock"
+                                    v-model="form.details.current_stock"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    id="nilai_akhir"
+                                    v-model="form.details.nilai_akhir"
+                                    type="number"
+                                    class="col-span-3"
+                                    required
+                                />
+                            </TableCell>
+                        </TableRow>
+                        </TableBody>
+                    </Table>
                     <DialogFooter>
-                        <Button @click="submit"> Save changes </Button>
+                        <Button @click="submit"> Save </Button>
                     </DialogFooter>
                 </DialogContent>
             </Form>
