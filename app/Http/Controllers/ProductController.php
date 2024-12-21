@@ -79,7 +79,7 @@ class ProductController extends Controller
         try {
             $validatedData = $this->validateProductData($request);
 
-            $product = Product::findOrFail($id);
+            $product = Product::find($id);
 
             if (empty($product)) {
                 return redirect()->back()->with('error', 'Product not found.');
@@ -95,10 +95,13 @@ class ProductController extends Controller
             $product->is_taxable = $validatedData['is_taxable'];
             $product->updated_by = Auth()->user()->name;
 
-            dd($product->details());
-            $validatedData['details']['nama_barang'] = $validatedData['nama_barang'];
-            $validatedData['details']['created_by'] = Auth()->user()->name;
-            $product->details()->create($validatedData['details']);
+            $product->details()->update($validatedData['details']);
+            $product->details()->update([
+                'nama_barang' => $validatedData['nama_barang'],
+                'updated_by' => Auth()->user()->name,
+            ]);
+
+            $product->save();
 
             DB::commit();
 

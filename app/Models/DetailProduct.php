@@ -10,7 +10,7 @@ class DetailProduct extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'mstdetailbarang';
+    protected $table = 'mst_detail_barang';
 
     protected $primaryKey = 'id';
 

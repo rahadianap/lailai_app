@@ -12,15 +12,11 @@ import { MoreHorizontal } from "lucide-vue-next";
 
 const props = defineProps({
     product: Object,
-    onEdit: Function,
 })
 
-const edit = (id) => {
-    props.onEdit(id);
-}
-
 defineEmits<{
-  (e: 'expand'): void
+  (e: 'expand'): void,
+  (e: 'edit'): void
 }>()
 
 </script>
@@ -36,13 +32,11 @@ defineEmits<{
         <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem @click="$emit('expand')">
-        Expand
-      </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="edit(product.id)">
+                Expand
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="$emit('edit')">
                 Edit
             </DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>

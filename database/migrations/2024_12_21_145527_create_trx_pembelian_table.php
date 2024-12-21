@@ -11,15 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('mstbarang', function (Blueprint $table) {
+        Schema::create('trx_pembelian', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_barang');
-            $table->string('kode_barcode');
-            $table->string('nama_barang');
-            $table->string('nama_satuan');
-            $table->string('nama_kategori');
-            $table->boolean('is_taxable')->default(false);
-            $table->integer('isi_barang');
+            $table->string('kode_pembelian');
+            $table->string('nama_supplier');
+            $table->string('kode_po')->nullable();
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();
@@ -34,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('mstbarang');
+        Schema::dropIfExists('trx_pembelian');
     }
 };

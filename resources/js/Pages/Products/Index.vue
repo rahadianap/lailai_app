@@ -96,26 +96,6 @@ const onUnitSelect = (unit) => {
 
 const columns = [
     {
-        id: "select",
-        header: ({ table }) =>
-            h(Checkbox, {
-                checked:
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate"),
-                "onUpdate:checked": (value) =>
-                    table.toggleAllPageRowsSelected(!!value),
-                ariaLabel: "Select all",
-            }),
-        cell: ({ row }) =>
-            h(Checkbox, {
-                checked: row.getIsSelected(),
-                "onUpdate:checked": (value) => row.toggleSelected(!!value),
-                ariaLabel: "Select row",
-            }),
-        enableSorting: false,
-        enableHiding: false,
-    },
-    {
         accessorKey: "kode_barang",
         header: () => h("div", { class: "text-left" }, "Kode Barang"),
         cell: ({ row }) => {
@@ -225,11 +205,11 @@ const columns = [
         cell: ({ row }) => {
             const product = row.original;
 
-            return h(DropdownAction, {
+            return h('div', { class: 'relative' }, h(DropdownAction, {
                 product,
-                onEdit,
+                onEdit: () => onEdit(product.id),
                 onExpand: row.toggleExpanded,
-            });
+            }));
         },
     },
 ];
@@ -311,6 +291,7 @@ const table = useVueTable({
 const errors = ref({});
 
 const form = useForm({
+    id: null,
     kode_barcode: "",
     nama_barang: "",
     nama_satuan: "",
@@ -330,8 +311,14 @@ const form = useForm({
     },
 });
 
+const resetForm = () => {
+    form.reset();
+}
+
 const submit = () => {
-    form.post("/products", {
+    const url = form.id ? `/products/${form.id}` : '/products';
+    const method = form.id ? 'put' : 'post';
+    form[method](url, {
         preserveState: true,
         onError: (error) => {
             errors.value = error;
@@ -370,8 +357,8 @@ const onEdit = async (id) => {
       console.error('Error ');
     }
     const data = await res.json();
-    console.log(data)
-    // Set to form 
+    // Set to form
+    form.id = data.data.id; 
     form.kode_barcode = data.data.kode_barcode;
     form.nama_barang = data.data.nama_barang;
     form.nama_satuan = data.data.nama_satuan;
@@ -591,11 +578,11 @@ const formatPrice = (price) => {
                 </div>
             </div>
         </div>
-        <Dialog v-model:open="showCreate">
+        <Dialog v-model:open="showCreate" @update:open="(val) => { if (!val) resetForm(); showCreate = val; }">
             <Form>
                 <DialogContent class="w-[1500px]">
                     <DialogHeader>
-                        <DialogTitle>Data Master Barang</DialogTitle>
+                        <DialogTitle>{{ form.id ? 'Edit' : 'Create' }} Data Master Barang</DialogTitle>
                         <DialogDescription>
                             Data master barang
                         </DialogDescription>

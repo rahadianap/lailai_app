@@ -10,7 +10,7 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'mstbarang';
+    protected $table = 'mst_barang';
 
     protected $primaryKey = 'id';
 

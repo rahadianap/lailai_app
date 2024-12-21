@@ -6,20 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Unit extends Model
+class Supplier extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'mst_satuan_barang';
+    protected $table = 'mst_supplier';
 
     protected $primaryKey = 'id';
-
-    protected $fillable = [
-        'kode_satuan',
-        'nama_satuan',
-        'is_aktif',
-        'created_by',
-        'updated_by',
-        'deleted_by',
-    ];
 }

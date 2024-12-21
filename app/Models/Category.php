@@ -10,14 +10,16 @@ class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'mstkategoribarang';
+    protected $table = 'mst_kategori_barang';
+
     protected $primaryKey = 'id';
+
     protected $fillable = [
         'kode_kategori',
         'nama_kategori',
         'is_aktif',
         'created_by',
         'updated_by',
-        'deleted_by'
+        'deleted_by',
     ];
 }
