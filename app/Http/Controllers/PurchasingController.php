@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Models\Purchasing;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
@@ -28,6 +29,24 @@ class PurchasingController extends Controller
 
         $data = Supplier::where('nama_supplier', 'like', "%{$search}%")
             ->paginate($perPage);
+
+        return response()->json($data);
+    }
+
+    public function getProducts(Request $request)
+    {
+        $search = $request->input('search', '');
+        $perPage = 10;
+
+        $data = Product::where('kode_barcode', 'like', "%{$search}%")
+            ->paginate($perPage);
+
+        return response()->json($data);
+    }
+
+    public function fetchDetails($id)
+    {
+        $data = Product::where('kode_barcode', $id)->first();
 
         return response()->json($data);
     }

@@ -33,9 +33,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Form,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import SearchableSelect from "../../components/SearchableSelect.vue";
 import { useForm } from "@inertiajs/vue3";
@@ -54,6 +52,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Trash2 } from "lucide-vue-next";
 
 const props = defineProps({
     data: Array,
@@ -69,20 +68,51 @@ const showDialogCreate = () => {
 
 const selectedCategory = ref(null);
 
-const selectedUnit = ref(null);
+const selectedProduct = ref(null);
 
 const onCategorySelect = (category) => {
     selectedCategory.value = category;
 };
 
-const onUnitSelect = (unit) => {
-    selectedUnit.value = unit;
+const onProductSelect = async (product) => {
+    selectedProduct.value = product;
+    try {
+        const response = await fetch(
+            `http://127.0.0.1:8000/api/purchasing/products/${product.kode_barcode}`,
+        );
+        if (!response.ok) {
+            throw new Error("Failed to fetch product details");
+        }
+        const productDetails = await response.json();
+
+        // Update the current detail with the fetched product information
+        const currentDetail = form.details[form.details.length - 1];
+        currentDetail.nama_barang = productDetails.nama_barang;
+        currentDetail.nama_satuan = productDetails.nama_satuan;
+        currentDetail.isi = productDetails.isi_barang;
+        currentDetail.harga = productDetails.harga_beli_karton;
+
+        // Set default values for other fields
+        currentDetail.qty = 1;
+        currentDetail.diskon = 0;
+        currentDetail.diskon_global = 0;
+        currentDetail.jumlah = productDetails.harga_beli_karton;
+        currentDetail.exp_date = ""; // You might want to set a default date here
+    } catch (error) {
+        console.error("Error fetching product details:", error);
+        // Optionally, show an error message to the user
+        Swal.fire({
+            title: "Error",
+            text: "Failed to fetch product details",
+            icon: "error",
+        });
+    }
 };
 
 const columns = [
     {
         accessorKey: "kode_pembelian",
-        header: () => h("div", { class: "text-left" }, "Kode Barang"),
+        header: () => h("div", { class: "text-left" }, "Kode Pembelian"),
         cell: ({ row }) => {
             return h(
                 "div",
@@ -93,7 +123,7 @@ const columns = [
     },
     {
         accessorKey: "nama_supplier",
-        header: () => h("div", { class: "text-left" }, "Kode Barcode"),
+        header: () => h("div", { class: "text-left" }, "Supplier"),
         cell: ({ row }) => {
             return h(
                 "div",
@@ -104,7 +134,7 @@ const columns = [
     },
     {
         accessorKey: "kode_po",
-        header: () => h("div", { class: "text-left" }, "Nama Barang"),
+        header: () => h("div", { class: "text-left" }, "Kode PO"),
         cell: ({ row }) => {
             return h(
                 "div",
@@ -139,11 +169,15 @@ const columns = [
         cell: ({ row }) => {
             const product = row.original;
 
-            return h('div', { class: 'relative' }, h(DropdownAction, {
-                product,
-                onEdit: () => onEdit(product.id),
-                onExpand: row.toggleExpanded,
-            }));
+            return h(
+                "div",
+                { class: "relative" },
+                h(DropdownAction, {
+                    product,
+                    onEdit: () => onEdit(product.id),
+                    onExpand: row.toggleExpanded,
+                }),
+            );
         },
     },
 ];
@@ -227,7 +261,23 @@ const errors = ref({});
 const form = useForm({
     id: null,
     nama_supplier: "",
-    details: [{
+    details: [
+        {
+            kode_barcode: "",
+            harga_jual_karton: 0,
+            harga_jual_eceran: 0,
+            harga_beli_karton: 0,
+            harga_beli_eceran: 0,
+            hpp_avg_karton: 0,
+            hpp_avg_eceran: 0,
+            current_stock: 0,
+            nilai_akhir: 0,
+        },
+    ],
+});
+
+const addNewDetail = () => {
+    const newDetail = {
         saldo_awal: 0,
         harga_jual_karton: 0,
         harga_jual_eceran: 0,
@@ -237,11 +287,11 @@ const form = useForm({
         hpp_avg_eceran: 0,
         current_stock: 0,
         nilai_akhir: 0,
-    }],
-});
+    };
+    form.details.push(newDetail);
+};
 
-const addNewDetail = () => {
-  form.details.push({
+const newDetailInput = ref({
     saldo_awal: 0,
     harga_jual_karton: 0,
     harga_jual_eceran: 0,
@@ -251,33 +301,72 @@ const addNewDetail = () => {
     hpp_avg_eceran: 0,
     current_stock: 0,
     nilai_akhir: 0,
-  });
+});
+
+const addNewDetailFromInput = () => {
+    // if (isItemExist(newDetailInput.value)) {
+    //     Swal.fire({
+    //         title: "Item Already Exists",
+    //         text: "This item is already in the details table.",
+    //         icon: "warning",
+    //         showConfirmButton: false,
+    //         timer: 1000,
+    //     });
+    // } else {
+    //     form.details.push({ ...newDetailInput.value });
+    //     // Reset the input after adding
+    //     Object.keys(newDetailInput.value).forEach((key) => {
+    //         newDetailInput.value[key] = 0;
+    //     });
+    // }
+    form.details.push({ ...newDetailInput.value });
+    //     // Reset the input after adding
+    Object.keys(newDetailInput.value).forEach((key) => {
+        newDetailInput.value[key] = 0;
+    });
+};
+
+const isItemExist = (newItem) => {
+    return form.details.some(
+        (item) =>
+            item.saldo_awal === newItem.saldo_awal &&
+            item.harga_jual_karton === newItem.harga_jual_karton &&
+            item.harga_jual_eceran === newItem.harga_jual_eceran &&
+            item.harga_beli_karton === newItem.harga_beli_karton &&
+            item.harga_beli_eceran === newItem.harga_beli_eceran &&
+            item.hpp_avg_karton === newItem.hpp_avg_karton &&
+            item.hpp_avg_eceran === newItem.hpp_avg_eceran &&
+            item.current_stock === newItem.current_stock &&
+            item.nilai_akhir === newItem.nilai_akhir,
+    );
 };
 
 const removeDetail = (index) => {
-  form.details.splice(index, 1);
+    form.details.splice(index, 1);
 };
 
 const resetForm = () => {
-  form.reset();
-  form.clearErrors();
-  form.id = null;
-  form.nama_supplier = "",
-  form.details = [{
-    saldo_awal: 0,
-    harga_jual_karton: 0,
-    harga_jual_eceran: 0,
-    harga_beli_karton: 0,
-    harga_beli_eceran: 0,
-    hpp_avg_karton: 0,
-    hpp_avg_eceran: 0,
-    current_stock: 0,
-    nilai_akhir: 0,
-  }];
+    form.reset();
+    form.clearErrors();
+    form.id = null;
+    (form.nama_supplier = ""),
+        (form.details = [
+            {
+                kode_barcode: 0,
+                harga_jual_karton: 0,
+                harga_jual_eceran: 0,
+                harga_beli_karton: 0,
+                harga_beli_eceran: 0,
+                hpp_avg_karton: 0,
+                hpp_avg_eceran: 0,
+                current_stock: 0,
+                nilai_akhir: 0,
+            },
+        ]);
 };
 const submit = () => {
-    const url = form.id ? `/purchasing/${form.id}` : '/purchasing';
-    const method = form.id ? 'put' : 'post';
+    const url = form.id ? `/purchasing/${form.id}` : "/purchasing";
+    const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
         onError: (error) => {
@@ -304,50 +393,53 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-  //Open Dialog
-  showCreate.value = true 
-  try {
-    const res = await fetch(`/purchasing/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    if (!res.ok) {
-      console.error('Error ');
+    //Open Dialog
+    showCreate.value = true;
+    try {
+        const res = await fetch(`/purchasing/${id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        if (!res.ok) {
+            console.error("Error ");
+        }
+        const data = await res.json();
+        // Set to form
+        form.id = data.data.id;
+        form.kode_barcode = data.data.kode_barcode;
+        form.kode_barcode = data.data.kode_barcode;
+        form.nama_satuan = data.data.nama_satuan;
+        form.nama_kategori = data.data.nama_kategori;
+        form.isi_barang = data.data.isi_barang;
+        form.is_taxable = data.data.is_taxable === "1" ? true : false;
+        form.details.kode_barcode = data.data.details["kode_barcode"];
+        form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
+        form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
+        form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
+        form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
+        form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
+        form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
+        form.details.current_stock = data.data.details["current_stock"];
+        form.details.nilai_akhir = data.data.details["nilai_akhir"];
+    } catch (error) {
+        console.error(error);
     }
-    const data = await res.json();
-    // Set to form
-    form.id = data.data.id; 
-    form.kode_barcode = data.data.kode_barcode;
-    form.nama_barang = data.data.nama_barang;
-    form.nama_satuan = data.data.nama_satuan;
-    form.nama_kategori = data.data.nama_kategori;
-    form.isi_barang = data.data.isi_barang;
-    form.is_taxable = data.data.is_taxable === "1" ? true : false;
-    form.details.saldo_awal = data.data.details['saldo_awal'];
-    form.details.harga_jual_karton = data.data.details['harga_jual_karton'];
-    form.details.harga_jual_eceran = data.data.details['harga_jual_eceran'];
-    form.details.harga_beli_karton = data.data.details['harga_beli_karton'];
-    form.details.harga_beli_eceran = data.data.details['harga_beli_eceran'];
-    form.details.hpp_avg_karton = data.data.details['hpp_avg_karton'];
-    form.details.hpp_avg_eceran = data.data.details['hpp_avg_eceran'];
-    form.details.current_stock = data.data.details['current_stock'];
-    form.details.nilai_akhir = data.data.details['nilai_akhir'];
-  } catch (error) {
-    console.error(error);
-  }
 };
 
 const formatPrice = (price) => {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(price);
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+    }).format(price);
 };
 </script>
 
 <template>
     <Layout>
         <div class="flex items-center">
-            <h1 class="text-lg font-semibold md:text-2xl">Products</h1>
+            <h1 class="text-lg font-semibold md:text-2xl">Purchasing</h1>
         </div>
         <div class="w-full">
             <div class="flex items-center justify-between py-4">
@@ -358,7 +450,9 @@ const formatPrice = (price) => {
                     class="max-w-sm"
                     placeholder="Filter kode pembelian..."
                     @update:model-value="
-                        table.getColumn('kode_pembelian')?.setFilterValue($event)
+                        table
+                            .getColumn('kode_pembelian')
+                            ?.setFilterValue($event)
                     "
                 />
                 <Button class="ml-4" variant="outline" @click="showDialogCreate"
@@ -410,33 +504,142 @@ const formatPrice = (price) => {
                                     <TableCell
                                         :colspan="row.getAllCells().length"
                                     >
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                            <TableHead>Saldo Awal</TableHead>
-                                            <TableHead>Harga Jual (Karton)</TableHead>
-                                            <TableHead>Harga Jual (Eceran)</TableHead>
-                                            <TableHead>Harga Beli (Karton)</TableHead>
-                                            <TableHead>Harga Beli (Eceran)</TableHead>
-                                            <TableHead>HPP (Karton)</TableHead>
-                                            <TableHead>HPP (Eceran)</TableHead>
-                                            <TableHead>Current Stock</TableHead>
-                                            <TableHead>Nilai Akhir</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            <TableRow>
-                                            <TableCell class="font-medium">{{ row.original.details['saldo_awal'] }}</TableCell>
-                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_jual_karton']) }}</TableCell>
-                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_jual_eceran']) }}</TableCell>
-                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_beli_karton']) }}</TableCell>
-                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_beli_eceran']) }}</TableCell>
-                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['hpp_avg_karton']) }}</TableCell>
-                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['hpp_avg_eceran']) }}</TableCell>
-                                            <TableCell class="font-medium">{{ row.original.details['current_stock'] }}</TableCell>
-                                            <TableCell class="font-medium">{{ formatPrice(row.original.details['nilai_akhir']) }}</TableCell>
-                                            </TableRow>
-                                        </TableBody>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead
+                                                        >Saldo Awal</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Harga Jual
+                                                        (Karton)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Harga Jual
+                                                        (Eceran)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Harga Beli
+                                                        (Karton)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Harga Beli
+                                                        (Eceran)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >HPP (Karton)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >HPP (Eceran)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Current
+                                                        Stock</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Nilai Akhir</TableHead
+                                                    >
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow>
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            row.original
+                                                                .details[
+                                                                "kode_barcode"
+                                                            ]
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "harga_jual_karton"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "harga_jual_eceran"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "harga_beli_karton"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "harga_beli_eceran"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "hpp_avg_karton"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "hpp_avg_eceran"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            row.original
+                                                                .details[
+                                                                "current_stock"
+                                                            ]
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "nilai_akhir"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                </TableRow>
+                                            </TableBody>
                                         </Table>
                                     </TableCell>
                                 </TableRow>
@@ -538,19 +741,33 @@ const formatPrice = (price) => {
                 </div>
             </div>
         </div>
-        <Dialog v-model:open="showCreate" @update:open="(val) => { if (!val) resetForm(); showCreate = val; }">
+        <Dialog
+            v-model:open="showCreate"
+            @update:open="
+                (val) => {
+                    if (!val) resetForm();
+                    showCreate = val;
+                }
+            "
+        >
             <Form>
-                <DialogContent class="w-[1500px]">
+                <DialogContent
+                    class="max-w-full w-full max-h-full h-full flex flex-col p-4"
+                >
                     <DialogHeader>
-                        <DialogTitle>{{ form.id ? 'Edit' : 'Create' }} Data Master Barang</DialogTitle>
+                        <DialogTitle
+                            >{{ form.id ? "Edit" : "Create" }} Data
+                            Pembelian</DialogTitle
+                        >
                         <DialogDescription>
-                            Data master barang
+                            Data master pembelian
                         </DialogDescription>
                     </DialogHeader>
                     <div class="grid grid-cols-5 gap-4">
                         <div>
                             <Label for="nama_supplier"> Supplier </Label>
                             <SearchableSelect
+                                class="mt-2"
                                 required
                                 v-model="form.nama_supplier"
                                 placeholder="Search suppliers..."
@@ -563,7 +780,7 @@ const formatPrice = (price) => {
                                 loading-text="Loading suppliers..."
                                 no-results-text="No suppliers found"
                                 load-more-text="Load more suppliers"
-                                @select="onUnitSelect"
+                                @select="onProductSelect"
                             />
                             <span
                                 v-if="errors?.nama_supplier"
@@ -573,117 +790,148 @@ const formatPrice = (price) => {
                         </div>
                     </div>
                     <DialogHeader class="mt-4">
-                        <DialogTitle>Data Detail Barang</DialogTitle>
+                        <DialogTitle>Data Detail Pembelian</DialogTitle>
                         <DialogDescription>
-                            Data detail barang
+                            Data detail pembelian
                         </DialogDescription>
                     </DialogHeader>
-                    <div class="max-h-[400px] overflow-y-auto p-2 md:p-4" aria-label="Product Detail Form">
+                    <div class="max-h-screen overflow-y-auto p-2 md:p-4">
                         <Table>
                             <TableHeader class="sticky top-0 z-10 bg-white">
-                            <TableRow>
-                                <TableHead>Saldo Awal</TableHead>
-                                <TableHead>Harga Jual (Karton)</TableHead>
-                                <TableHead>Harga Jual (Eceran)</TableHead>
-                                <TableHead>Harga Beli (Karton)</TableHead>
-                                <TableHead>Harga Beli (Eceran)</TableHead>
-                                <TableHead>HPP (Karton)</TableHead>
-                                <TableHead>HPP (Eceran)</TableHead>
-                                <TableHead>Current Stock</TableHead>
-                                <TableHead>Nilai Akhir Persediaan</TableHead>
-                            </TableRow>
+                                <TableRow>
+                                    <TableHead>Kode Barcode</TableHead>
+                                    <TableHead>Nama Barang</TableHead>
+                                    <TableHead>Qty</TableHead>
+                                    <TableHead>Satuan</TableHead>
+                                    <TableHead>Isi</TableHead>
+                                    <TableHead>Harga</TableHead>
+                                    <TableHead>Diskon</TableHead>
+                                    <TableHead>Diskon Global</TableHead>
+                                    <TableHead>Jumlah</TableHead>
+                                    <TableHead>Expired Date</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
                             </TableHeader>
                             <TableBody>
-                            <TableRow v-for="(detail, index) in form.details" :key="index">
-                                <TableCell>
-                                    <Input
-                                        id="saldo_awal"
-                                        v-model="detail.saldo_awal"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="harga_jual_karton"
-                                        v-model="detail.harga_jual_karton"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="harga_jual_eceran"
-                                        v-model="detail.harga_jual_eceran"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="harga_beli_karton"
-                                        v-model="detail.harga_beli_karton"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="harga_beli_eceran"
-                                        v-model="detail.harga_beli_eceran"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="hpp_avg_karton"
-                                        v-model="detail.hpp_avg_karton"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="hpp_avg_eceran"
-                                        v-model="detail.hpp_avg_eceran"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="current_stock"
-                                        v-model="detail.current_stock"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="nilai_akhir"
-                                        v-model="detail.nilai_akhir"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Button @click="removeDetail(index)" variant="destructive">Remove</Button>
-                                </TableCell>
-                            </TableRow>
+                                <TableRow
+                                    v-for="(detail, index) in form.details"
+                                    :key="index"
+                                >
+                                    <TableCell>
+                                        <SearchableSelect
+                                            required
+                                            v-model="form.kode_barcode"
+                                            placeholder="Search..."
+                                            api-endpoint="http://127.0.0.1:8000/api/purchasing/products"
+                                            value-field="kode_barcode"
+                                            display-field="kode_barcode"
+                                            search-param="search"
+                                            :per-page="10"
+                                            :debounce-time="300"
+                                            loading-text="Loading products..."
+                                            no-results-text="No products found"
+                                            load-more-text="Load more products"
+                                            @select="onProductSelect"
+                                        />
+                                        <span
+                                            v-if="errors?.kode_barcode"
+                                            class="text-sm text-red-500"
+                                            >{{ errors.kode_barcode }}</span
+                                        >
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="nama_barang"
+                                            v-model="detail.nama_barang"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="qty"
+                                            v-model="detail.qty"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="nama_satuan"
+                                            v-model="detail.nama_satuan"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="isi"
+                                            v-model="detail.isi"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="harga"
+                                            v-model="detail.harga"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="diskon"
+                                            v-model="detail.diskon"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="diskon_global"
+                                            v-model="detail.diskon_global"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="jumlah"
+                                            v-model="detail.jumlah"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="exp_date"
+                                            v-model="detail.exp_date"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            @click="removeDetail(index)"
+                                            variant="destructive"
+                                            ><Trash2
+                                        /></Button>
+                                    </TableCell>
+                                </TableRow>
                             </TableBody>
                         </Table>
                     </div>
-                    <Button @click="addNewDetail" class="mt-4">Add New Detail</Button>
+                    <Button @click="addNewDetailFromInput">Add</Button>
                     <DialogFooter>
                         <Button @click="submit"> Save </Button>
                     </DialogFooter>
