@@ -22,7 +22,7 @@ import {
     getSortedRowModel,
     useVueTable,
 } from "@tanstack/vue-table";
-import { h, ref, watch, computed } from "vue";
+import { h, ref } from "vue";
 import DropdownAction from "../../components/DataTableDropdown.vue";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -65,21 +65,23 @@ const showCreate = ref(false);
 
 const showDialogCreate = () => {
     showCreate.value = true;
+    console.log(data);
 };
 
-const selectedCategory = ref(null);
+const selectedSupplier = ref(null);
 
 const selectedProduct = ref(null);
 
-const onCategorySelect = (category) => {
-    selectedCategory.value = category;
+const onSupplierSelect = (supplier) => {
+    console.log(supplier);
+    selectedSupplier.value = supplier;
 };
 
 const onProductSelect = async (product) => {
     selectedProduct.value = product;
     try {
         const response = await fetch(
-            `http://127.0.0.1:8000/api/purchasing/products/${product.kode_barcode}`,
+            `http://127.0.0.1:8000/api/purchase-order/products/${product.kode_barcode}`,
         );
         if (!response.ok) {
             throw new Error("Failed to fetch product details");
@@ -90,16 +92,14 @@ const onProductSelect = async (product) => {
         const currentDetail = form.details[form.details.length - 1];
         currentDetail.nama_barang = productDetails.nama_barang;
         currentDetail.nama_satuan = productDetails.nama_satuan;
-        currentDetail.isi = productDetails.isi_barang;
+        currentDetail.isi_barang = productDetails.isi_barang;
         currentDetail.harga = productDetails.harga_beli_karton;
 
         // Set default values for other fields
         currentDetail.qty = 1;
         currentDetail.diskon = 0;
         currentDetail.diskon_global = 0;
-        currentDetail.jumlah = productDetails.harga_beli_karton;
-        currentDetail.is_taxable = productDetails.is_taxable;
-        currentDetail.exp_date = ""; // You might want to set a default date here
+        currentDetail.jumlah = productDetails.jumlah;
         calculateJumlah(currentDetail);
     } catch (error) {
         console.error("Error fetching product details:", error);
@@ -108,19 +108,21 @@ const onProductSelect = async (product) => {
             title: "Error",
             text: "Failed to fetch product details",
             icon: "error",
+            timer: 1000,
         });
     }
 };
 
 const columns = [
     {
-        accessorKey: "kode_pembelian",
-        header: () => h("div", { class: "text-left" }, "Kode Pembelian"),
+        accessorKey: "kode_po",
+        header: () =>
+            h("div", { class: "text-left text-sm" }, "Kode Pembelian"),
         cell: ({ row }) => {
             return h(
                 "div",
-                { class: "text-left font-medium" },
-                row.getValue("kode_pembelian"),
+                { class: "text-left font-normal" },
+                row.getValue("kode_po"),
             );
         },
     },
@@ -130,37 +132,37 @@ const columns = [
         cell: ({ row }) => {
             return h(
                 "div",
-                { class: "text-left font-medium" },
+                { class: "text-left font-normal" },
                 row.getValue("nama_supplier"),
             );
         },
     },
     {
-        accessorKey: "kode_po",
-        header: () => h("div", { class: "text-left" }, "Kode PO"),
+        accessorKey: "status",
+        header: () => h("div", { class: "text-left" }, "Status"),
         cell: ({ row }) => {
             return h(
                 "div",
-                { class: "text-left font-medium" },
-                row.getValue("kode_po"),
+                { class: "text-left font-normal" },
+                row.getValue("status"),
             );
         },
     },
     {
         accessorKey: "is_aktif",
-        header: () => h("div", { class: "text-center" }, "Status"),
+        header: () => h("div", { class: "text-center" }, "Active"),
         cell: ({ row }) => {
             const status = row.getValue("is_aktif");
             if (status == true) {
                 return h(
                     "div",
-                    { class: "text-center font-medium" },
+                    { class: "text-center font-normal" },
                     h(Badge, "Active"),
                 );
             } else {
                 return h(
                     "div",
-                    { class: "text-center font-medium" },
+                    { class: "text-center font-normal" },
                     h(Badge, { variant: "outline" }, "Inactive"),
                 );
             }
@@ -170,14 +172,14 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const product = row.original;
+            const po = row.original;
 
             return h(
                 "div",
-                { class: "relative" },
+                { class: "relative text-right" },
                 h(DropdownAction, {
-                    product,
-                    onEdit: () => onEdit(product.id),
+                    po,
+                    onEdit: () => onEdit(po.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -213,7 +215,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/purchasing",
+            "/purchase-order",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -264,28 +266,18 @@ const errors = ref({});
 const form = useForm({
     id: null,
     nama_supplier: "",
-    kode_po: "",
     keterangan: "",
     details: [
         {
             kode_barcode: "",
             nama_barang: "",
-            exp_date: "",
             qty: 0,
-            nama_satuan: 0,
+            nama_satuan: "",
             isi_barang: 0,
             harga: 0,
             diskon: 0,
             diskon_global: 0,
             jumlah: 0,
-            dpp: 0,
-            ppn: 0,
-            taxable: false,
-            rebate: 0,
-            diskon_total: 0,
-            dpp_total: 0,
-            ppn_total: 0,
-            total: 0,
         },
     ],
 });
@@ -293,17 +285,13 @@ const form = useForm({
 const newDetailInput = ref({
     kode_barcode: "",
     nama_barang: "",
-    exp_date: "",
     qty: 0,
-    nama_satuan: 0,
+    nama_satuan: "",
     isi_barang: 0,
     harga: 0,
     diskon: 0,
     diskon_global: 0,
     jumlah: 0,
-    dpp: 0,
-    ppn: 0,
-    taxable: false,
 });
 
 const addNewDetailFromInput = () => {
@@ -331,54 +319,9 @@ const isItemExist = (newItem) => {
     );
 };
 
-const subtotal = computed(() => {
-    return form.details.reduce((sum, detail) => sum + (detail.jumlah || 0), 0);
-});
-
 const calculateJumlah = (detail) => {
     detail.jumlah = detail.qty * detail.harga;
 };
-
-const calculateTotals = () => {
-    // Get subtotal from computed value
-    const currentSubtotal = subtotal.value;
-
-    // Apply discounts and rebate
-    let dpp = currentSubtotal;
-
-    // Apply rebate if any
-    dpp -= form.rebate || 0;
-
-    // Apply fixed amount discount
-    dpp -= form.diskon_rupiah || 0;
-
-    // Apply percentage discount
-    const percentageDiscount = dpp * ((form.diskon_total || 0) / 100);
-    dpp -= percentageDiscount;
-
-    // Calculate PPn (11%)
-    const ppnTotal = form.details.reduce((sum, detail) => {
-        if (detail.is_taxable === "1") {
-            return sum + detail.jumlah * 0.11;
-        }
-        return sum;
-    }, 0);
-
-    // Calculate total
-    const total = dpp + ppnTotal;
-
-    // Update form values
-    form.dpp_total = parseFloat(dpp.toFixed(2));
-    form.ppn_total = parseFloat(ppnTotal.toFixed(2));
-    form.total = parseFloat(total.toFixed(2));
-};
-
-watch(subtotal, () => {
-    calculateTotals();
-});
-
-// Add watch effect to recalculate totals when details change
-watch(() => form.details, calculateTotals, { deep: true });
 
 const removeDetail = (index) => {
     form.details.splice(index, 1);
@@ -391,21 +334,21 @@ const resetForm = () => {
     (form.nama_supplier = ""),
         (form.details = [
             {
-                kode_barcode: 0,
-                harga_jual_karton: 0,
-                harga_jual_eceran: 0,
-                harga_beli_karton: 0,
-                harga_beli_eceran: 0,
-                hpp_avg_karton: 0,
-                hpp_avg_eceran: 0,
-                current_stock: 0,
-                nilai_akhir: 0,
+                kode_barcode: "",
+                nama_barang: "",
+                qty: 0,
+                nama_satuan: "",
+                isi_barang: 0,
+                harga: 0,
+                diskon: 0,
+                diskon_global: 0,
+                jumlah: 0,
             },
         ]);
 };
 
 const submit = () => {
-    const url = form.id ? `/purchasing/${form.id}` : "/purchasing";
+    const url = form.id ? `/purchase-order/${form.id}` : "/purchase-order";
     const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
@@ -415,6 +358,7 @@ const submit = () => {
                 title: "Oops!",
                 text: "Something went wrong",
                 icon: "error",
+                timer: 1000,
             });
         },
         onSuccess: () => {
@@ -424,6 +368,7 @@ const submit = () => {
                 text: "Your work has been saved",
                 icon: "success",
                 showConfirmButton: false,
+                timer: 1000,
             });
             setTimeout(() => {
                 window.location.reload();
@@ -436,7 +381,7 @@ const onEdit = async (id) => {
     //Open Dialog
     showCreate.value = true;
     try {
-        const res = await fetch(`/purchasing/${id}`, {
+        const res = await fetch(`/purchase-order/${id}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -448,21 +393,21 @@ const onEdit = async (id) => {
         const data = await res.json();
         // Set to form
         form.id = data.data.id;
-        form.kode_barcode = data.data.kode_barcode;
-        form.kode_barcode = data.data.kode_barcode;
-        form.nama_satuan = data.data.nama_satuan;
-        form.nama_kategori = data.data.nama_kategori;
-        form.isi_barang = data.data.isi_barang;
-        form.is_taxable = data.data.is_taxable === "1" ? true : false;
-        form.details.kode_barcode = data.data.details["kode_barcode"];
-        form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
-        form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
-        form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
-        form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
-        form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
-        form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
-        form.details.current_stock = data.data.details["current_stock"];
-        form.details.nilai_akhir = data.data.details["nilai_akhir"];
+        form.nama_supplier = data.data.nama_supplier;
+        // form.kode_barcode = data.data.kode_barcode;
+        // form.nama_satuan = data.data.nama_satuan;
+        // form.nama_kategori = data.data.nama_kategori;
+        // form.isi_barang = data.data.isi_barang;
+        // form.is_taxable = data.data.is_taxable === "1" ? true : false;
+        // form.details.kode_barcode = data.data.details["kode_barcode"];
+        // form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
+        // form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
+        // form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
+        // form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
+        // form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
+        // form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
+        // form.details.current_stock = data.data.details["current_stock"];
+        // form.details.nilai_akhir = data.data.details["nilai_akhir"];
     } catch (error) {
         console.error(error);
     }
@@ -479,20 +424,16 @@ const formatPrice = (price) => {
 <template>
     <Layout>
         <div class="flex items-center">
-            <h1 class="text-lg font-semibold md:text-2xl">Purchasing</h1>
+            <h1 class="text-lg font-semibold md:text-2xl">Purchase Order</h1>
         </div>
         <div class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
-                    :model-value="
-                        table.getColumn('kode_pembelian')?.getFilterValue()
-                    "
+                    :model-value="table.getColumn('kode_po')?.getFilterValue()"
                     class="max-w-sm"
-                    placeholder="Filter kode pembelian..."
+                    placeholder="Filter kode PO..."
                     @update:model-value="
-                        table
-                            .getColumn('kode_pembelian')
-                            ?.setFilterValue($event)
+                        table.getColumn('kode_po')?.setFilterValue($event)
                     "
                 />
                 <Button class="ml-4" variant="outline" @click="showDialogCreate"
@@ -519,7 +460,7 @@ const formatPrice = (price) => {
                             </TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody class="text-xs">
                         <template v-if="table.getRowModel().rows?.length">
                             <template
                                 v-for="row in table.getRowModel().rows"
@@ -548,133 +489,71 @@ const formatPrice = (price) => {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead
-                                                        >Saldo Awal</TableHead
+                                                        >Nomor Faktur</TableHead
                                                     >
                                                     <TableHead
-                                                        >Harga Jual
-                                                        (Karton)</TableHead
+                                                        >Nama Barang</TableHead
                                                     >
+                                                    <TableHead>Qty</TableHead>
                                                     <TableHead
-                                                        >Harga Jual
-                                                        (Eceran)</TableHead
+                                                        >Satuan</TableHead
                                                     >
+                                                    <TableHead>Isi</TableHead>
+                                                    <TableHead>Harga</TableHead>
                                                     <TableHead
-                                                        >Harga Beli
-                                                        (Karton)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Harga Beli
-                                                        (Eceran)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >HPP (Karton)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >HPP (Eceran)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Current
-                                                        Stock</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Nilai Akhir</TableHead
+                                                        >Jumlah</TableHead
                                                     >
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                <TableRow>
+                                                <TableRow
+                                                    v-for="detail in row
+                                                        .original.details"
+                                                    :key="detail.id"
+                                                >
                                                     <TableCell
-                                                        class="font-medium"
+                                                        class="font-normal"
                                                         >{{
-                                                            row.original
-                                                                .details[
-                                                                "kode_barcode"
-                                                            ]
+                                                            detail.nomor_faktur
                                                         }}</TableCell
                                                     >
                                                     <TableCell
-                                                        class="font-medium"
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.nama_barang
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.qty
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.nama_satuan
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.isi_barang
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_jual_karton"
-                                                                ],
+                                                                detail.harga,
                                                             )
                                                         }}</TableCell
                                                     >
                                                     <TableCell
-                                                        class="font-medium"
+                                                        class="font-normal"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_jual_eceran"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_beli_karton"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_beli_eceran"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "hpp_avg_karton"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "hpp_avg_eceran"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            row.original
-                                                                .details[
-                                                                "current_stock"
-                                                            ]
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "nilai_akhir"
-                                                                ],
+                                                                detail.jumlah,
                                                             )
                                                         }}</TableCell
                                                     >
@@ -706,7 +585,7 @@ const formatPrice = (price) => {
                     selected.
                 </div>
                 <div class="flex items-center space-x-2">
-                    <p class="text-sm font-medium">Rows per page</p>
+                    <p class="text-sm font-normal">Rows per page</p>
                     <Select
                         :model-value="
                             table.getState().pagination.pageSize.toString()
@@ -736,7 +615,7 @@ const formatPrice = (price) => {
                     </Select>
                 </div>
                 <div
-                    class="flex w-[100px] items-center justify-center text-sm font-medium"
+                    class="flex w-[100px] items-center justify-center text-sm font-normal"
                 >
                     Page {{ table.getState().pagination.pageIndex + 1 }} of
                     {{ table.getPageCount() }}
@@ -799,9 +678,7 @@ const formatPrice = (price) => {
                             >{{ form.id ? "Edit" : "Create" }} Data
                             Pembelian</DialogTitle
                         >
-                        <DialogDescription>
-                            Data master pembelian
-                        </DialogDescription>
+                        <DialogDescription> Data master PO </DialogDescription>
                     </DialogHeader>
                     <div class="flex flex-row justify-start gap-4">
                         <div>
@@ -811,7 +688,7 @@ const formatPrice = (price) => {
                                 required
                                 v-model="form.nama_supplier"
                                 placeholder="Search suppliers..."
-                                api-endpoint="http://127.0.0.1:8000/api/purchasing/suppliers"
+                                api-endpoint="http://127.0.0.1:8000/api/purchase-order/suppliers"
                                 value-field="nama_supplier"
                                 display-field="nama_supplier"
                                 search-param="search"
@@ -820,36 +697,12 @@ const formatPrice = (price) => {
                                 loading-text="Loading suppliers..."
                                 no-results-text="No suppliers found"
                                 load-more-text="Load more suppliers"
-                                @select="onProductSelect"
+                                @select="onSupplierSelect"
                             />
                             <span
                                 v-if="errors?.nama_supplier"
                                 class="text-sm text-red-500"
                                 >{{ errors.nama_supplier }}</span
-                            >
-                        </div>
-                        <div>
-                            <Label for="kode_po"> Nomor PO </Label>
-                            <SearchableSelect
-                                class="mt-2"
-                                required
-                                v-model="form.kode_po"
-                                placeholder="Search PO..."
-                                api-endpoint="http://127.0.0.1:8000/api/purchasing/po"
-                                value-field="kode_po"
-                                display-field="kode_po"
-                                search-param="search"
-                                :per-page="10"
-                                :debounce-time="300"
-                                loading-text="Loading PO..."
-                                no-results-text="No PO found"
-                                load-more-text="Load more PO"
-                                @select="onProductSelect"
-                            />
-                            <span
-                                v-if="errors?.kode_po"
-                                class="text-sm text-red-500"
-                                >{{ errors.kode_po }}</span
                             >
                         </div>
                     </div>
@@ -859,7 +712,6 @@ const formatPrice = (price) => {
                             id="keterangan"
                             v-model="form.keterangan"
                             class="shrink w-full mt-2"
-                            required
                         />
                         <span
                             v-if="errors?.keterangan"
@@ -870,9 +722,7 @@ const formatPrice = (price) => {
                     <!-- </div> -->
                     <DialogHeader class="mt-4">
                         <DialogTitle>Data Detail Pembelian</DialogTitle>
-                        <DialogDescription>
-                            Data detail pembelian
-                        </DialogDescription>
+                        <DialogDescription> Data detail PO </DialogDescription>
                     </DialogHeader>
                     <div class="flex-grow">
                         <div
@@ -883,7 +733,6 @@ const formatPrice = (price) => {
                                     <TableRow>
                                         <TableHead>Kode Barcode</TableHead>
                                         <TableHead>Nama Barang</TableHead>
-                                        <TableHead>Expired Date</TableHead>
                                         <TableHead>Qty</TableHead>
                                         <TableHead>Satuan</TableHead>
                                         <TableHead>Isi</TableHead>
@@ -891,9 +740,6 @@ const formatPrice = (price) => {
                                         <TableHead>Diskon</TableHead>
                                         <TableHead>Diskon Global</TableHead>
                                         <TableHead>Jumlah</TableHead>
-                                        <TableHead>DPP</TableHead>
-                                        <TableHead>PPN</TableHead>
-                                        <TableHead>Taxable</TableHead>
                                         <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -907,7 +753,7 @@ const formatPrice = (price) => {
                                                 required
                                                 v-model="detail.kode_barcode"
                                                 placeholder="Search..."
-                                                api-endpoint="http://127.0.0.1:8000/api/purchasing/products"
+                                                api-endpoint="http://127.0.0.1:8000/api/purchase-order/products"
                                                 value-field="kode_barcode"
                                                 display-field="kode_barcode"
                                                 search-param="search"
@@ -936,15 +782,6 @@ const formatPrice = (price) => {
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="exp_date"
-                                                v-model="detail.exp_date"
-                                                type="date"
-                                                class="col-span-3"
-                                                required
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
                                                 id="qty"
                                                 v-model="detail.qty"
                                                 type="number"
@@ -964,8 +801,8 @@ const formatPrice = (price) => {
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="isi"
-                                                v-model="detail.isi"
+                                                id="isi_barang"
+                                                v-model="detail.isi_barang"
                                                 type="number"
                                                 class="col-span-3"
                                                 required
@@ -1010,34 +847,6 @@ const formatPrice = (price) => {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Input
-                                                id="dpp"
-                                                v-model="detail.dpp"
-                                                type="number"
-                                                class="col-span-3"
-                                                required
-                                                readonly
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="ppn"
-                                                v-model="detail.ppn"
-                                                type="number"
-                                                class="col-span-3"
-                                                required
-                                                readonly
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <TableCell>
-                                                <Checkbox
-                                                    disabled
-                                                    v-model="detail.is_taxable"
-                                                />
-                                            </TableCell>
-                                        </TableCell>
-                                        <TableCell>
                                             <Button
                                                 @click="removeDetail(index)"
                                                 variant="destructive"
@@ -1050,79 +859,6 @@ const formatPrice = (price) => {
                         </div>
                     </div>
                     <Button @click="addNewDetailFromInput">Add</Button>
-                    <div class="mt-4 border rounded-lg p-4 bg-gray-50">
-                        <div class="grid grid-cols-3 gap-4">
-                            <!-- Left Column -->
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >Rebate</span
-                                    >
-                                    <div class="flex items-center gap-2">
-                                        <Input
-                                            v-model="form.rebate"
-                                            type="number"
-                                            class="w-32 text-right"
-                                            @input="calculateTotals"
-                                        />
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >Diskon Rp</span
-                                    >
-                                    <div class="flex items-center gap-2">
-                                        <Input
-                                            v-model="form.diskon_total"
-                                            type="number"
-                                            class="w-32 text-right"
-                                            @input="calculateTotals"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Middle Column -->
-                            <div class="col-span-1">
-                                <!-- Placeholder for middle column if needed -->
-                            </div>
-
-                            <!-- Right Column -->
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium">DPP</span>
-                                    <Input
-                                        v-model="form.dpp_total"
-                                        type="number"
-                                        class="w-32 text-right"
-                                        readonly
-                                    />
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >PPN 11%</span
-                                    >
-                                    <Input
-                                        v-model="form.ppn_total"
-                                        type="number"
-                                        class="w-32 text-right"
-                                        readonly
-                                    />
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >Total</span
-                                    >
-                                    <Input
-                                        v-model="form.total"
-                                        type="number"
-                                        class="w-32 text-right font-bold"
-                                        readonly
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <DialogFooter>
                         <Button @click="submit"> Save </Button>
                     </DialogFooter>
@@ -1155,18 +891,5 @@ const formatPrice = (price) => {
 :deep(.v-popper__popper .v-popper__wrapper) {
     max-height: 200px;
     overflow-y: auto;
-}
-
-/* Add styles for the summary card */
-.summary-card {
-    background-color: #f8f9fa;
-    border-radius: 0.5rem;
-    padding: 1rem;
-}
-
-/* Make readonly inputs look different */
-input[readonly] {
-    background-color: #f1f5f9;
-    cursor: not-allowed;
 }
 </style>

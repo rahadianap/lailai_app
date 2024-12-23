@@ -32,7 +32,7 @@
             </button>
             <div
                 v-if="showOptions"
-                class="absolute z-10 w-full mt-1 overflow-auto bg-white border border-gray-300 rounded-md shadow-lg max-h-60"
+                class="absolute z-10 w-[400px] text-sm mt-1 overflow-auto bg-white border border-gray-300 rounded-md shadow-lg max-h-60"
             >
                 <ul>
                     <li
@@ -221,40 +221,51 @@ const handleClickOutside = (event) => {
 };
 
 const fetchSelectedOption = async (value) => {
-  try {
-    const response = await fetch(`${props.apiEndpoint}?${props.valueField}=${value}`)
-    const data = await response.json()
-    // Assuming the API returns an array of options
-    const option = data.data.find(item => item[props.valueField] == value)
-    if (option) {
-      selectedOption.value = option
-      search.value = option[props.displayField]
-    } else {
-      console.error('Selected option not found in API response')
-      selectedOption.value = null
-      search.value = ''
+    try {
+        const response = await fetch(
+            `${props.apiEndpoint}?${props.valueField}=${value}`,
+        );
+        const data = await response.json();
+        // Assuming the API returns an array of options
+        const option = data.data.find(
+            (item) => item[props.valueField] == value,
+        );
+        if (option) {
+            selectedOption.value = option;
+            search.value = option[props.displayField];
+        } else {
+            console.error("Selected option not found in API response");
+            selectedOption.value = null;
+            search.value = "";
+        }
+    } catch (error) {
+        console.error("Error fetching selected option:", error);
+        selectedOption.value = null;
+        search.value = "";
     }
-  } catch (error) {
-    console.error('Error fetching selected option:', error)
-    selectedOption.value = null
-    search.value = ''
-  }
-}
+};
 
-watch(() => props.modelValue, (newValue) => {
-  if (newValue === null) {
-    selectedOption.value = null
-    search.value = ''
-  } else if (!selectedOption.value || newValue != selectedOption.value[props.valueField]) {
-    fetchSelectedOption(newValue)
-  }
-}, { immediate: true })
+watch(
+    () => props.modelValue,
+    (newValue) => {
+        if (newValue === null) {
+            selectedOption.value = null;
+            search.value = "";
+        } else if (
+            !selectedOption.value ||
+            newValue != selectedOption.value[props.valueField]
+        ) {
+            fetchSelectedOption(newValue);
+        }
+    },
+    { immediate: true },
+);
 
 watch(selectedOption, (newValue) => {
-  if (newValue) {
-    search.value = newValue[props.displayField]
-  }
-})
+    if (newValue) {
+        search.value = newValue[props.displayField];
+    }
+});
 
 onMounted(() => {
     document.addEventListener("click", handleClickOutside);

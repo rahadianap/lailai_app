@@ -18,6 +18,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{products}', [\App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');  //with GET
         Route::put('/{products}', [\App\Http\Controllers\ProductController::class, 'update'])->name('products.update');  //with GET
     });
+    Route::prefix('/purchase-order')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PurchaseOrderController::class, 'index'])->name('purchase-order.index');
+        Route::post('/', [\App\Http\Controllers\PurchaseOrderController::class, 'store'])->name('purchase-order.store');
+        // Route::get('/{purchase-order}', [\App\Http\Controllers\PurchaseOrderController::class, 'edit'])->name('purchase-order.edit');  //with GET
+        // Route::put('/{purchase-order}', [\App\Http\Controllers\PurchaseOrderController::class, 'update'])->name('purchase-order.update');  //with GET
+    });
     Route::prefix('/purchasing')->group(function () {
         Route::get('/', [\App\Http\Controllers\PurchasingController::class, 'index'])->name('purchasing.index');
         // Route::post('/', [\App\Http\Controllers\PurchasingController::class, 'store'])->name('purchasing.store');

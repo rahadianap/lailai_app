@@ -40,9 +40,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    Form,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import SearchableSelect from "../../components/SearchableSelect.vue";
 import { useForm } from "@inertiajs/vue3";
@@ -197,11 +195,15 @@ const columns = [
         cell: ({ row }) => {
             const product = row.original;
 
-            return h('div', { class: 'relative' }, h(DropdownAction, {
-                product,
-                onEdit: () => onEdit(product.id),
-                onExpand: row.toggleExpanded,
-            }));
+            return h(
+                "div",
+                { class: "relative" },
+                h(DropdownAction, {
+                    product,
+                    onEdit: () => onEdit(product.id),
+                    onExpand: row.toggleExpanded,
+                }),
+            );
         },
     },
 ];
@@ -283,70 +285,74 @@ const table = useVueTable({
 const errors = ref({});
 
 const form = useForm({
-  id: null,
-  kode_barcode: "",
-  nama_barang: "",
-  nama_satuan: "",
-  nama_kategori: "",
-  isi_barang: 0,
-  is_taxable: true,
-  details: [{
-    saldo_awal: 0,
-    harga_jual_karton: 0,
-    harga_jual_eceran: 0,
-    harga_beli_karton: 0,
-    harga_beli_eceran: 0,
-    hpp_avg_karton: 0,
-    hpp_avg_eceran: 0,
-    current_stock: 0,
-    nilai_akhir: 0,
-  }],
+    id: null,
+    kode_barcode: "",
+    nama_barang: "",
+    nama_satuan: "",
+    nama_kategori: "",
+    isi_barang: 0,
+    is_taxable: true,
+    details: [
+        {
+            saldo_awal: 0,
+            harga_jual_karton: 0,
+            harga_jual_eceran: 0,
+            harga_beli_karton: 0,
+            harga_beli_eceran: 0,
+            hpp_avg_karton: 0,
+            hpp_avg_eceran: 0,
+            current_stock: 0,
+            nilai_akhir: 0,
+        },
+    ],
 });
 
 const addNewDetail = () => {
-  form.details.push({
-    saldo_awal: 0,
-    harga_jual_karton: 0,
-    harga_jual_eceran: 0,
-    harga_beli_karton: 0,
-    harga_beli_eceran: 0,
-    hpp_avg_karton: 0,
-    hpp_avg_eceran: 0,
-    current_stock: 0,
-    nilai_akhir: 0,
-  });
+    form.details.push({
+        saldo_awal: 0,
+        harga_jual_karton: 0,
+        harga_jual_eceran: 0,
+        harga_beli_karton: 0,
+        harga_beli_eceran: 0,
+        hpp_avg_karton: 0,
+        hpp_avg_eceran: 0,
+        current_stock: 0,
+        nilai_akhir: 0,
+    });
 };
 
 const removeDetail = (index) => {
-  form.details.splice(index, 1);
+    form.details.splice(index, 1);
 };
 
 const resetForm = () => {
-  form.reset();
-  form.clearErrors();
-  form.id = null;
-  form.kode_barcode = "";
-  form.nama_barang = "";
-  form.nama_satuan = "";
-  form.nama_kategori = "";
-  form.isi_barang = 0;
-  form.is_taxable = true;
-  form.details = [{
-    saldo_awal: 0,
-    harga_jual_karton: 0,
-    harga_jual_eceran: 0,
-    harga_beli_karton: 0,
-    harga_beli_eceran: 0,
-    hpp_avg_karton: 0,
-    hpp_avg_eceran: 0,
-    current_stock: 0,
-    nilai_akhir: 0,
-  }];
+    form.reset();
+    form.clearErrors();
+    form.id = null;
+    form.kode_barcode = "";
+    form.nama_barang = "";
+    form.nama_satuan = "";
+    form.nama_kategori = "";
+    form.isi_barang = 0;
+    form.is_taxable = true;
+    form.details = [
+        {
+            saldo_awal: 0,
+            harga_jual_karton: 0,
+            harga_jual_eceran: 0,
+            harga_beli_karton: 0,
+            harga_beli_eceran: 0,
+            hpp_avg_karton: 0,
+            hpp_avg_eceran: 0,
+            current_stock: 0,
+            nilai_akhir: 0,
+        },
+    ];
 };
 
 const submit = () => {
-    const url = form.id ? `/products/${form.id}` : '/products';
-    const method = form.id ? 'put' : 'post';
+    const url = form.id ? `/products/${form.id}` : "/products";
+    const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
         onError: (error) => {
@@ -373,43 +379,46 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-  //Open Dialog
-  showCreate.value = true 
-  try {
-    const res = await fetch(`/products/${id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    if (!res.ok) {
-      console.error('Error ');
+    //Open Dialog
+    showCreate.value = true;
+    try {
+        const res = await fetch(`/products/${id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        if (!res.ok) {
+            console.error("Error ");
+        }
+        const data = await res.json();
+        // Set to form
+        form.id = data.data.id;
+        form.kode_barcode = data.data.kode_barcode;
+        form.nama_barang = data.data.nama_barang;
+        form.nama_satuan = data.data.nama_satuan;
+        form.nama_kategori = data.data.nama_kategori;
+        form.isi_barang = data.data.isi_barang;
+        form.is_taxable = data.data.is_taxable === "1" ? true : false;
+        form.details.saldo_awal = data.data.details["saldo_awal"];
+        form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
+        form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
+        form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
+        form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
+        form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
+        form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
+        form.details.current_stock = data.data.details["current_stock"];
+        form.details.nilai_akhir = data.data.details["nilai_akhir"];
+    } catch (error) {
+        console.error(error);
     }
-    const data = await res.json();
-    // Set to form
-    form.id = data.data.id; 
-    form.kode_barcode = data.data.kode_barcode;
-    form.nama_barang = data.data.nama_barang;
-    form.nama_satuan = data.data.nama_satuan;
-    form.nama_kategori = data.data.nama_kategori;
-    form.isi_barang = data.data.isi_barang;
-    form.is_taxable = data.data.is_taxable === "1" ? true : false;
-    form.details.saldo_awal = data.data.details['saldo_awal'];
-    form.details.harga_jual_karton = data.data.details['harga_jual_karton'];
-    form.details.harga_jual_eceran = data.data.details['harga_jual_eceran'];
-    form.details.harga_beli_karton = data.data.details['harga_beli_karton'];
-    form.details.harga_beli_eceran = data.data.details['harga_beli_eceran'];
-    form.details.hpp_avg_karton = data.data.details['hpp_avg_karton'];
-    form.details.hpp_avg_eceran = data.data.details['hpp_avg_eceran'];
-    form.details.current_stock = data.data.details['current_stock'];
-    form.details.nilai_akhir = data.data.details['nilai_akhir'];
-  } catch (error) {
-    console.error(error);
-  }
 };
 
 const formatPrice = (price) => {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(price);
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+    }).format(price);
 };
 </script>
 
@@ -480,30 +489,141 @@ const formatPrice = (price) => {
                                         :colspan="row.getAllCells().length"
                                     >
                                         <Table>
-                                            <TableHeader class="sticky top-0 z-10 bg-white">
+                                            <TableHeader
+                                                class="sticky top-0 z-10 bg-white"
+                                            >
                                                 <TableRow>
-                                                    <TableHead>Saldo Awal</TableHead>
-                                                    <TableHead>Harga Jual (Karton)</TableHead>
-                                                    <TableHead>Harga Jual (Eceran)</TableHead>
-                                                    <TableHead>Harga Beli (Karton)</TableHead>
-                                                    <TableHead>Harga Beli (Eceran)</TableHead>
-                                                    <TableHead>HPP (Karton)</TableHead>
-                                                    <TableHead>HPP (Eceran)</TableHead>
-                                                    <TableHead>Current Stock</TableHead>
-                                                    <TableHead>Nilai Akhir</TableHead>
+                                                    <TableHead
+                                                        >Saldo Awal</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Harga Jual
+                                                        (Karton)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Harga Jual
+                                                        (Eceran)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Harga Beli
+                                                        (Karton)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Harga Beli
+                                                        (Eceran)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >HPP (Karton)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >HPP (Eceran)</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Current
+                                                        Stock</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Nilai Akhir</TableHead
+                                                    >
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
                                                 <TableRow>
-                                                    <TableCell class="font-medium">{{ row.original.details['saldo_awal'] }}</TableCell>
-                                                    <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_jual_karton']) }}</TableCell>
-                                                    <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_jual_eceran']) }}</TableCell>
-                                                    <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_beli_karton']) }}</TableCell>
-                                                    <TableCell class="font-medium">{{ formatPrice(row.original.details['harga_beli_eceran']) }}</TableCell>
-                                                    <TableCell class="font-medium">{{ formatPrice(row.original.details['hpp_avg_karton']) }}</TableCell>
-                                                    <TableCell class="font-medium">{{ formatPrice(row.original.details['hpp_avg_eceran']) }}</TableCell>
-                                                    <TableCell class="font-medium">{{ row.original.details['current_stock'] }}</TableCell>
-                                                    <TableCell class="font-medium">{{ formatPrice(row.original.details['nilai_akhir']) }}</TableCell>
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            row.original
+                                                                .details[
+                                                                "saldo_awal"
+                                                            ]
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "harga_jual_karton"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "harga_jual_eceran"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "harga_beli_karton"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "harga_beli_eceran"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "hpp_avg_karton"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "hpp_avg_eceran"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            row.original
+                                                                .details[
+                                                                "current_stock"
+                                                            ]
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-medium"
+                                                        >{{
+                                                            formatPrice(
+                                                                row.original
+                                                                    .details[
+                                                                    "nilai_akhir"
+                                                                ],
+                                                            )
+                                                        }}</TableCell
+                                                    >
                                                 </TableRow>
                                             </TableBody>
                                         </Table>
@@ -601,11 +721,22 @@ const formatPrice = (price) => {
                 </div>
             </div>
         </div>
-        <Dialog v-model:open="showCreate" @update:open="(val) => { if (!val) resetForm(); showCreate = val; }">
+        <Dialog
+            v-model:open="showCreate"
+            @update:open="
+                (val) => {
+                    if (!val) resetForm();
+                    showCreate = val;
+                }
+            "
+        >
             <Form>
                 <DialogContent class="w-[1500px]">
                     <DialogHeader>
-                        <DialogTitle>{{ form.id ? 'Edit' : 'Create' }} Data Master Barang</DialogTitle>
+                        <DialogTitle
+                            >{{ form.id ? "Edit" : "Create" }} Data Master
+                            Barang</DialogTitle
+                        >
                         <DialogDescription>
                             Data master barang
                         </DialogDescription>
@@ -700,11 +831,11 @@ const formatPrice = (price) => {
                             >
                         </div>
                         <div class="flex items-center space-x-2">
-                            <Checkbox 
-                                id="is_taxable" 
+                            <Checkbox
+                                id="is_taxable"
                                 :checked="form.is_taxable"
                                 @update:checked="form.is_taxable = $event"
-                                />
+                            />
                             <Label for="is_taxable">Barang Kena Pajak</Label>
                         </div>
                     </div>
@@ -714,113 +845,127 @@ const formatPrice = (price) => {
                             Data detail barang
                         </DialogDescription>
                     </DialogHeader>
-                    <div class="max-h-[400px] overflow-y-auto p-2 md:p-4" aria-label="Product Detail Form">
+                    <div
+                        class="max-h-[400px] overflow-y-auto p-2 md:p-4"
+                        aria-label="Product Detail Form"
+                    >
                         <Table>
                             <TableHeader class="sticky top-0 z-10 bg-white">
-                            <TableRow>
-                                <TableHead>Saldo Awal</TableHead>
-                                <TableHead>Harga Jual (Karton)</TableHead>
-                                <TableHead>Harga Jual (Eceran)</TableHead>
-                                <TableHead>Harga Beli (Karton)</TableHead>
-                                <TableHead>Harga Beli (Eceran)</TableHead>
-                                <TableHead>HPP (Karton)</TableHead>
-                                <TableHead>HPP (Eceran)</TableHead>
-                                <TableHead>Current Stock</TableHead>
-                                <TableHead>Nilai Akhir Persediaan</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
+                                <TableRow>
+                                    <TableHead>Saldo Awal</TableHead>
+                                    <TableHead>Harga Jual (Karton)</TableHead>
+                                    <TableHead>Harga Jual (Eceran)</TableHead>
+                                    <TableHead>Harga Beli (Karton)</TableHead>
+                                    <TableHead>Harga Beli (Eceran)</TableHead>
+                                    <TableHead>HPP (Karton)</TableHead>
+                                    <TableHead>HPP (Eceran)</TableHead>
+                                    <TableHead>Current Stock</TableHead>
+                                    <TableHead
+                                        >Nilai Akhir Persediaan</TableHead
+                                    >
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
                             </TableHeader>
                             <TableBody>
-                            <TableRow v-for="(detail, index) in form.details" :key="index">
-                                <TableCell>
-                                    <Input
-                                        id="saldo_awal"
-                                        v-model="detail.saldo_awal"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="harga_jual_karton"
-                                        v-model="detail.harga_jual_karton"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="harga_jual_eceran"
-                                        v-model="detail.harga_jual_eceran"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="harga_beli_karton"
-                                        v-model="detail.harga_beli_karton"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="harga_beli_eceran"
-                                        v-model="detail.harga_beli_eceran"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="hpp_avg_karton"
-                                        v-model="detail.hpp_avg_karton"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="hpp_avg_eceran"
-                                        v-model="detail.hpp_avg_eceran"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="current_stock"
-                                        v-model="detail.current_stock"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        id="nilai_akhir"
-                                        v-model="detail.nilai_akhir"
-                                        type="number"
-                                        class="col-span-3"
-                                        required
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Button @click="removeDetail(index)" variant="destructive">Remove</Button>
-                                </TableCell>
-                            </TableRow>
+                                <TableRow
+                                    v-for="(detail, index) in form.details"
+                                    :key="index"
+                                >
+                                    <TableCell>
+                                        <Input
+                                            id="saldo_awal"
+                                            v-model="detail.saldo_awal"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="harga_jual_karton"
+                                            v-model="detail.harga_jual_karton"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="harga_jual_eceran"
+                                            v-model="detail.harga_jual_eceran"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="harga_beli_karton"
+                                            v-model="detail.harga_beli_karton"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="harga_beli_eceran"
+                                            v-model="detail.harga_beli_eceran"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="hpp_avg_karton"
+                                            v-model="detail.hpp_avg_karton"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="hpp_avg_eceran"
+                                            v-model="detail.hpp_avg_eceran"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="current_stock"
+                                            v-model="detail.current_stock"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input
+                                            id="nilai_akhir"
+                                            v-model="detail.nilai_akhir"
+                                            type="number"
+                                            class="col-span-3"
+                                            required
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            @click="removeDetail(index)"
+                                            variant="destructive"
+                                            >Remove</Button
+                                        >
+                                    </TableCell>
+                                </TableRow>
                             </TableBody>
                         </Table>
                     </div>
-                    <Button @click="addNewDetail" class="mt-4">Add New Detail</Button>
+                    <Button @click="addNewDetail" class="mt-4"
+                        >Add New Detail</Button
+                    >
                     <DialogFooter>
                         <Button @click="submit"> Save </Button>
                     </DialogFooter>

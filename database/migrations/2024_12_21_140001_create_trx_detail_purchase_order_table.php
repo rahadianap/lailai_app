@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -16,7 +15,7 @@ return new class extends Migration
             $table->unsignedBigInteger('purchase_order_id');
             $table->string('kode_po');
             $table->string('nomor_faktur');
-            $table->unsignedBigInteger('barang_id');
+            $table->string('kode_barcode');
             $table->string('nama_barang');
             $table->integer('qty');
             $table->string('nama_satuan');
@@ -24,15 +23,14 @@ return new class extends Migration
             $table->integer('harga');
             $table->integer('jumlah');
             $table->decimal('harga_satuan_kecil', total: 10, places: 2);
-            $table->decimal('hpp_avg_satuan', total: 10, places: 2);
-            $table->decimal('hpp_avg_perbiji', total: 10, places: 2);
-            $table->decimal('nilai_dpp', total: 10, places: 2);
-            $table->decimal('nilai_ppn', total: 10, places: 2);
-            $table->integer('harga_jual');
-            $table->integer('diskon');
-            $table->integer('diskon_global');
-            $table->date('exp_date');
-            $table->integer('rebate');
+            $table->decimal('hpp_avg_satuan', total: 10, places: 2)->nullable();
+            $table->decimal('hpp_avg_perbiji', total: 10, places: 2)->nullable();
+            $table->decimal('nilai_dpp', total: 10, places: 2)->nullable();
+            $table->decimal('nilai_ppn', total: 10, places: 2)->nullable();
+            $table->integer('harga_jual')->nullable();
+            $table->integer('diskon')->nullable();
+            $table->integer('diskon_global')->nullable();
+            $table->integer('rebate')->nullable();
             $table->boolean('is_taxable')->default(false);
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
@@ -42,7 +40,6 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->foreign('purchase_order_id')->references('id')->on('trx_purchase_order')->onDelete('cascade');
-            $table->foreign('barang_id')->references('id')->on('mstbarang');
         });
     }
 

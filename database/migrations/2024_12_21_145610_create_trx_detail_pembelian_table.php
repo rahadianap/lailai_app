@@ -42,7 +42,7 @@ return new class extends Migration {
             $table->softDeletes();
 
             $table->foreign('pembelian_id')->references('id')->on('trx_pembelian')->onDelete('cascade');
-            $table->foreign('barang_id')->references('id')->on('mstbarang');
+            $table->foreign('barang_id')->references('id')->on('mst_barang');
         });
     }
 
