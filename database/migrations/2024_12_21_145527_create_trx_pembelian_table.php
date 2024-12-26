@@ -16,6 +16,12 @@ return new class extends Migration {
             $table->string('nama_supplier');
             $table->string('kode_po')->nullable();
             $table->string('keterangan')->nullable();
+            $table->string('purchase_type');
+            $table->integer('rebate')->nullable();
+            $table->integer('diskon_total')->nullable();
+            $table->integer('dpp_total')->nullable();
+            $table->integer('ppn_total')->nullable();
+            $table->integer('total');
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();

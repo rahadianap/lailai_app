@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->unsignedBigInteger('pembelian_id');
             $table->string('kode_pembelian');
             $table->string('nomor_faktur');
-            $table->unsignedBigInteger('barang_id');
             $table->string('kode_barcode');
             $table->string('nama_barang');
             $table->integer('qty');
@@ -24,10 +23,10 @@ return new class extends Migration {
             $table->integer('harga');
             $table->integer('jumlah');
             $table->decimal('harga_satuan_kecil', total: 10, places: 2);
-            $table->decimal('hpp_avg_satuan', total: 10, places: 2);
-            $table->decimal('hpp_avg_perbiji', total: 10, places: 2);
-            $table->decimal('nilai_dpp', total: 10, places: 2);
-            $table->decimal('nilai_ppn', total: 10, places: 2);
+            $table->decimal('current_hpp_satuan_besar', total: 10, places: 2)->nullable();
+            $table->decimal('current_hpp_satuan_kecil', total: 10, places: 2)->nullable();
+            $table->decimal('nilai_dpp', total: 10, places: 2)->nullable();
+            $table->decimal('nilai_ppn', total: 10, places: 2)->nullable();
             $table->integer('harga_jual');
             $table->integer('diskon')->nullable();
             $table->integer('diskon_global')->nullable();
@@ -42,7 +41,6 @@ return new class extends Migration {
             $table->softDeletes();
 
             $table->foreign('pembelian_id')->references('id')->on('trx_pembelian')->onDelete('cascade');
-            $table->foreign('barang_id')->references('id')->on('mst_barang');
         });
     }
 

@@ -20,6 +20,13 @@ class Purchasing extends Model
         'nama_supplier',
         'po_id',
         'kode_po',
+        'keterangan',
+        'purchase_type',
+        'rebate',
+        'diskon_total',
+        'dpp_total',
+        'ppn_total',
+        'total',
         'is_aktif',
         'created_by',
         'updated_by',
@@ -28,6 +35,6 @@ class Purchasing extends Model
 
     public function details()
     {
-        return $this->hasMany(DetailPurchasing::class);
+        return $this->hasMany(DetailPurchasing::class, 'pembelian_id');
     }
 }

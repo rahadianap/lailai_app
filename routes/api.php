@@ -14,3 +14,4 @@ Route::get('/purchasing/suppliers', [PurchasingController::class, 'getSuppliers'
 Route::get('/purchasing/products', [PurchasingController::class, 'getProducts']);
 Route::get('/purchasing/po', [PurchasingController::class, 'getPO']);
 Route::get('/purchasing/products/{id}', [PurchasingController::class, 'fetchDetails']);
+Route::get('/purchasing/po/{id}', [PurchasingController::class, 'fetchPODetails']);

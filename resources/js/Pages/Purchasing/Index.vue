@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import SearchableSelect from "../../components/SearchableSelect.vue";
 import { useForm } from "@inertiajs/vue3";
 import Swal from "sweetalert2";
@@ -67,12 +68,43 @@ const showDialogCreate = () => {
     showCreate.value = true;
 };
 
-const selectedCategory = ref(null);
-
 const selectedProduct = ref(null);
+const selectedSupplier = ref(null);
 
-const onCategorySelect = (category) => {
-    selectedCategory.value = category;
+const onSupplierSelect = (supplier) => {
+    selectedSupplier.value = supplier.nama_supplier;
+};
+
+const onPOSelect = async (po) => {
+    try {
+        const response = await fetch(
+            `http://127.0.0.1:8000/api/purchasing/po/${po.id}`,
+        );
+        if (!response.ok) {
+            throw new Error("Failed to fetch PO details");
+        }
+        const poDetails = await response.json();
+        console.log(poDetails);
+
+        // Update form with PO details
+        form.nama_supplier = poDetails[0].nama_supplier;
+        form.keterangan = poDetails[0].keterangan;
+        form.details = poDetails.map((detail) => ({
+            ...detail,
+            jumlah:
+                detail.qty * detail.harga -
+                (detail.diskon + detail.diskon_global),
+        }));
+
+        calculateTotals();
+    } catch (error) {
+        console.error("Error fetching PO details:", error);
+        Swal.fire({
+            title: "Error",
+            text: "Failed to fetch PO details",
+            icon: "error",
+        });
+    }
 };
 
 const onProductSelect = async (product) => {
@@ -90,7 +122,7 @@ const onProductSelect = async (product) => {
         const currentDetail = form.details[form.details.length - 1];
         currentDetail.nama_barang = productDetails.nama_barang;
         currentDetail.nama_satuan = productDetails.nama_satuan;
-        currentDetail.isi = productDetails.isi_barang;
+        currentDetail.isi_barang = productDetails.isi_barang;
         currentDetail.harga = productDetails.harga_beli_karton;
 
         // Set default values for other fields
@@ -266,6 +298,14 @@ const form = useForm({
     nama_supplier: "",
     kode_po: "",
     keterangan: "",
+    purchase_type: "ppn",
+    rebate: 0,
+    diskon_total: 0,
+    subtotal: 0,
+    dpp_total: 0,
+    ppn_total: 0,
+    total: 0,
+    grand_total: 0,
     details: [
         {
             kode_barcode: "",
@@ -280,12 +320,8 @@ const form = useForm({
             jumlah: 0,
             dpp: 0,
             ppn: 0,
+            harga_jual: 0,
             taxable: false,
-            rebate: 0,
-            diskon_total: 0,
-            dpp_total: 0,
-            ppn_total: 0,
-            total: 0,
         },
     ],
 });
@@ -303,6 +339,7 @@ const newDetailInput = ref({
     jumlah: 0,
     dpp: 0,
     ppn: 0,
+    harga_jual: 0,
     taxable: false,
 });
 
@@ -336,46 +373,50 @@ const subtotal = computed(() => {
 });
 
 const calculateJumlah = (detail) => {
-    detail.jumlah = detail.qty * detail.harga;
+    detail.jumlah = detail.qty * detail.harga - detail.diskon;
+    form.subtotal = detail.jumlah;
+};
+
+const setDiskonGlobal = (detail) => {
+    form.diskon_total = detail.diskon_global;
+    form.dpp_total = detail.jumlah - detail.diskon_global;
+    form.total = detail.jumlah - detail.diskon_global;
 };
 
 const calculateTotals = () => {
-    // Get subtotal from computed value
-    const currentSubtotal = subtotal.value;
-
-    // Apply discounts and rebate
-    let dpp = currentSubtotal;
-
-    // Apply rebate if any
-    dpp -= form.rebate || 0;
-
-    // Apply fixed amount discount
-    dpp -= form.diskon_rupiah || 0;
-
-    // Apply percentage discount
-    const percentageDiscount = dpp * ((form.diskon_total || 0) / 100);
-    dpp -= percentageDiscount;
-
-    // Calculate PPn (11%)
-    const ppnTotal = form.details.reduce((sum, detail) => {
-        if (detail.is_taxable === "1") {
-            return sum + detail.jumlah * 0.11;
+    // Calculate subtotal
+    // form.subtotal = form.details.reduce(
+    //     (sum, detail) => sum + (detail.jumlah || 0),
+    //     0,
+    // );
+    // // Calculate discount in Rupiah
+    // const discountPercentage = form.diskon_total || 0;
+    // form.diskon_rupiah = (form.subtotal * discountPercentage) / 100;
+    // // Calculate DPP (Dasar Pengenaan Pajak)
+    // form.dpp_total = form.subtotal - form.diskon_rupiah - (form.rebate || 0);
+    // // Calculate PPN (Pajak Pertambahan Nilai)
+    form.ppn_total = form.details.reduce((sum, detail) => {
+        if (detail.is_taxable === "1" || detail.is_taxable === true) {
+            return sum + form.dpp_total * 0.11;
         }
         return sum;
     }, 0);
-
-    // Calculate total
-    const total = dpp + ppnTotal;
-
-    // Update form values
-    form.dpp_total = parseFloat(dpp.toFixed(2));
-    form.ppn_total = parseFloat(ppnTotal.toFixed(2));
-    form.total = parseFloat(total.toFixed(2));
+    // // Calculate total
+    // form.total = form.dpp_total + form.ppn_total;
+    // // Ensure all values are rounded to 2 decimal places
+    // form.subtotal = parseFloat(form.subtotal.toFixed(2));
+    // form.diskon_rupiah = parseFloat(form.diskon_rupiah.toFixed(2));
+    // form.dpp_total = parseFloat(form.dpp_total.toFixed(2));
+    form.ppn_total = parseFloat(form.ppn_total.toFixed(2));
+    form.grand_total = form.dpp_total + form.ppn_total;
+    // form.total = parseFloat(form.total.toFixed(2));
 };
 
-watch(subtotal, () => {
-    calculateTotals();
-});
+watch(
+    [() => form.details, () => form.diskon_total, () => form.rebate],
+    calculateTotals,
+    { deep: true },
+);
 
 // Add watch effect to recalculate totals when details change
 watch(() => form.details, calculateTotals, { deep: true });
@@ -413,8 +454,9 @@ const submit = () => {
             errors.value = error;
             Swal.fire({
                 title: "Oops!",
-                text: "Something went wrong",
+                text: errors.value["error"],
                 icon: "error",
+                timer: 1000,
             });
         },
         onSuccess: () => {
@@ -807,7 +849,7 @@ const formatPrice = (price) => {
                         <div>
                             <Label for="nama_supplier"> Supplier </Label>
                             <SearchableSelect
-                                class="mt-2"
+                                class="mt-2 editable-input"
                                 required
                                 v-model="form.nama_supplier"
                                 placeholder="Search suppliers..."
@@ -820,18 +862,19 @@ const formatPrice = (price) => {
                                 loading-text="Loading suppliers..."
                                 no-results-text="No suppliers found"
                                 load-more-text="Load more suppliers"
-                                @select="onProductSelect"
+                                @select="onSupplierSelect"
                             />
-                            <span
-                                v-if="errors?.nama_supplier"
-                                class="text-sm text-red-500"
-                                >{{ errors.nama_supplier }}</span
+                            <p
+                                v-if="form.errors.nama_supplier"
+                                class="text-sm text-red-500 mt-1"
                             >
+                                {{ form.errors.nama_supplier }}
+                            </p>
                         </div>
                         <div>
                             <Label for="kode_po"> Nomor PO </Label>
                             <SearchableSelect
-                                class="mt-2"
+                                class="mt-2 editable-input"
                                 required
                                 v-model="form.kode_po"
                                 placeholder="Search PO..."
@@ -844,13 +887,14 @@ const formatPrice = (price) => {
                                 loading-text="Loading PO..."
                                 no-results-text="No PO found"
                                 load-more-text="Load more PO"
-                                @select="onProductSelect"
+                                @select="onPOSelect"
                             />
-                            <span
-                                v-if="errors?.kode_po"
-                                class="text-sm text-red-500"
-                                >{{ errors.kode_po }}</span
+                            <p
+                                v-if="form.errors.kode_po"
+                                class="text-sm text-red-500 mt-1"
                             >
+                                {{ form.errors.kode_po }}
+                            </p>
                         </div>
                     </div>
                     <div>
@@ -858,14 +902,15 @@ const formatPrice = (price) => {
                         <Textarea
                             id="keterangan"
                             v-model="form.keterangan"
-                            class="shrink w-full mt-2"
+                            class="shrink w-full mt-2 editable-input"
                             required
                         />
-                        <span
-                            v-if="errors?.keterangan"
-                            class="text-sm text-red-500"
-                            >{{ errors.keterangan }}</span
+                        <p
+                            v-if="form.errors.keterangan"
+                            class="text-sm text-red-500 mt-1"
                         >
+                            {{ form.errors.keterangan }}
+                        </p>
                     </div>
                     <!-- </div> -->
                     <DialogHeader class="mt-4">
@@ -874,6 +919,29 @@ const formatPrice = (price) => {
                             Data detail pembelian
                         </DialogDescription>
                     </DialogHeader>
+                    <div class="flex flex-row justify-end gap-4">
+                        <RadioGroup
+                            v-model="form.purchase_type"
+                            class="flex space-x-4 mt-2"
+                        >
+                            <div class="flex items-center space-x-2">
+                                <RadioGroupItem id="ppn" value="ppn" />
+                                <Label for="ppn" class="text-xs">PPN</Label>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <RadioGroupItem id="inc_ppn" value="inc_ppn" />
+                                <Label for="inc_ppn" class="text-xs"
+                                    >Inc.PPN</Label
+                                >
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <RadioGroupItem id="no_ppn" value="type3" />
+                                <Label for="no_ppn" class="text-xs"
+                                    >No PPn</Label
+                                >
+                            </div>
+                        </RadioGroup>
+                    </div>
                     <div class="flex-grow">
                         <div
                             class="h-full max-h-[calc(90vh-300px)] overflow-y-auto border rounded-md relative"
@@ -893,6 +961,7 @@ const formatPrice = (price) => {
                                         <TableHead>Jumlah</TableHead>
                                         <TableHead>DPP</TableHead>
                                         <TableHead>PPN</TableHead>
+                                        <TableHead>Harga Jual</TableHead>
                                         <TableHead>Taxable</TableHead>
                                         <TableHead>Actions</TableHead>
                                     </TableRow>
@@ -904,6 +973,7 @@ const formatPrice = (price) => {
                                     >
                                         <TableCell>
                                             <SearchableSelect
+                                                class="editable-input"
                                                 required
                                                 v-model="detail.kode_barcode"
                                                 placeholder="Search..."
@@ -919,11 +989,20 @@ const formatPrice = (price) => {
                                                 @select="onProductSelect"
                                                 :append-to-body="true"
                                             />
-                                            <span
-                                                v-if="errors?.kode_barcode"
-                                                class="text-sm text-red-500"
-                                                >{{ errors.kode_barcode }}</span
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `details.${index}.kode_barcode`
+                                                    ]
+                                                "
+                                                class="text-sm text-red-500 mt-1"
                                             >
+                                                {{
+                                                    form.errors[
+                                                        `details.${index}.kode_barcode`
+                                                    ]
+                                                }}
+                                            </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
@@ -939,19 +1018,49 @@ const formatPrice = (price) => {
                                                 id="exp_date"
                                                 v-model="detail.exp_date"
                                                 type="date"
-                                                class="col-span-3"
+                                                class="col-span-3 editable-input"
                                                 required
                                             />
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `details.${index}.exp_date`
+                                                    ]
+                                                "
+                                                class="text-sm text-red-500 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `details.${index}.exp_date`
+                                                    ]
+                                                }}
+                                            </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
                                                 id="qty"
                                                 v-model="detail.qty"
                                                 type="number"
-                                                class="col-span-3"
+                                                class="col-span-3 editable-input"
                                                 required
                                                 @input="calculateJumlah(detail)"
+                                                min="0"
+                                                step="0"
                                             />
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `details.${index}.qty`
+                                                    ]
+                                                "
+                                                class="text-sm text-red-500 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `details.${index}.qty`
+                                                    ]
+                                                }}
+                                            </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
@@ -964,11 +1073,12 @@ const formatPrice = (price) => {
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="isi"
-                                                v-model="detail.isi"
+                                                id="isi_barang"
+                                                v-model="detail.isi_barang"
                                                 type="number"
                                                 class="col-span-3"
                                                 required
+                                                readonly
                                             />
                                         </TableCell>
                                         <TableCell>
@@ -976,28 +1086,78 @@ const formatPrice = (price) => {
                                                 id="harga"
                                                 v-model="detail.harga"
                                                 type="number"
-                                                class="col-span-3"
+                                                class="col-span-3 editable-input"
                                                 required
                                                 @input="calculateJumlah(detail)"
+                                                min="0"
+                                                step="0"
                                             />
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `details.${index}.harga`
+                                                    ]
+                                                "
+                                                class="text-sm text-red-500 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `details.${index}.harga`
+                                                    ]
+                                                }}
+                                            </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
                                                 id="diskon"
                                                 v-model="detail.diskon"
                                                 type="number"
-                                                class="col-span-3"
+                                                class="col-span-3 editable-input"
+                                                @input="calculateJumlah(detail)"
                                                 required
+                                                min="0"
+                                                step="0"
                                             />
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `details.${index}.diskon`
+                                                    ]
+                                                "
+                                                class="text-sm text-red-500 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `details.${index}.diskon`
+                                                    ]
+                                                }}
+                                            </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
                                                 id="diskon_global"
                                                 v-model="detail.diskon_global"
                                                 type="number"
-                                                class="col-span-3"
+                                                class="col-span-3 editable-input"
+                                                @input="setDiskonGlobal(detail)"
                                                 required
+                                                min="0"
+                                                step="0"
                                             />
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `details.${index}.diskon_global`
+                                                    ]
+                                                "
+                                                class="text-sm text-red-500 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `details.${index}.diskon_global`
+                                                    ]
+                                                }}
+                                            </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
@@ -1028,6 +1188,31 @@ const formatPrice = (price) => {
                                                 required
                                                 readonly
                                             />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                id="harga_jual"
+                                                v-model="detail.harga_jual"
+                                                type="number"
+                                                class="col-span-3 editable-input"
+                                                required
+                                                min="0"
+                                                step="0"
+                                            />
+                                            <p
+                                                v-if="
+                                                    form.errors[
+                                                        `details.${index}.harga_jual`
+                                                    ]
+                                                "
+                                                class="text-sm text-red-500 mt-1"
+                                            >
+                                                {{
+                                                    form.errors[
+                                                        `details.${index}.harga_jual`
+                                                    ]
+                                                }}
+                                            </p>
                                         </TableCell>
                                         <TableCell>
                                             <TableCell>
@@ -1076,7 +1261,20 @@ const formatPrice = (price) => {
                                             v-model="form.diskon_total"
                                             type="number"
                                             class="w-32 text-right"
-                                            @input="calculateTotals"
+                                            readonly
+                                        />
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium"
+                                        >Subtotal</span
+                                    >
+                                    <div class="flex items-center gap-2">
+                                        <Input
+                                            v-model="form.subtotal"
+                                            type="number"
+                                            class="w-32 text-right"
+                                            readonly
                                         />
                                     </div>
                                 </div>
@@ -1120,6 +1318,17 @@ const formatPrice = (price) => {
                                         readonly
                                     />
                                 </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium"
+                                        >Grand Total</span
+                                    >
+                                    <Input
+                                        v-model="form.grand_total"
+                                        type="number"
+                                        class="w-32 text-right font-bold"
+                                        readonly
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1157,16 +1366,40 @@ const formatPrice = (price) => {
     overflow-y: auto;
 }
 
-/* Add styles for the summary card */
+/* Make readonly inputs look different */
 .summary-card {
     background-color: #f8f9fa;
     border-radius: 0.5rem;
     padding: 1rem;
 }
 
-/* Make readonly inputs look different */
-input[readonly] {
-    background-color: #f1f5f9;
+.editable-input {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    border-color: blue;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.editable-input:hover {
+    border-color: #9ca3af;
+}
+
+.editable-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    outline: none;
+}
+
+.readonly-input {
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.disabled-checkbox {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 </style>
