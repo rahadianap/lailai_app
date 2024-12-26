@@ -51,7 +51,7 @@ class PurchasingController extends Controller
             ]);
 
             foreach ($request->details as $detail) {
-                $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('kode_barcode', $detail['kode_barcode'])->first();
+                $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('kode_barcode', $detail['kode_barcode'])->get();
                 $purchase->details()->create([
                     'pembelian_id' => $purchase->id,
                     'kode_pembelian' => $purchase->kode_pembelian,
@@ -66,8 +66,8 @@ class PurchasingController extends Controller
                     'diskon' => $detail['diskon'],
                     'diskon_global' => $detail['diskon_global'],
                     'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
-                    'current_hpp_satuan_besar' => $detailProduct->hpp_avg_karton,
-                    'current_hpp_satuan_kecil' => $detailProduct->hpp_avg_eceran,
+                    // 'current_hpp_satuan_besar' => $detailProduct->hpp_avg_karton,
+                    // 'current_hpp_satuan_kecil' => $detailProduct->hpp_avg_eceran,
                     'nilai_dpp' => $detail['dpp'] || 0,
                     'nilai_ppn' => $detail['ppn'] || 0,
                     'harga_jual' => $detail['harga_jual'],
@@ -75,14 +75,20 @@ class PurchasingController extends Controller
                     'is_taxable' => $detail['taxable'],
                     'created_by' => Auth()->user()->name,
                 ]);
-            }
 
+                foreach ($detailProduct as $product) {
+                    $purchase->details()->update([
+                        'current_hpp_satuan_besar' => $product->hpp_avg_karton,
+                        'current_hpp_satuan_kecil' => $product->hpp_avg_eceran,
+                    ]);
+                }
+            }
 
             DB::commit();
             return Inertia::render('Purchasing/Index')->with('message', 'Purchase created successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'An error occurred while saving the purchase. Please try again.']);
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 

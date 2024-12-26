@@ -368,19 +368,28 @@ const isItemExist = (newItem) => {
     );
 };
 
-const subtotal = computed(() => {
+const totalDiskon = computed(() => {
+    return form.details.reduce(
+        (sum, detail) => sum + (detail.diskon_global || 0),
+        0,
+    );
+});
+
+const totalSub = computed(() => {
     return form.details.reduce((sum, detail) => sum + (detail.jumlah || 0), 0);
 });
 
 const calculateJumlah = (detail) => {
     detail.jumlah = detail.qty * detail.harga - detail.diskon;
-    form.subtotal = detail.jumlah;
+    form.subtotal = totalSub;
 };
 
 const setDiskonGlobal = (detail) => {
-    form.diskon_total = detail.diskon_global;
-    form.dpp_total = detail.jumlah - detail.diskon_global;
-    form.total = detail.jumlah - detail.diskon_global;
+    form.diskon_total = totalDiskon;
+    form.dpp_total = form.subtotal - form.diskon_total;
+    form.total = form.subtotal - form.diskon_total;
+    form.ppn_total = form.total * 0.11;
+    form.grand_total = form.dpp_total + form.ppn_total;
 };
 
 const calculateTotals = () => {
@@ -395,20 +404,19 @@ const calculateTotals = () => {
     // // Calculate DPP (Dasar Pengenaan Pajak)
     // form.dpp_total = form.subtotal - form.diskon_rupiah - (form.rebate || 0);
     // // Calculate PPN (Pajak Pertambahan Nilai)
-    form.ppn_total = form.details.reduce((sum, detail) => {
-        if (detail.is_taxable === "1" || detail.is_taxable === true) {
-            return sum + form.dpp_total * 0.11;
-        }
-        return sum;
-    }, 0);
+    // form.ppn_total = form.details.reduce((sum, detail) => {
+    //     if (detail.is_taxable === "1" || detail.is_taxable === true) {
+    //         return sum + form.dpp_total * 0.11;
+    //     }
+    //     return sum;
+    // }, 0);
     // // Calculate total
     // form.total = form.dpp_total + form.ppn_total;
     // // Ensure all values are rounded to 2 decimal places
     // form.subtotal = parseFloat(form.subtotal.toFixed(2));
     // form.diskon_rupiah = parseFloat(form.diskon_rupiah.toFixed(2));
     // form.dpp_total = parseFloat(form.dpp_total.toFixed(2));
-    form.ppn_total = parseFloat(form.ppn_total.toFixed(2));
-    form.grand_total = form.dpp_total + form.ppn_total;
+    // form.ppn_total = parseFloat(form.ppn_total.toFixed(2))
     // form.total = parseFloat(form.total.toFixed(2));
 };
 
