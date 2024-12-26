@@ -350,7 +350,7 @@ const addNewDetailFromInput = () => {
             text: "This item is already in the details table.",
             icon: "warning",
             showConfirmButton: false,
-            timer: 1000,
+            timer: 2000,
         });
     } else {
         form.details.push({ ...newDetailInput.value });
@@ -385,6 +385,8 @@ const calculateJumlah = (detail) => {
 };
 
 const setDiskonGlobal = (detail) => {
+    detail.jumlah = detail.qty * detail.harga - detail.diskon;
+    form.subtotal = totalSub;
     form.diskon_total = totalDiskon;
     form.dpp_total = form.subtotal - form.diskon_total;
     form.total = form.subtotal - form.diskon_total;
@@ -464,7 +466,7 @@ const submit = () => {
                 title: "Oops!",
                 text: errors.value["error"],
                 icon: "error",
-                timer: 1000,
+                timer: 2000,
             });
         },
         onSuccess: () => {
@@ -842,7 +844,7 @@ const formatPrice = (price) => {
         >
             <Form>
                 <DialogContent
-                    class="max-w-full w-full max-h-full h-full flex flex-col p-4 dialog-content"
+                    class="flex flex-col w-full h-full max-w-full max-h-full p-4 dialog-content"
                 >
                     <DialogHeader>
                         <DialogTitle
@@ -874,7 +876,7 @@ const formatPrice = (price) => {
                             />
                             <p
                                 v-if="form.errors.nama_supplier"
-                                class="text-sm text-red-500 mt-1"
+                                class="mt-1 text-sm text-red-500"
                             >
                                 {{ form.errors.nama_supplier }}
                             </p>
@@ -899,7 +901,7 @@ const formatPrice = (price) => {
                             />
                             <p
                                 v-if="form.errors.kode_po"
-                                class="text-sm text-red-500 mt-1"
+                                class="mt-1 text-sm text-red-500"
                             >
                                 {{ form.errors.kode_po }}
                             </p>
@@ -910,12 +912,12 @@ const formatPrice = (price) => {
                         <Textarea
                             id="keterangan"
                             v-model="form.keterangan"
-                            class="shrink w-full mt-2 editable-input"
+                            class="w-full mt-2 shrink editable-input"
                             required
                         />
                         <p
                             v-if="form.errors.keterangan"
-                            class="text-sm text-red-500 mt-1"
+                            class="mt-1 text-sm text-red-500"
                         >
                             {{ form.errors.keterangan }}
                         </p>
@@ -930,7 +932,7 @@ const formatPrice = (price) => {
                     <div class="flex flex-row justify-end gap-4">
                         <RadioGroup
                             v-model="form.purchase_type"
-                            class="flex space-x-4 mt-2"
+                            class="flex mt-2 space-x-4"
                         >
                             <div class="flex items-center space-x-2">
                                 <RadioGroupItem id="ppn" value="ppn" />
@@ -1003,7 +1005,7 @@ const formatPrice = (price) => {
                                                         `details.${index}.kode_barcode`
                                                     ]
                                                 "
-                                                class="text-sm text-red-500 mt-1"
+                                                class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
@@ -1035,7 +1037,7 @@ const formatPrice = (price) => {
                                                         `details.${index}.exp_date`
                                                     ]
                                                 "
-                                                class="text-sm text-red-500 mt-1"
+                                                class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
@@ -1051,7 +1053,7 @@ const formatPrice = (price) => {
                                                 type="number"
                                                 class="col-span-3 editable-input"
                                                 required
-                                                @input="calculateJumlah(detail)"
+                                                @input="setDiskonGlobal(detail)"
                                                 min="0"
                                                 step="0"
                                             />
@@ -1061,7 +1063,7 @@ const formatPrice = (price) => {
                                                         `details.${index}.qty`
                                                     ]
                                                 "
-                                                class="text-sm text-red-500 mt-1"
+                                                class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
@@ -1096,7 +1098,7 @@ const formatPrice = (price) => {
                                                 type="number"
                                                 class="col-span-3 editable-input"
                                                 required
-                                                @input="calculateJumlah(detail)"
+                                                @input="setDiskonGlobal(detail)"
                                                 min="0"
                                                 step="0"
                                             />
@@ -1106,7 +1108,7 @@ const formatPrice = (price) => {
                                                         `details.${index}.harga`
                                                     ]
                                                 "
-                                                class="text-sm text-red-500 mt-1"
+                                                class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
@@ -1132,7 +1134,7 @@ const formatPrice = (price) => {
                                                         `details.${index}.diskon`
                                                     ]
                                                 "
-                                                class="text-sm text-red-500 mt-1"
+                                                class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
@@ -1158,7 +1160,7 @@ const formatPrice = (price) => {
                                                         `details.${index}.diskon_global`
                                                     ]
                                                 "
-                                                class="text-sm text-red-500 mt-1"
+                                                class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
@@ -1213,7 +1215,7 @@ const formatPrice = (price) => {
                                                         `details.${index}.harga_jual`
                                                     ]
                                                 "
-                                                class="text-sm text-red-500 mt-1"
+                                                class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
@@ -1243,7 +1245,7 @@ const formatPrice = (price) => {
                         </div>
                     </div>
                     <Button @click="addNewDetailFromInput">Add</Button>
-                    <div class="mt-4 border rounded-lg p-4 bg-gray-50">
+                    <div class="p-4 mt-4 border rounded-lg bg-gray-50">
                         <div class="grid grid-cols-3 gap-4">
                             <!-- Left Column -->
                             <div class="space-y-2">
@@ -1322,7 +1324,7 @@ const formatPrice = (price) => {
                                     <Input
                                         v-model="form.total"
                                         type="number"
-                                        class="w-32 text-right font-bold"
+                                        class="w-32 font-bold text-right"
                                         readonly
                                     />
                                 </div>
@@ -1333,7 +1335,7 @@ const formatPrice = (price) => {
                                     <Input
                                         v-model="form.grand_total"
                                         type="number"
-                                        class="w-32 text-right font-bold"
+                                        class="w-32 font-bold text-right"
                                         readonly
                                     />
                                 </div>

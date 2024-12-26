@@ -2,19 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DetailProduct;
-use App\Models\DetailPurchaseOrder;
 use App\Models\DetailPurchasing;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Purchasing;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Str;
 
 class PurchasingController extends Controller
 {
@@ -51,7 +48,6 @@ class PurchasingController extends Controller
             ]);
 
             foreach ($request->details as $detail) {
-                $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('kode_barcode', $detail['kode_barcode'])->get();
                 $purchase->details()->create([
                     'pembelian_id' => $purchase->id,
                     'kode_pembelian' => $purchase->kode_pembelian,
@@ -66,8 +62,6 @@ class PurchasingController extends Controller
                     'diskon' => $detail['diskon'],
                     'diskon_global' => $detail['diskon_global'],
                     'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
-                    // 'current_hpp_satuan_besar' => $detailProduct->hpp_avg_karton,
-                    // 'current_hpp_satuan_kecil' => $detailProduct->hpp_avg_eceran,
                     'nilai_dpp' => $detail['dpp'] || 0,
                     'nilai_ppn' => $detail['ppn'] || 0,
                     'harga_jual' => $detail['harga_jual'],
@@ -76,18 +70,21 @@ class PurchasingController extends Controller
                     'created_by' => Auth()->user()->name,
                 ]);
 
-                foreach ($detailProduct as $product) {
-                    $purchase->details()->update([
-                        'current_hpp_satuan_besar' => $product->hpp_avg_karton,
-                        'current_hpp_satuan_kecil' => $product->hpp_avg_eceran,
-                    ]);
-                }
+                // $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('kode_barcode', $detail['kode_barcode'])->get();
+                // foreach ($detailProduct as $product) {
+                //     $purchase->details()->update([
+                //         'current_hpp_satuan_besar' => $product['hpp_avg_karton'],
+                //         'current_hpp_satuan_kecil' => $product['hpp_avg_eceran'],
+                //     ]);
+                // }
             }
 
             DB::commit();
+
             return Inertia::render('Purchasing/Index')->with('message', 'Purchase created successfully');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
@@ -142,62 +139,62 @@ class PurchasingController extends Controller
     public function getKodePembelian()
     {
         try {
-            $id = 'PR' . '/' . date('Ymd') . '/' . '000001';
-            $maxId = Purchasing::withTrashed()->where('kode_pembelian', 'LIKE', 'PR' . '/' . date('Ymd') . '/')->max('kode_pembelian');
-            if (!$maxId) {
-                $id = 'PR' . '/' . date('Ymd') . '/' . '000001';
+            $id = 'PR'.'/'.date('Ymd').'/'.'000001';
+            $maxId = Purchasing::withTrashed()->where('kode_pembelian', 'LIKE', 'PR'.'/'.date('Ymd').'/')->max('kode_pembelian');
+            if (! $maxId) {
+                $id = 'PR'.'/'.date('Ymd').'/'.'000001';
             } else {
-                $maxId = str_replace('PR' . '/' . date('Ymd') . '/', '', $maxId);
+                $maxId = str_replace('PR'.'/'.date('Ymd').'/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'PR' . '/' . date('Ymd') . '/' . '00000' . $count;
+                    $id = 'PR'.'/'.date('Ymd').'/'.'00000'.$count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'PR' . '/' . date('Ymd') . '/' . '0000' . $count;
+                    $id = 'PR'.'/'.date('Ymd').'/'.'0000'.$count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'PR' . '/' . date('Ymd') . '/' . '000' . $count;
+                    $id = 'PR'.'/'.date('Ymd').'/'.'000'.$count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'PR' . '/' . date('Ymd') . '/' . '00' . $count;
+                    $id = 'PR'.'/'.date('Ymd').'/'.'00'.$count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'PR' . '/' . date('Ymd') . '/' . '0' . $count;
+                    $id = 'PR'.'/'.date('Ymd').'/'.'0'.$count;
                 } else {
-                    $id = 'PR' . '/' . date('Ymd') . '/' . $count;
+                    $id = 'PR'.'/'.date('Ymd').'/'.$count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'PR/' . Str::uuid()->toString();
+            return 'PR/'.Str::uuid()->toString();
         }
     }
 
     public function getNoFaktur()
     {
         try {
-            $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000001';
-            $maxId = DetailPurchasing::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PR' . '/' . date('Ymd') . '/')->max('nomor_faktur');
-            if (!$maxId) {
-                $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000001';
+            $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000001';
+            $maxId = DetailPurchasing::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PR'.'/'.date('Ymd').'/')->max('nomor_faktur');
+            if (! $maxId) {
+                $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000001';
             } else {
-                $maxId = str_replace('FKT-PR' . '/' . date('Ymd') . '/', '', $maxId);
+                $maxId = str_replace('FKT-PR'.'/'.date('Ymd').'/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '00000' . $count;
+                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'00000'.$count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '0000' . $count;
+                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'0000'.$count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000' . $count;
+                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000'.$count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '00' . $count;
+                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'00'.$count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '0' . $count;
+                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'0'.$count;
                 } else {
-                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . $count;
+                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.$count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'FKT-PR/' . Str::uuid()->toString();
+            return 'FKT-PR/'.Str::uuid()->toString();
         }
     }
 
