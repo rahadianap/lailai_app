@@ -24,8 +24,8 @@ return new class extends Migration
             $table->integer('harga');
             $table->integer('jumlah');
             $table->decimal('harga_satuan_kecil', total: 10, places: 2);
-            // $table->decimal('current_hpp_satuan_besar', total: 10, places: 2)->nullable();
-            // $table->decimal('current_hpp_satuan_kecil', total: 10, places: 2)->nullable();
+            $table->decimal('current_hpp_satuan_besar', total: 10, places: 2)->nullable();
+            $table->decimal('current_hpp_satuan_kecil', total: 10, places: 2)->nullable();
             $table->decimal('nilai_dpp', total: 10, places: 2)->nullable();
             $table->decimal('nilai_ppn', total: 10, places: 2)->nullable();
             $table->integer('harga_jual');

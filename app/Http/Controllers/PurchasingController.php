@@ -69,14 +69,15 @@ class PurchasingController extends Controller
                     'is_taxable' => $detail['taxable'],
                     'created_by' => Auth()->user()->name,
                 ]);
+            }
 
-                // $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('kode_barcode', $detail['kode_barcode'])->get();
-                // foreach ($detailProduct as $product) {
-                //     $purchase->details()->update([
-                //         'current_hpp_satuan_besar' => $product['hpp_avg_karton'],
-                //         'current_hpp_satuan_kecil' => $product['hpp_avg_eceran'],
-                //     ]);
-                // }
+            // dd($validatedData['details']);
+            foreach ($validatedData['details'] as $item) {
+                $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('kode_barcode', $item['kode_barcode'])->first();
+                DetailPurchasing::where('kode_barcode', $item['kode_barcode'])->where('pembelian_id', $purchase->id)->update([
+                    'current_hpp_satuan_besar' => $detailProduct['hpp_avg_karton'],
+                    'current_hpp_satuan_kecil' => $detailProduct['hpp_avg_eceran'],
+                ]);
             }
 
             DB::commit();
