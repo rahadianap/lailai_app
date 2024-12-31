@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DetailPurchasing;
 use App\Models\Product;
+use App\Models\DetailProduct;
 use App\Models\PurchaseOrder;
 use App\Models\Purchasing;
 use App\Models\Supplier;
@@ -71,12 +72,23 @@ class PurchasingController extends Controller
                 ]);
             }
 
-            // dd($validatedData['details']);
             foreach ($validatedData['details'] as $item) {
-                $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('kode_barcode', $item['kode_barcode'])->first();
+                $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('mst_detail_barang.kode_barcode', $item['kode_barcode'])->first();
                 DetailPurchasing::where('kode_barcode', $item['kode_barcode'])->where('pembelian_id', $purchase->id)->update([
                     'current_hpp_satuan_besar' => $detailProduct['hpp_avg_karton'],
                     'current_hpp_satuan_kecil' => $detailProduct['hpp_avg_eceran'],
+                ]);
+
+                // Update stock di tabel mst_detail_barang & HPP
+                DetailProduct::where('kode_barcode', $item['kode_barcode'])->update([
+                    'harga_beli_karton' => (float) $item['harga'],
+                    'harga_beli_eceran' => (float) $item['harga'] / $item['isi_barang'],
+                    'harga_jual_karton' => $item['harga_jual'],
+                    'harga_jual_eceran' => $item['harga_jual'] / $item['isi_barang'],
+                    'hpp_avg_karton' => ($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon'] + $item['diskon_global']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty']),
+                    'hpp_avg_eceran' => (($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon'] + $item['diskon_global']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty'])) / $item['isi_barang'],
+                    'current_stock' => $item['qty'] * $item['isi_barang'] + $detailProduct->current_stock,
+                    'nilai_akhir' => ((($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon'] + $item['diskon_global']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty'])) / $item['isi_barang']) * ($item['qty'] * $item['isi_barang'] + $detailProduct->current_stock),
                 ]);
             }
 
@@ -140,62 +152,62 @@ class PurchasingController extends Controller
     public function getKodePembelian()
     {
         try {
-            $id = 'PR'.'/'.date('Ymd').'/'.'000001';
-            $maxId = Purchasing::withTrashed()->where('kode_pembelian', 'LIKE', 'PR'.'/'.date('Ymd').'/')->max('kode_pembelian');
-            if (! $maxId) {
-                $id = 'PR'.'/'.date('Ymd').'/'.'000001';
+            $id = 'PR' . '/' . date('Ymd') . '/' . '000001';
+            $maxId = Purchasing::withTrashed()->where('kode_pembelian', 'LIKE', 'PR' . '/' . date('Ymd') . '/')->max('kode_pembelian');
+            if (!$maxId) {
+                $id = 'PR' . '/' . date('Ymd') . '/' . '000001';
             } else {
-                $maxId = str_replace('PR'.'/'.date('Ymd').'/', '', $maxId);
+                $maxId = str_replace('PR' . '/' . date('Ymd') . '/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'00000'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '00000' . $count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'0000'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '0000' . $count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'000'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '000' . $count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'00'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '00' . $count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'0'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '0' . $count;
                 } else {
-                    $id = 'PR'.'/'.date('Ymd').'/'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . $count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'PR/'.Str::uuid()->toString();
+            return 'PR/' . Str::uuid()->toString();
         }
     }
 
     public function getNoFaktur()
     {
         try {
-            $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000001';
-            $maxId = DetailPurchasing::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PR'.'/'.date('Ymd').'/')->max('nomor_faktur');
-            if (! $maxId) {
-                $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000001';
+            $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000001';
+            $maxId = DetailPurchasing::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PR' . '/' . date('Ymd') . '/')->max('nomor_faktur');
+            if (!$maxId) {
+                $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000001';
             } else {
-                $maxId = str_replace('FKT-PR'.'/'.date('Ymd').'/', '', $maxId);
+                $maxId = str_replace('FKT-PR' . '/' . date('Ymd') . '/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'00000'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '00000' . $count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'0000'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '0000' . $count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000' . $count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'00'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '00' . $count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'0'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '0' . $count;
                 } else {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . $count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'FKT-PR/'.Str::uuid()->toString();
+            return 'FKT-PR/' . Str::uuid()->toString();
         }
     }
 
@@ -219,7 +231,10 @@ class PurchasingController extends Controller
             'details.*.diskon' => 'required|numeric|min:0',
             'details.*.diskon_global' => 'required|numeric|min:0',
             'details.*.jumlah' => 'required|numeric|min:0',
+            'details.*.dpp' => 'required|numeric|min:0',
+            'details.*.ppn' => 'required|numeric|min:0',
             'details.*.exp_date' => 'required|date',
+            'details.*.harga_jual' => 'required|numeric|min:0',
             'details.*.is_taxable' => 'required|boolean',
         ]);
     }

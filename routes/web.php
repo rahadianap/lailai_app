@@ -31,4 +31,11 @@ Route::middleware(['auth'])->group(function () {
         // Route::get('/{purchasing}', [\App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.edit');  //with GET
         // Route::put('/{purchasing}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.update');  //with GET
     });
+    Route::prefix('/pos')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SalesController::class, 'index'])->name('pos.index');
+        // Route::post('/', [\App\Http\Controllers\Sales::class, 'store'])->name('pos.store');
+        // Route::post('/', [\App\Http\Controllers\PurchasingController::class, 'store'])->name('purchasing.store');
+        // Route::get('/{purchasing}', [\App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.edit');  //with GET
+        // Route::put('/{purchasing}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.update');  //with GET
+    });
 });

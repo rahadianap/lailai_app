@@ -129,7 +129,7 @@ const emit = defineEmits(["update:modelValue", "select"]);
 const search = ref("");
 const options = ref([]);
 const selectedOption = ref(null);
-const showOptions = ref(true);
+const showOptions = ref(false);
 const loading = ref(false);
 const pagination = ref({
     current_page: 0,

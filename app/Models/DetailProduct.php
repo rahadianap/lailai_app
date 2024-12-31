@@ -16,6 +16,7 @@ class DetailProduct extends Model
 
     protected $fillable = [
         'barang_id',
+        'kode_barcode',
         'nama_barang',
         'saldo_awal',
         'harga_jual_karton',

@@ -450,7 +450,6 @@ const resetForm = () => {
                 hpp_avg_karton: 0,
                 hpp_avg_eceran: 0,
                 current_stock: 0,
-                nilai_akhir: 0,
             },
         ]);
 };
@@ -514,7 +513,6 @@ const onEdit = async (id) => {
         form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
         form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
         form.details.current_stock = data.data.details["current_stock"];
-        form.details.nilai_akhir = data.data.details["nilai_akhir"];
     } catch (error) {
         console.error(error);
     }
@@ -965,7 +963,7 @@ const formatPrice = (price) => {
                                         <TableHead>Qty</TableHead>
                                         <TableHead>Satuan</TableHead>
                                         <TableHead>Isi</TableHead>
-                                        <TableHead>Harga</TableHead>
+                                        <TableHead>Harga Beli</TableHead>
                                         <TableHead>Diskon</TableHead>
                                         <TableHead>Diskon Global</TableHead>
                                         <TableHead>Jumlah</TableHead>

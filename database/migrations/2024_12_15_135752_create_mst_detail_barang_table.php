@@ -13,12 +13,13 @@ return new class extends Migration {
         Schema::create('mst_detail_barang', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('barang_id');
+            $table->string('kode_barcode');
             $table->string('nama_barang');
             $table->integer('saldo_awal');
-            $table->integer('harga_jual_karton');
-            $table->integer('harga_jual_eceran');
-            $table->integer('harga_beli_karton');
-            $table->integer('harga_beli_eceran');
+            $table->decimal('harga_jual_karton', total: 10, places: 2);
+            $table->decimal('harga_jual_eceran', total: 10, places: 2);
+            $table->decimal('harga_beli_karton', total: 10, places: 2);
+            $table->decimal('harga_beli_eceran', total: 10, places: 2);
             $table->decimal('hpp_avg_karton', total: 10, places: 2);
             $table->decimal('hpp_avg_eceran', total: 10, places: 2);
             $table->decimal('hpp_fifo_karton', total: 10, places: 2)->nullable();

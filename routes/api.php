@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchasingController;
+use App\Http\Controllers\SalesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/products/categories', [ProductController::class, 'getCategories']);
@@ -15,3 +16,5 @@ Route::get('/purchasing/products', [PurchasingController::class, 'getProducts'])
 Route::get('/purchasing/po', [PurchasingController::class, 'getPO']);
 Route::get('/purchasing/products/{id}', [PurchasingController::class, 'fetchDetails']);
 Route::get('/purchasing/po/{id}', [PurchasingController::class, 'fetchPODetails']);
+Route::get('/pos/products', [SalesController::class, 'search']);
+Route::get('/pos/products/barcode/{barcode}', [SalesController::class, 'getByBarcode']);
