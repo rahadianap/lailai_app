@@ -1,8 +1,8 @@
 interface ReceiptData {
     items: Array<{
-        name: string;
+        nama_barang: string;
         quantity: number;
-        price: number;
+        harga_jual_eceran: number;
         total: number;
     }>;
     subtotal: number;
@@ -24,19 +24,19 @@ export function usePrinter() {
         receiptText += "====================\n\n";
 
         data.items.forEach((item) => {
-            receiptText += `${item.name}\n`;
-            receiptText += `  ${item.quantity} x ${item.price.toFixed(2)} = ${item.total.toFixed(2)}\n`;
+            receiptText += `${item.nama_barang}\n`;
+            receiptText += `  ${item.quantity} x ${item.harga_jual_eceran} = ${item.total}\n`;
         });
 
         receiptText += "\n====================\n";
-        receiptText += `Subtotal: ${data.subtotal.toFixed(2)}\n`;
-        receiptText += `Tax: ${data.tax.toFixed(2)}\n`;
-        receiptText += `Total: ${data.total.toFixed(2)}\n\n`;
+        receiptText += `Subtotal: ${data.subtotal}\n`;
+        receiptText += `Tax: ${data.tax}\n`;
+        receiptText += `Total: ${data.total}\n\n`;
         receiptText += `Payment Method: ${data.paymentMethod}\n`;
 
         if (data.paymentMethod === "cash") {
-            receiptText += `Cash Received: ${data.cashReceived.toFixed(2)}\n`;
-            receiptText += `Change: ${data.change.toFixed(2)}\n`;
+            receiptText += `Cash Received: ${data.cashReceived}\n`;
+            receiptText += `Change: ${data.change}\n`;
         }
 
         receiptText += "\nThank you for your purchase!";

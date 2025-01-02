@@ -27,6 +27,8 @@ class Purchasing extends Model
         'dpp_total',
         'ppn_total',
         'total',
+        'kode_voucher',
+        'kode_member',
         'is_aktif',
         'created_by',
         'updated_by',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -43,5 +44,17 @@ class SalesController extends Controller
         }
 
         return response()->json($product);
+    }
+
+    public function getVouchers(Request $request)
+    {
+        $search = $request->input('search', '');
+        $perPage = 10;
+
+        $data = Voucher::where('kode_voucher', 'like', "%{$search}%")
+            ->where('status', 'AVAILABLE')
+            ->paginate($perPage);
+
+        return response()->json($data);
     }
 }

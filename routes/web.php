@@ -38,4 +38,10 @@ Route::middleware(['auth'])->group(function () {
         // Route::get('/{purchasing}', [\App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.edit');  //with GET
         // Route::put('/{purchasing}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.update');  //with GET
     });
+    Route::prefix('/vouchers')->group(function () {
+        Route::get('/', [\App\Http\Controllers\VoucherController::class, 'index'])->name('vouchers.index');
+        // Route::post('/', [\App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
+        // Route::get('/{products}', [\App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');  //with GET
+        // Route::put('/{products}', [\App\Http\Controllers\ProductController::class, 'update'])->name('products.update');  //with GET
+    });
 });

@@ -129,6 +129,18 @@ const logout = () => {
                             <HandCoins class="w-4 h-4" />
                             POS
                         </Link>
+                        <Link
+                            href="/vouchers"
+                            :class="
+                                $page.url === '/'
+                                    ? 'bg-muted text-primary'
+                                    : 'text-muted-foreground'
+                            "
+                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
+                        >
+                            <HandCoins class="w-4 h-4" />
+                            Vouchers
+                        </Link>
                     </nav>
                 </div>
             </div>
