@@ -29,6 +29,8 @@ import {
     Scroll,
     ShoppingCart,
     HandCoins,
+    Tickets,
+    Users,
 } from "lucide-vue-next";
 import { Link } from "@inertiajs/vue3";
 import { useForm } from "@inertiajs/vue3";
@@ -138,8 +140,20 @@ const logout = () => {
                             "
                             class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
                         >
-                            <HandCoins class="w-4 h-4" />
+                            <Tickets class="w-4 h-4" />
                             Vouchers
+                        </Link>
+                        <Link
+                            href="/members"
+                            :class="
+                                $page.url === '/'
+                                    ? 'bg-muted text-primary'
+                                    : 'text-muted-foreground'
+                            "
+                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
+                        >
+                            <Users class="w-4 h-4" />
+                            Members
                         </Link>
                     </nav>
                 </div>

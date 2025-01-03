@@ -74,22 +74,47 @@ const showDialogCreate = () => {
 
 const columns = [
     {
-        accessorKey: "kode_voucher",
-        header: () => h("div", { class: "text-left" }, "Kode Voucher"),
+        accessorKey: "kode_member",
+        header: () => h("div", { class: "text-left" }, "Kode Member"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kode_voucher"),
+                row.getValue("kode_member"),
             );
         },
     },
     {
-        accessorKey: "nominal",
-        header: () => h("div", { class: "text-left" }, "Nominal"),
+        accessorKey: "nama_member",
+        header: () => h("div", { class: "text-left" }, "Nama Member"),
         cell: ({ row }) => {
-            const nominal = formatPrice(row.getValue("nominal"));
-            return h("div", { class: "text-left font-medium" }, nominal);
+            return h(
+                "div",
+                { class: "text-left font-medium" },
+                row.getValue("nama_member"),
+            );
+        },
+    },
+    {
+        accessorKey: "no_hp",
+        header: () => h("div", { class: "text-left" }, "Nomor HP"),
+        cell: ({ row }) => {
+            return h(
+                "div",
+                { class: "text-left font-medium" },
+                row.getValue("no_hp"),
+            );
+        },
+    },
+    {
+        accessorKey: "point",
+        header: () => h("div", { class: "text-left" }, "Jumlah Point"),
+        cell: ({ row }) => {
+            return h(
+                "div",
+                { class: "text-left font-medium" },
+                row.getValue("point"),
+            );
         },
     },
     {
@@ -104,34 +129,23 @@ const columns = [
         },
     },
     {
-        accessorKey: "status",
+        accessorKey: "is_aktif",
         header: () => h("div", { class: "text-center" }, "Status"),
         cell: ({ row }) => {
-            const status = row.getValue("status");
-            if (status === "AVAILABLE") {
+            const status = row.getValue("is_aktif");
+            if (status == true) {
                 return h(
                     "div",
                     { class: "text-center font-medium" },
-                    h(Badge, "AVAILABLE"),
+                    h(Badge, "Active"),
                 );
             } else {
                 return h(
                     "div",
                     { class: "text-center font-medium" },
-                    h(Badge, { variant: "desctructive" }, "USED"),
+                    h(Badge, { variant: "outline" }, "Inactive"),
                 );
             }
-        },
-    },
-    {
-        accessorKey: "keterangan",
-        header: () => h("div", { class: "text-left" }, "Keterangan"),
-        cell: ({ row }) => {
-            return h(
-                "div",
-                { class: "text-left font-medium" },
-                row.getValue("keterangan"),
-            );
         },
     },
     {
@@ -180,7 +194,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/vouchers",
+            "/members",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -227,24 +241,28 @@ const errors = ref({});
 
 const form = useForm({
     id: null,
-    kode_voucher: "",
-    nominal: 0,
-    exp_date: "",
-    keterangan: "",
+    kode_member: "",
+    nik: "",
+    nama_member: "",
+    email: "",
+    no_hp: "",
+    alamat: "",
 });
 
 const resetForm = () => {
     form.reset();
     form.clearErrors();
     form.id = null;
-    form.kode_voucher = "";
-    form.nominal = 0;
-    form.exp_date = "";
-    form.keterangan = "";
+    form.kode_member = "";
+    form.nik = "";
+    form.nama_member = "";
+    form.email = "";
+    form.no_hp = "";
+    form.alamat = "";
 };
 
 const submit = () => {
-    const url = form.id ? `/vouchers/${form.id}` : "/vouchers";
+    const url = form.id ? `/members/${form.id}` : "/members";
     const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
@@ -275,7 +293,7 @@ const onEdit = async (id) => {
     //Open Dialog
     showCreate.value = true;
     try {
-        const res = await fetch(`/vouchers/${id}`, {
+        const res = await fetch(`/members/${id}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -287,10 +305,12 @@ const onEdit = async (id) => {
         const data = await res.json();
         // Set to form
         form.id = data.data.id;
-        form.kode_voucher = data.data.kode_voucher;
-        form.nominal = data.data.nominal;
-        form.exp_date = data.data.exp_date;
-        form.keterangan = data.data.keterangan;
+        form.kode_member = data.data.kode_member;
+        form.nik = data.data.nik;
+        form.nama_member = data.data.nama_member;
+        form.email = data.data.email;
+        form.no_hp = data.data.no_hp;
+        form.alamat = data.data.alamat;
     } catch (error) {
         console.error(error);
     }
@@ -307,18 +327,18 @@ const formatPrice = (price) => {
 <template>
     <Layout>
         <div class="flex items-center">
-            <h1 class="text-lg font-semibold md:text-2xl">Vouchers</h1>
+            <h1 class="text-lg font-semibold md:text-2xl">Members</h1>
         </div>
         <div class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
-                        table.getColumn('kode_voucher')?.getFilterValue()
+                        table.getColumn('kode_member')?.getFilterValue()
                     "
                     class="max-w-sm"
-                    placeholder="Filter kode voucher..."
+                    placeholder="Filter kode member..."
                     @update:model-value="
-                        table.getColumn('kode_voucher')?.setFilterValue($event)
+                        table.getColumn('kode_member')?.setFilterValue($event)
                     "
                 />
                 <Button class="ml-4" variant="outline" @click="showDialogCreate"
@@ -480,45 +500,67 @@ const formatPrice = (price) => {
                     </DialogHeader>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <Label for="nominal"> Nominal </Label>
-                            <Input
-                                id="nominal"
-                                v-model="form.nominal"
-                                type="number"
-                                required
-                            />
+                            <Label for="nik"> NIK </Label>
+                            <Input id="nik" v-model="form.nik" type="text" />
                             <span
-                                v-if="errors?.nominal"
+                                v-if="errors?.nik"
                                 class="text-sm text-red-500"
-                                >{{ errors.nominal }}</span
+                                >{{ errors.nik }}</span
                             >
                         </div>
                         <div>
-                            <Label for="exp_date"> Expired Date </Label>
+                            <Label for="nama_member"> Nama Member* </Label>
                             <Input
-                                id="exp_date"
-                                v-model="form.exp_date"
-                                type="date"
+                                id="nama_member"
+                                v-model="form.nama_member"
+                                type="text"
                                 required
                             />
                             <span
-                                v-if="errors?.exp_date"
+                                v-if="errors?.nama_member"
                                 class="text-sm text-red-500"
-                                >{{ errors.exp_date }}</span
+                                >{{ errors.nama_member }}</span
+                            >
+                        </div>
+                        <div>
+                            <Label for="email"> Email </Label>
+                            <Input
+                                id="email"
+                                v-model="form.email"
+                                type="email"
+                            />
+                            <span
+                                v-if="errors?.email"
+                                class="text-sm text-red-500"
+                                >{{ errors.email }}</span
+                            >
+                        </div>
+                        <div>
+                            <Label for="no_hp"> Nomor HP* </Label>
+                            <Input
+                                id="no_hp"
+                                v-model="form.no_hp"
+                                type="text"
+                                required
+                            />
+                            <span
+                                v-if="errors?.no_hp"
+                                class="text-sm text-red-500"
+                                >{{ errors.no_hp }}</span
                             >
                         </div>
                         <div class="col-span-2">
-                            <Label for="keterangan"> Keterangan </Label>
+                            <Label for="alamat"> Alamat </Label>
                             <Textarea
-                                id="keterangan"
-                                v-model="form.keterangan"
+                                id="alamat"
+                                v-model="form.alamat"
                                 class="w-full shrink editable-input rounded-md border border-input p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                 required
                             />
                             <span
-                                v-if="errors?.keterangan"
+                                v-if="errors?.alamat"
                                 class="text-sm text-red-500"
-                                >{{ errors.keterangan }}</span
+                                >{{ errors.alamat }}</span
                             >
                         </div>
                     </div>

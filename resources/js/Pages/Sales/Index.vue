@@ -237,6 +237,13 @@
             @applyVoucher="handleApplyVoucher"
             @removeVoucher="removeVoucher"
         />
+        <MemberPopup
+            :isOpen="showMemberPopup"
+            :appliedVoucher="appliedPoint"
+            @update:isOpen="showMemberPopup = $event"
+            @applyVoucher="handleApplyVoucher"
+            @removeVoucher="removeVoucher"
+        />
     </PosLayout>
 </template>
 
@@ -266,6 +273,7 @@ import SearchableSelect2 from "../../components/SearchableSelect2.vue";
 import { Trash2 } from "lucide-vue-next";
 import { usePrinter } from "@/composables/usePrinter";
 import VoucherPopup from "@/components/VoucherPopup.vue";
+import MemberPopup from "@/components/MemberPopUp.vue";
 
 const { printReceipt: printReceiptToPrinter } = usePrinter();
 
@@ -279,6 +287,8 @@ const showDailySalesReport = ref(false);
 const dailySalesReport = ref([]);
 const showVoucherPopup = ref(false);
 const appliedVoucher = ref(null);
+const showMemberPopup = ref(false);
+const appliedPoint = ref(null);
 
 onMounted(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -303,6 +313,12 @@ const handleKeyDown = (event) => {
     ) {
         event.preventDefault();
         showVoucherPopup.value = true;
+    } else if (
+        (event.key === "m" || event.key === "M") &&
+        (event.ctrlKey || event.metaKey)
+    ) {
+        event.preventDefault();
+        showMemberPopup.value = true;
     }
 };
 

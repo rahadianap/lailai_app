@@ -40,8 +40,14 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::prefix('/vouchers')->group(function () {
         Route::get('/', [\App\Http\Controllers\VoucherController::class, 'index'])->name('vouchers.index');
-        // Route::post('/', [\App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
-        // Route::get('/{products}', [\App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');  //with GET
-        // Route::put('/{products}', [\App\Http\Controllers\ProductController::class, 'update'])->name('products.update');  //with GET
+        Route::post('/', [\App\Http\Controllers\VoucherController::class, 'store'])->name('vouchers.store');
+        Route::get('/{vouchers}', [\App\Http\Controllers\VoucherController::class, 'edit'])->name('vouchers.edit');  //with GET
+        Route::put('/{vouchers}', [\App\Http\Controllers\VoucherController::class, 'update'])->name('vouchers.update');  //with GET
+    });
+    Route::prefix('/members')->group(function () {
+        Route::get('/', [\App\Http\Controllers\MemberController::class, 'index'])->name('members.index');
+        Route::post('/', [\App\Http\Controllers\MemberController::class, 'store'])->name('members.store');
+        Route::get('/{members}', [\App\Http\Controllers\MemberController::class, 'edit'])->name('members.edit');  //with GET
+        Route::put('/{members}', [\App\Http\Controllers\MemberController::class, 'update'])->name('members.update');  //with GET
     });
 });

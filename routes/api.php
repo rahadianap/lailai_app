@@ -19,3 +19,4 @@ Route::get('/purchasing/po/{id}', [PurchasingController::class, 'fetchPODetails'
 Route::get('/pos/products', [SalesController::class, 'search']);
 Route::get('/pos/products/barcode/{barcode}', [SalesController::class, 'getByBarcode']);
 Route::get('/pos/vouchers', [SalesController::class, 'getVouchers']);
+Route::get('/pos/members', [SalesController::class, 'getMembers']);

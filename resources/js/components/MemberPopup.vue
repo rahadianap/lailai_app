@@ -2,43 +2,43 @@
     <Dialog :open="isOpen" @update:open="closePopup">
         <DialogContent class="max-w-[600px] sm:max-w-[600px]">
             <DialogHeader>
-                <DialogTitle>Apply Voucher</DialogTitle>
+                <DialogTitle>Select member</DialogTitle>
                 <DialogDescription>
-                    Select a voucher to apply to your purchase.
+                    Select a member to apply points discount to your purchase.
                 </DialogDescription>
             </DialogHeader>
             <div class="grid gap-4 py-4">
                 <div v-if="isLoading" class="text-center">
-                    Loading vouchers...
+                    Loading members...
                 </div>
                 <div v-else-if="error" class="text-center text-red-500">
                     {{ error }}
                 </div>
                 <div v-else class="flex flex-col items-start gap-2">
-                    <Label htmlFor="voucher" class="text-right">
-                        Voucher
+                    <Label htmlFor="member" class="text-right">
+                        Nomor Member
                     </Label>
                     <Select
-                        v-model="selectedVoucher"
-                        @update:modelValue="applyVoucher"
+                        v-model="selectedMember"
+                        @update:modelValue="applyPoint"
                         class="col-span-3"
                     >
-                        <SelectTrigger id="voucher">
-                            <SelectValue placeholder="Select a voucher" />
+                        <SelectTrigger id="member">
+                            <SelectValue placeholder="Select a member" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem
-                                v-if="vouchers.data.length === 0"
+                                v-if="members.data.length === 0"
                                 class="text-center"
                             >
-                                No vouchers available
+                                No members available
                             </SelectItem>
                             <SelectItem
-                                v-for="voucher in vouchers.data"
-                                :key="voucher?.id"
-                                :value="voucher"
+                                v-for="member in members.data"
+                                :key="member?.id"
+                                :value="member"
                             >
-                                {{ voucher?.kode_voucher }}
+                                {{ member?.kode_member }}
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -46,9 +46,9 @@
             </div>
             <DialogFooter>
                 <Button
-                    @click="removeVoucher"
+                    @click="removePoint"
                     variant="outline"
-                    v-if="selectedVoucher"
+                    v-if="selectedMember"
                     >Remove Voucher</Button
                 >
                 <Button @click="closePopup">Close</Button>
@@ -82,56 +82,56 @@ const props = defineProps({
     appliedVoucher: Object,
 });
 
-const emit = defineEmits(["update:isOpen", "applyVoucher", "removeVoucher"]);
+const emit = defineEmits(["update:isOpen", "applyPoint", "removePoint"]);
 
-const vouchers = ref([]);
-const selectedVoucher = ref(null);
+const members = ref([]);
+const selectedMember = ref(null);
 const isLoading = ref(false);
 const error = ref(null);
 
 onMounted(async () => {
-    await fetchVouchers();
+    await fetchMembers();
 });
 
 watch(
     () => props.isOpen,
     async (newValue) => {
         if (newValue) {
-            await fetchVouchers();
-            selectedVoucher.value = props.appliedVoucher;
+            await fetchMembers();
+            selectedMember.value = props.appliedVoucher;
         }
     },
 );
 
-async function fetchVouchers() {
+async function fetchMembers() {
     isLoading.value = true;
     error.value = null;
     try {
-        const response = await fetch("http://127.0.0.1:8000/api/pos/vouchers");
-        if (!response.ok) throw new Error("Failed to fetch vouchers");
-        vouchers.value = await response.json();
+        const response = await fetch("http://127.0.0.1:8000/api/pos/members");
+        if (!response.ok) throw new Error("Failed to fetch members");
+        members.value = await response.json();
     } catch (err) {
-        console.error("Error fetching vouchers:", err);
-        error.value = "Failed to load vouchers. Please try again.";
+        console.error("Error fetching members:", err);
+        error.value = "Failed to load members. Please try again.";
     } finally {
         isLoading.value = false;
     }
 }
 
-const applyVoucher = () => {
-    if (selectedVoucher.value) {
-        emit("applyVoucher", selectedVoucher.value);
+const applyPoint = () => {
+    if (selectedMember.value) {
+        emit("applyPoint", selectedMember.value);
     }
 };
 
-const removeVoucher = () => {
-    selectedVoucher.value = null;
-    emit("removeVoucher");
+const removePoint = () => {
+    selectedMember.value = null;
+    emit("removePoint");
 };
 
 const closePopup = () => {
     emit("update:isOpen", false);
-    selectedVoucher.value = null;
+    selectedMember.value = null;
 };
 
 const formatCurrency = (value) => {

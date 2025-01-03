@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Member;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -53,6 +54,17 @@ class SalesController extends Controller
 
         $data = Voucher::where('kode_voucher', 'like', "%{$search}%")
             ->where('status', 'AVAILABLE')
+            ->paginate($perPage);
+
+        return response()->json($data);
+    }
+
+    public function getMembers(Request $request)
+    {
+        $search = $request->input('search', '');
+        $perPage = 10;
+
+        $data = Member::where('kode_member', 'like', "%{$search}%")
             ->paginate($perPage);
 
         return response()->json($data);

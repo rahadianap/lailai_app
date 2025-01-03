@@ -6,20 +6,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Voucher extends Model
+class Member extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'mst_voucher';
+    protected $table = 'mst_member';
 
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'kode_voucher',
-        'nominal',
+        'kode_member',
+        'nik',
+        'nama_member',
+        'email',
+        'no_hp',
+        'alamat',
+        'point',
+        'tgl_daftar',
         'exp_date',
-        'status',
-        'keterangan',
+        'is_aktif',
         'created_by',
         'updated_by',
         'deleted_by',
