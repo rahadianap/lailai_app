@@ -2,9 +2,9 @@
     <Dialog :open="isOpen" @update:open="closePopup">
         <DialogContent class="max-w-[600px] sm:max-w-[600px]">
             <DialogHeader>
-                <DialogTitle>Select member</DialogTitle>
+                <DialogTitle>Select Member</DialogTitle>
                 <DialogDescription>
-                    Select a member to apply points discount to your purchase.
+                    Choose a member to apply their points to the purchase.
                 </DialogDescription>
             </DialogHeader>
             <div class="grid gap-4 py-4">
@@ -15,12 +15,10 @@
                     {{ error }}
                 </div>
                 <div v-else class="flex flex-col items-start gap-2">
-                    <Label htmlFor="member" class="text-right">
-                        Nomor Member
-                    </Label>
+                    <Label htmlFor="member" class="text-right"> Member </Label>
                     <Select
-                        v-model="selectedMember"
-                        @update:modelValue="applyPoint"
+                        v-model="selectedMemberId"
+                        @update:modelValue="applyMember"
                         class="col-span-3"
                     >
                         <SelectTrigger id="member">
@@ -35,10 +33,11 @@
                             </SelectItem>
                             <SelectItem
                                 v-for="member in members.data"
-                                :key="member?.id"
+                                :key="member.id"
                                 :value="member"
                             >
-                                {{ member?.kode_member }}
+                                {{ member.nama_member }} -
+                                {{ formatPoints(member.point) }} points
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -46,10 +45,10 @@
             </div>
             <DialogFooter>
                 <Button
-                    @click="removePoint"
+                    @click="removeMember"
                     variant="outline"
-                    v-if="selectedMember"
-                    >Remove Voucher</Button
+                    v-if="selectedMemberId"
+                    >Remove Member</Button
                 >
                 <Button @click="closePopup">Close</Button>
             </DialogFooter>
@@ -79,13 +78,13 @@ import { Label } from "@/components/ui/label";
 
 const props = defineProps({
     isOpen: Boolean,
-    appliedVoucher: Object,
+    appliedMember: Object,
 });
 
-const emit = defineEmits(["update:isOpen", "applyPoint", "removePoint"]);
+const emit = defineEmits(["update:isOpen", "applyMember", "removeMember"]);
 
 const members = ref([]);
-const selectedMember = ref(null);
+const selectedMemberId = ref(null);
 const isLoading = ref(false);
 const error = ref(null);
 
@@ -98,8 +97,17 @@ watch(
     async (newValue) => {
         if (newValue) {
             await fetchMembers();
-            selectedMember.value = props.appliedVoucher;
+            selectedMemberId.value = props.appliedMember
+                ? props.appliedMember.id
+                : null;
         }
+    },
+);
+
+watch(
+    () => props.appliedMember,
+    (newValue) => {
+        selectedMemberId.value = newValue ? newValue.id : null;
     },
 );
 
@@ -118,26 +126,22 @@ async function fetchMembers() {
     }
 }
 
-const applyPoint = () => {
-    if (selectedMember.value) {
-        emit("applyPoint", selectedMember.value);
+const applyMember = () => {
+    if (selectedMemberId.value) {
+        emit("applyMember", selectedMemberId.value);
     }
 };
 
-const removePoint = () => {
-    selectedMember.value = null;
-    emit("removePoint");
+const removeMember = () => {
+    selectedMemberId.value = null;
+    emit("removeMember");
 };
 
 const closePopup = () => {
     emit("update:isOpen", false);
-    selectedMember.value = null;
 };
 
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
-    }).format(value);
+const formatPoints = (points) => {
+    return new Intl.NumberFormat("id-ID").format(Number(points));
 };
 </script>

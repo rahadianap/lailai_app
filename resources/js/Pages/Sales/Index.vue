@@ -109,9 +109,18 @@
                         <span
                             >Voucher ({{ appliedVoucher.kode_voucher }}):</span
                         >
-                        <span
-                            >-{{ formatCurrency(appliedVoucher.nominal) }}</span
-                        >
+                        <span>{{
+                            formatCurrency(appliedVoucher.nominal * -1)
+                        }}</span>
+                    </div>
+                    <div
+                        v-if="appliedMember"
+                        class="flex justify-between mb-2 text-green-600"
+                    >
+                        <span>Member Points ({{ appliedMember.point }}):</span>
+                        <span>{{
+                            formatCurrency(appliedMember.point * 50 * -1)
+                        }}</span>
                     </div>
                     <div class="flex justify-between mb-4">
                         <span class="text-lg font-bold">Grand Total:</span>
@@ -239,10 +248,10 @@
         />
         <MemberPopup
             :isOpen="showMemberPopup"
-            :appliedVoucher="appliedPoint"
+            :appliedMember="appliedMember"
             @update:isOpen="showMemberPopup = $event"
-            @applyVoucher="handleApplyVoucher"
-            @removeVoucher="removeVoucher"
+            @applyMember="handleApplyMember"
+            @removeMember="removeMember"
         />
     </PosLayout>
 </template>
@@ -273,7 +282,7 @@ import SearchableSelect2 from "../../components/SearchableSelect2.vue";
 import { Trash2 } from "lucide-vue-next";
 import { usePrinter } from "@/composables/usePrinter";
 import VoucherPopup from "@/components/VoucherPopup.vue";
-import MemberPopup from "@/components/MemberPopUp.vue";
+import MemberPopup from "@/components/MemberPopup.vue";
 
 const { printReceipt: printReceiptToPrinter } = usePrinter();
 
@@ -288,7 +297,7 @@ const dailySalesReport = ref([]);
 const showVoucherPopup = ref(false);
 const appliedVoucher = ref(null);
 const showMemberPopup = ref(false);
-const appliedPoint = ref(null);
+const appliedMember = ref(null);
 
 onMounted(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -328,6 +337,16 @@ const handleApplyVoucher = (voucher) => {
         showVoucherPopup.value = false;
     } else {
         console.error("Invalid voucher selected");
+        // Optionally, show an error message to the user
+    }
+};
+
+const handleApplyMember = (member) => {
+    if (member) {
+        appliedMember.value = member;
+        // showMemberPopup.value = false;
+    } else {
+        console.error("Invalid member selected");
         // Optionally, show an error message to the user
     }
 };
@@ -433,7 +452,10 @@ const total = computed(() => {
     const voucherDiscount = appliedVoucher.value
         ? appliedVoucher.value.nominal
         : 0;
-    return Math.max(0, totalBeforeVoucher - voucherDiscount);
+    const memberDiscount = appliedMember.value
+        ? appliedMember.value.point * 50
+        : 0;
+    return Math.max(0, totalBeforeVoucher - voucherDiscount - memberDiscount);
 });
 
 const change = computed(() => {
@@ -492,6 +514,7 @@ const resetTransaction = () => {
     showPaymentSuccess.value = false;
     selectedProduct.value = null;
     appliedVoucher.value = null;
+    appliedMember.value = null;
 };
 
 const printReceipt = () => {
@@ -504,6 +527,7 @@ const printReceipt = () => {
         cashReceived: cashReceived.value,
         change: change.value,
         appliedVoucher: appliedVoucher.value,
+        appliedMember: appliedMember.value,
     };
     printReceiptToPrinter(receiptData);
 };
@@ -550,6 +574,10 @@ watch(
 
 const removeVoucher = () => {
     appliedVoucher.value = null;
+};
+
+const removeMember = () => {
+    appliedMember.value = null;
 };
 </script>
 
