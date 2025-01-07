@@ -202,6 +202,7 @@ const columns = [
                     product,
                     onEdit: () => onEdit(product.id),
                     onExpand: row.toggleExpanded,
+                    onDelete: () => onDelete(product.id),   
                 }),
             );
         },
@@ -400,19 +401,55 @@ const onEdit = async (id) => {
         form.nama_kategori = data.data.nama_kategori;
         form.isi_barang = data.data.isi_barang;
         form.is_taxable = data.data.is_taxable === "1" ? true : false;
-        form.details.saldo_awal = data.data.details["saldo_awal"];
-        form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
-        form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
-        form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
-        form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
-        form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
-        form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
-        form.details.current_stock = data.data.details["current_stock"];
-        form.details.nilai_akhir = data.data.details["nilai_akhir"];
+        form.details[0].saldo_awal = data.data.details["saldo_awal"];
+        form.details[0].harga_jual_karton = data.data.details["harga_jual_karton"];
+        form.details[0].harga_jual_eceran = data.data.details["harga_jual_eceran"];
+        form.details[0].harga_beli_karton = data.data.details["harga_beli_karton"];
+        form.details[0].harga_beli_eceran = data.data.details["harga_beli_eceran"];
+        form.details[0].hpp_avg_karton = data.data.details["hpp_avg_karton"];
+        form.details[0].hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
+        form.details[0].current_stock = data.data.details["current_stock"];
+        form.details[0].nilai_akhir = data.data.details["nilai_akhir"];
     } catch (error) {
         console.error(error);
     }
 };
+
+const onDelete = (id) => {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = useForm({})
+          form.delete(`/products/${id}`, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+              Swal.fire(
+                'Deleted!',
+                'Your product has been deleted.',
+                'success'
+              )
+              // Refresh the product list
+              router.reload({ only: ['data'] })
+            },
+            onError: () => {
+              Swal.fire(
+                'Error!',
+                'There was a problem deleting the product.',
+                'error'
+              )
+            }
+          })
+        }
+      })
+    }
 
 const formatPrice = (price) => {
     return new Intl.NumberFormat("id-ID", {
@@ -863,7 +900,6 @@ const formatPrice = (price) => {
                                     <TableHead
                                         >Nilai Akhir Persediaan</TableHead
                                     >
-                                    <TableHead>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -952,20 +988,10 @@ const formatPrice = (price) => {
                                             required
                                         />
                                     </TableCell>
-                                    <TableCell>
-                                        <Button
-                                            @click="removeDetail(index)"
-                                            variant="destructive"
-                                            >Remove</Button
-                                        >
-                                    </TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
                     </div>
-                    <Button @click="addNewDetail" class="mt-4"
-                        >Add New Detail</Button
-                    >
                     <DialogFooter>
                         <Button @click="submit"> Save </Button>
                     </DialogFooter>

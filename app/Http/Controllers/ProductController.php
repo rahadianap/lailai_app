@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\DetailProduct;
 use App\Models\Product;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,39 +28,64 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'kode_barcode' => 'required|unique:mst_barang,kode_barcode',
+            'nama_barang' => 'required|string|max:255',
+            'nama_satuan' => 'required|string|max:50',
+            'nama_kategori' => 'required|string|max:50',
+            'isi_barang' => 'required|integer|min:1',
+            'is_taxable' => 'required|boolean',
+            'details' => 'required|array|min:1',
+            'details.*.saldo_awal' => 'required|numeric|min:0',
+            'details.*.harga_jual_karton' => 'required|numeric|min:0',
+            'details.*.harga_jual_eceran' => 'required|numeric|min:0',
+            'details.*.harga_beli_karton' => 'required|numeric|min:0',
+            'details.*.harga_beli_eceran' => 'required|numeric|min:0',
+            'details.*.hpp_avg_karton' => 'required|numeric|min:0',
+            'details.*.hpp_avg_eceran' => 'required|numeric|min:0',
+            'details.*.current_stock' => 'required|numeric|min:0',
+            'details.*.nilai_akhir' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        DB::beginTransaction();
+
         try {
-            $validatedData = $this->validateProductData($request);
-
-            $exist = Product::where('kode_barcode', $validatedData['kode_barcode'])->exists();
-
-            if ($exist) {
-                return back()->withErrors($exist)->withInput();
-            }
-
-            DB::beginTransaction();
-
             $product = Product::create([
                 'kode_barang' => $this->getKodeBarang(),
-                'kode_barcode' => $validatedData['kode_barcode'],
-                'nama_barang' => $validatedData['nama_barang'],
-                'nama_satuan' => $validatedData['nama_satuan'],
-                'nama_kategori' => $validatedData['nama_kategori'],
-                'isi_barang' => $validatedData['isi_barang'],
-                'is_taxable' => $validatedData['is_taxable'],
-                'created_by' => Auth()->user()->name,
+                'kode_barcode' => $request->kode_barcode,
+                'nama_barang' => $request->nama_barang,
+                'nama_satuan' => $request->nama_satuan,
+                'nama_kategori' => $request->nama_kategori,
+                'isi_barang' => $request->isi_barang,
+                'is_taxable' => $request->is_taxable,
+                'created_by' => auth()->user()->name,
             ]);
 
-            $validatedData['details']['nama_barang'] = $validatedData['nama_barang'];
-            $validatedData['details']['created_by'] = Auth()->user()->name;
-            $product->details()->create($validatedData['details']);
+            foreach ($request->details as $detail) {
+                DetailProduct::create([
+                    'barang_id' => $product->id,
+                    'kode_barcode' => $product->kode_barcode,
+                    'nama_barang' => $product->nama_barang,
+                    'saldo_awal' => $detail['saldo_awal'],
+                    'harga_jual_karton' => $detail['harga_jual_karton'],
+                    'harga_jual_eceran' => $detail['harga_jual_eceran'],
+                    'harga_beli_karton' => $detail['harga_beli_karton'],
+                    'harga_beli_eceran' => $detail['harga_beli_eceran'],
+                    'hpp_avg_karton' => $detail['hpp_avg_karton'],
+                    'hpp_avg_eceran' => $detail['hpp_avg_eceran'],
+                    'current_stock' => $detail['current_stock'],
+                    'nilai_akhir' => $detail['nilai_akhir'],
+                    'created_by' => auth()->user()->name,
+                ]);
+            }
 
             DB::commit();
 
             return redirect()->back()->with('success', 'Product Create Successfully.');
-        } catch (ValidationException $e) {
-            DB::rollBack();
-
-            return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -76,44 +102,93 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
+        $validator = Validator::make($request->all(), [
+            'kode_barcode' => 'required|unique:mst_barang,kode_barcode,'.$id,
+            'nama_barang' => 'required|string|max:255',
+            'nama_satuan' => 'required|string|max:50',
+            'nama_kategori' => 'required|string|max:50',
+            'isi_barang' => 'required|integer|min:1',
+            'is_taxable' => 'required|boolean',
+            'details' => 'required|array|min:1',
+            'details.*.saldo_awal' => 'required|numeric|min:0',
+            'details.*.harga_jual_karton' => 'required|numeric|min:0',
+            'details.*.harga_jual_eceran' => 'required|numeric|min:0',
+            'details.*.harga_beli_karton' => 'required|numeric|min:0',
+            'details.*.harga_beli_eceran' => 'required|numeric|min:0',
+            'details.*.hpp_avg_karton' => 'required|numeric|min:0',
+            'details.*.hpp_avg_eceran' => 'required|numeric|min:0',
+            'details.*.current_stock' => 'required|numeric|min:0',
+            'details.*.nilai_akhir' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
         try {
-            $validatedData = $this->validateProductData($request);
-
-            $product = Product::find($id);
-
-            if (empty($product)) {
-                return redirect()->back()->with('error', 'Product not found.');
-            }
-
-            DB::beginTransaction();
-
-            $product->kode_barcode = $validatedData['kode_barcode'];
-            $product->nama_barang = $validatedData['nama_barang'];
-            $product->nama_satuan = $validatedData['nama_satuan'];
-            $product->nama_kategori = $validatedData['nama_kategori'];
-            $product->isi_barang = $validatedData['isi_barang'];
-            $product->is_taxable = $validatedData['is_taxable'];
-            $product->updated_by = Auth()->user()->name;
-
-            $product->details()->update($validatedData['details']);
-            $product->details()->update([
-                'nama_barang' => $validatedData['nama_barang'],
-                'updated_by' => Auth()->user()->name,
+            $product = Product::findOrFail($id);
+            $product->update([
+                'kode_barcode' => $request->kode_barcode,
+                'nama_barang' => $request->nama_barang,
+                'nama_satuan' => $request->nama_satuan,
+                'nama_kategori' => $request->nama_kategori,
+                'isi_barang' => $request->isi_barang,
+                'is_taxable' => $request->is_taxable,
+                'updated_by' => auth()->user()->name,
             ]);
 
-            $product->save();
+            foreach ($request->details as $detail) {
+                DetailProduct::where('barang_id', $product->id)->update([
+                    'barang_id' => $product->id,
+                    'kode_barcode' => $product->kode_barcode,
+                    'nama_barang' => $product->nama_barang,
+                    'saldo_awal' => $detail['saldo_awal'],
+                    'harga_jual_karton' => $detail['harga_jual_karton'],
+                    'harga_jual_eceran' => $detail['harga_jual_eceran'],
+                    'harga_beli_karton' => $detail['harga_beli_karton'],
+                    'harga_beli_eceran' => $detail['harga_beli_eceran'],
+                    'hpp_avg_karton' => $detail['hpp_avg_karton'],
+                    'hpp_avg_eceran' => $detail['hpp_avg_eceran'],
+                    'current_stock' => $detail['current_stock'],
+                    'nilai_akhir' => $detail['nilai_akhir'],
+                    'created_by' => auth()->user()->name,
+                    'updated_by' => auth()->user()->name,
+                ]);
+            }
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Product Create Successfully.');
-        } catch (ValidationException $e) {
-            DB::rollBack();
-
-            return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 422);
+            return redirect()->back()->with('success', 'Product Update Successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => 'An error occurred while creating the product', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'An error occurred while updating the product',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $product = Product::findOrFail($id);
+            $product->details()->delete();
+            $product->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Product deleted successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while deleting the product', 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -144,36 +219,36 @@ class ProductController extends Controller
         try {
             $id = 'PRD-000001';
             $maxId = Product::withTrashed()->where('kode_barang', 'LIKE', 'PRD-%')->max('kode_barang');
-            if (!$maxId) {
+            if (! $maxId) {
                 $id = 'PRD-000001';
             } else {
                 $maxId = str_replace('PRD-', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'PRD-00000' . $count;
+                    $id = 'PRD-00000'.$count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'PRD-0000' . $count;
+                    $id = 'PRD-0000'.$count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'PRD-000' . $count;
+                    $id = 'PRD-000'.$count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'PRD-00' . $count;
+                    $id = 'PRD-00'.$count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'PRD-0' . $count;
+                    $id = 'PRD-0'.$count;
                 } else {
-                    $id = 'PRD-' . $count;
+                    $id = 'PRD-'.$count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'PRD-' . Str::uuid()->toString();
+            return 'PRD-'.Str::uuid()->toString();
         }
     }
 
     private function validateProductData(Request $request)
     {
         return $request->validate([
-            'kode_barcode' => 'required|string|max:255|unique:mst_barang,kode_barcode,' . ($request->id ?? 'NULL') . ',id',
+            'kode_barcode' => 'required|string|max:255|unique:mst_barang,kode_barcode,'.($request->id ?? 'NULL').',id',
             'nama_barang' => 'required|string|max:255',
             'nama_satuan' => 'required|exists:mst_satuan_barang,nama_satuan',
             'nama_kategori' => 'required|exists:mst_kategori_barang,nama_kategori',

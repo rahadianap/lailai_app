@@ -17,6 +17,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [\App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
         Route::get('/{products}', [\App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');  //with GET
         Route::put('/{products}', [\App\Http\Controllers\ProductController::class, 'update'])->name('products.update');  //with GET
+        Route::delete('/{products}', [\App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
     });
     Route::prefix('/purchase-order')->group(function () {
         Route::get('/', [\App\Http\Controllers\PurchaseOrderController::class, 'index'])->name('purchase-order.index');

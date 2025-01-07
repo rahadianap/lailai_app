@@ -1,4 +1,4 @@
-<script lang="ts" setup>
+<script setup>
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -14,10 +14,7 @@ const props = defineProps({
     product: Object,
 })
 
-defineEmits<{
-  (e: 'expand'): void,
-  (e: 'edit'): void
-}>()
+const emit = defineEmits(['expand', 'edit', 'delete'])
 
 </script>
 
@@ -36,6 +33,9 @@ defineEmits<{
             </DropdownMenuItem>
             <DropdownMenuItem @click="$emit('edit')">
                 Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="$emit('delete')">
+                Delete
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
