@@ -10,61 +10,70 @@ use Inertia\Inertia;
 
 class UserController extends Controller
 {
+    private $allPermissions = [
+        'products_view', 'products_create', 'products_edit', 'products_delete',
+        'pos_view', 'pos_create', 'pos_edit', 'pos_delete',
+        'po_view', 'po_create', 'po_edit', 'po_delete',
+        'purchasing_view', 'purchasing_create', 'purchasing_edit', 'purchasing_delete',
+        'vouchers_view', 'vouchers_create', 'vouchers_edit', 'vouchers_delete',
+        'members_view', 'members_create', 'members_edit', 'members_delete',
+    ];
+
+    private $rolePermissions = [
+        'admin' => [
+            'products_view', 'products_create', 'products_edit', 'products_delete',
+            'pos_view', 'pos_create', 'pos_edit', 'pos_delete',
+            'po_view', 'po_create', 'po_edit', 'po_delete',
+            'purchasing_view', 'purchasing_create', 'purchasing_edit', 'purchasing_delete',
+            'vouchers_view', 'vouchers_create', 'vouchers_edit', 'vouchers_delete',
+            'members_view', 'members_create', 'members_edit', 'members_delete',
+        ],
+        'manager' => [
+            'products_view', 'products_create',
+            'pos_view', 'pos_create',
+            'po_view', 'po_create',
+            'purchasing_view', 'purchasing_create',
+            'vouchers_view', 'vouchers_create',
+            'members_view', 'members_create',
+        ],
+        'user' => [
+            'products_view',
+            'pos_view',
+        ],
+    ];
+
     public function index()
     {
         $user = auth()->user();
-        $roles = ['user', 'manager', 'admin']; // Add or modify roles as needed
-        $permissions = [
-            'products_view' => true,
-            'products_create' => true,
-            'products_edit' => true,
-            'products_delete' => true,
-            'pos_view' => true,
-            'pos_create' => true,
-            'pos_edit' => true,
-            'pos_delete' => true,
-            'po_view' => true,
-            'po_create' => true,
-            'po_edit' => true,
-            'po_delete' => true,
-            'purchasing_view' => true,
-            'purchasing_create' => true,
-            'purchasing_edit' => true,
-            'purchasing_delete' => true,
-            'vouchers_view' => true,
-            'vouchers_create' => true,
-            'vouchers_edit' => true,
-            'vouchers_delete' => true,
-            'members_view' => true,
-            'members_create' => true,
-            'members_edit' => true,
-            'members_delete' => true,
-        ];
+        $roles = ['user', 'manager', 'admin'];
 
         return Inertia::render('Users/Index', [
             'user' => $user,
             'roles' => $roles,
-            'permissions' => $permissions,
+            'allPermissions' => array_fill_keys($this->allPermissions, true),
         ]);
     }
 
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'name' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'role' => ['required', 'string', Rule::in(['user', 'manager', 'admin'])],
             'permissions' => ['array'],
         ]);
 
         $user->update([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => $request->email,
             'role' => $validated['role'],
         ]);
 
-        // Update permissions
-        $user->permissions = $validated['permissions'];
+        // Update permissions based on role and user selection
+        $roleBasedPermissions = $this->rolePermissions[$validated['role']];
+        $userSelectedPermissions = array_keys(array_filter($validated['permissions']));
+        $finalPermissions = array_intersect($roleBasedPermissions, $userSelectedPermissions);
+
+        $user->permissions = array_fill_keys($finalPermissions, true);
         $user->save();
 
         return redirect()->back()->with('success', 'User settings updated successfully.');

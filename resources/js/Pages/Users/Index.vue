@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed } from "vue";
-import { useForm } from "@inertiajs/vue3";
+import { ref, computed } from 'vue';
+import { useForm } from '@inertiajs/vue3';
 import Layout from "@/Layout/App.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,12 +21,18 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs";
+import Swal from "sweetalert2";
 
 const props = defineProps({
     user: Object,
     roles: Array,
-    permissions: Object,
+    allPermissions: Object,
 });
 
 const form = useForm({
@@ -37,28 +43,61 @@ const form = useForm({
 });
 
 const availablePermissions = computed(() => {
-    return Object.keys(props.permissions).reduce((acc, key) => {
-        if (props.permissions[key]) {
-            acc.push(key);
-        }
-        return acc;
-    }, []);
+    return Object.keys(props.allPermissions);
+});
+
+const isPermissionEnabled = computed(() => (permission) => {
+    if (form.role === 'admin') {
+        return true;
+    }
+    if (form.role === 'manager') {
+        return !['products_delete', 'pos_delete', 'po_delete', 'purchasing_delete', 'vouchers_delete', 'members_delete', 'products_edit', 'pos_edit', 'po_edit', 'purchasing_edit', 'vouchers_edit', 'members_edit'].includes(permission);
+    }
+    if (form.role === 'user') {
+        return ['products_view', 'pos_view'].includes(permission);
+    }
+    return false;
 });
 
 const submit = () => {
     form.put(`/users/${props.user.id}`, {
         preserveScroll: true,
         onSuccess: () => {
-            toast.success("User settings updated successfully");
+            Swal.fire({
+                title: "Yeay!",
+                text: "Your work has been saved",
+                icon: "success",
+                showConfirmButton: false,
+            });
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         },
         onError: () => {
-            toast.error("Failed to update user settings");
+            Swal.fire({
+                title: "Oops!",
+                text: "Something went wrong",
+                icon: "error",
+            });
         },
     });
 };
 
 const togglePermission = (permission) => {
-    form.permissions[permission] = !form.permissions[permission];
+    if (isPermissionEnabled.value(permission)) {
+        form.permissions[permission] = !form.permissions[permission];
+    }
+};
+
+const updateRole = (newRole) => {
+    form.role = newRole;
+    // Reset permissions based on the new role
+    form.permissions = {};
+    availablePermissions.value.forEach(permission => {
+        if (isPermissionEnabled.value(permission)) {
+            form.permissions[permission] = true;
+        }
+    });
 };
 </script>
 
@@ -67,19 +106,14 @@ const togglePermission = (permission) => {
         <Card class="w-full mx-auto">
             <CardHeader>
                 <CardTitle>User Settings</CardTitle>
-                <CardDescription
-                    >Manage your account settings and
-                    permissions</CardDescription
-                >
+                <CardDescription>Manage your account settings and permissions</CardDescription>
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="account" class="w-full">
                     <TabsList class="grid w-full grid-cols-3">
                         <TabsTrigger value="account">Account</TabsTrigger>
                         <TabsTrigger value="role">Role</TabsTrigger>
-                        <TabsTrigger value="permissions"
-                            >Permissions</TabsTrigger
-                        >
+                        <TabsTrigger value="permissions">Permissions</TabsTrigger>
                     </TabsList>
                     <TabsContent value="account">
                         <div class="space-y-4">
@@ -89,27 +123,19 @@ const togglePermission = (permission) => {
                             </div>
                             <div>
                                 <Label for="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    v-model="form.email"
-                                    type="email"
-                                />
+                                <Input id="email" v-model="form.email" type="email" />
                             </div>
                         </div>
                     </TabsContent>
                     <TabsContent value="role">
                         <div>
                             <Label for="role">Role</Label>
-                            <Select v-model="form.role">
+                            <Select v-model="form.role" @update:modelValue="updateRole">
                                 <SelectTrigger>
                                     <SelectValue :placeholder="form.role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem
-                                        v-for="role in roles"
-                                        :key="role"
-                                        :value="role"
-                                    >
+                                    <SelectItem v-for="role in roles" :key="role" :value="role">
                                         {{ role }}
                                     </SelectItem>
                                 </SelectContent>
@@ -117,22 +143,15 @@ const togglePermission = (permission) => {
                         </div>
                     </TabsContent>
                     <TabsContent value="permissions">
-                        <div class="space-y-4">
-                            <div
-                                v-for="permission in availablePermissions"
-                                :key="permission"
-                                class="flex items-center space-x-2"
-                            >
-                                <Checkbox
-                                    :id="permission"
+                        <div class="grid grid-cols-4 gap-4 space-y-2">
+                            <div v-for="permission in availablePermissions" :key="permission" class="flex items-center space-x-2">
+                                <Checkbox 
+                                    :id="permission" 
                                     :checked="form.permissions[permission]"
-                                    @update:checked="
-                                        togglePermission(permission)
-                                    "
+                                    :disabled="!isPermissionEnabled(permission)"
+                                    @update:checked="togglePermission(permission)"
                                 />
-                                <Label :for="permission">{{
-                                    permission
-                                }}</Label>
+                                <Label :for="permission">{{ permission }}</Label>
                             </div>
                         </div>
                     </TabsContent>
@@ -144,3 +163,4 @@ const togglePermission = (permission) => {
         </Card>
     </Layout>
 </template>
+

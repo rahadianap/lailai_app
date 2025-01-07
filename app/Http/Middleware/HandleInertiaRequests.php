@@ -36,12 +36,10 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Get user data if authenticated.
-     *
-     * @return array|null
      */
     private function getUserData(): ?array
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return null;
         }
 
@@ -53,12 +51,10 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Get permissions based on user role.
-     *
-     * @return array
      */
     private function getPermissions(): array
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return [
                 'products_view' => false,
                 'products_create' => false,
