@@ -99,6 +99,17 @@ const navigationGroups = [
             },
         ],
     },
+    {
+        title: "Settings",
+        items: [
+            {
+                name: "Users",
+                href: "/users",
+                icon: Scroll,
+                show: canViewPO,
+            },
+        ],
+    },
 ];
 
 // State for collapsible groups

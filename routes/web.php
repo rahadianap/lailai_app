@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/login', [\App\Http\Controllers\AuthController::class, 'login'])->name('login');
@@ -12,6 +13,12 @@ Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])-
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index']);
+    Route::prefix('/users')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('users.index');
+        Route::put('/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::put('/{user}/password', [UserController::class, 'updatePassword'])->name('users.update-password');
+        Route::delete('/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
     Route::prefix('/products')->group(function () {
         Route::get('/', [\App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
         Route::post('/', [\App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
