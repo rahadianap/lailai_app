@@ -1,14 +1,5 @@
-<script setup lang="ts">
-import { Badge } from "../components/ui/badge";
-
+<script setup>
 import { Button } from "../components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "../components/ui/card";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,10 +8,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
-import { Input } from "../components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
 import {
-    Bell,
     CircleUser,
     Home,
     Menu,
@@ -32,8 +21,20 @@ import {
     Tickets,
     Users,
 } from "lucide-vue-next";
-import { Link } from "@inertiajs/vue3";
-import { useForm } from "@inertiajs/vue3";
+import { Link, usePage, useForm } from "@inertiajs/vue3";
+import { computed } from "vue";
+
+const page = usePage();
+const user = computed(() => page.props.user);
+const permissions = computed(() => page.props.permissions);
+
+// Computed properties based on permissions
+const canViewProducts = computed(() => permissions.value.products_view);
+const canViewPO = computed(() => permissions.value.po_view);
+const canViewPurchasing = computed(() => permissions.value.purchasing_view);
+const canViewVouchers = computed(() => permissions.value.vouchers_view);
+const canViewMembers = computed(() => permissions.value.members_view);
+const canViewPOS = computed(() => permissions.value.pos_view);
 
 const form = useForm({});
 
@@ -58,14 +59,30 @@ const logout = () => {
                         <Package2 class="w-6 h-6" />
                         <span class="">Acme Inc</span>
                     </Link>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        class="w-8 h-8 ml-auto"
-                    >
-                        <Bell class="w-4 h-4" />
-                        <span class="sr-only">Toggle notifications</span>
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <Button
+                                variant="secondary"
+                                size="icon"
+                                class="rounded-full ml-auto"
+                            >
+                                <CircleUser class="w-5 h-5" />
+                                <span class="sr-only">Toggle user menu</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>{{
+                                user.name
+                            }}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>Settings</DropdownMenuItem>
+                            <DropdownMenuItem>Support</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem @click="logout"
+                                >Logout</DropdownMenuItem
+                            >
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
                 <div class="flex-1">
                     <nav
@@ -84,6 +101,7 @@ const logout = () => {
                             Dashboard
                         </Link>
                         <Link
+                            v-if="canViewProducts"
                             href="/products"
                             :class="
                                 $page.url === '/'
@@ -96,6 +114,7 @@ const logout = () => {
                             Products
                         </Link>
                         <Link
+                            v-if="canViewPO"
                             href="/purchase-order"
                             :class="
                                 $page.url === '/'
@@ -108,6 +127,7 @@ const logout = () => {
                             Purchase Order
                         </Link>
                         <Link
+                            v-if="canViewPurchasing"
                             href="/purchasing"
                             :class="
                                 $page.url === '/'
@@ -120,6 +140,7 @@ const logout = () => {
                             Purchasing
                         </Link>
                         <Link
+                            v-if="canViewPOS"
                             href="/pos"
                             :class="
                                 $page.url === '/'
@@ -132,6 +153,7 @@ const logout = () => {
                             POS
                         </Link>
                         <Link
+                            v-if="canViewVouchers"
                             href="/vouchers"
                             :class="
                                 $page.url === '/'
@@ -144,6 +166,7 @@ const logout = () => {
                             Vouchers
                         </Link>
                         <Link
+                            v-if="canViewMembers"
                             href="/members"
                             :class="
                                 $page.url === '/'
@@ -203,28 +226,6 @@ const logout = () => {
                             </nav>
                         </SheetContent>
                     </Sheet>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger as-child>
-                            <Button
-                                variant="secondary"
-                                size="icon"
-                                class="rounded-full"
-                            >
-                                <CircleUser class="w-5 h-5" />
-                                <span class="sr-only">Toggle user menu</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>Settings</DropdownMenuItem>
-                            <DropdownMenuItem>Support</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem @click="logout"
-                                >Logout</DropdownMenuItem
-                            >
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </header>
             </div>
             <main class="flex flex-col flex-1 gap-4 p-4 lg:gap-6 lg:p-6">

@@ -13,10 +13,15 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+
 class ProductController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request): Response
     {
+        $this->authorize('view', Product::class);
+
         $perPage = $request->input('per_page', 10);
 
         $data = Product::with('details')->where('is_aktif', 1)->paginate(perPage: $perPage);
@@ -28,6 +33,8 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', Product::class);
+
         $validator = Validator::make($request->all(), [
             'kode_barcode' => 'required|unique:mst_barang,kode_barcode',
             'nama_barang' => 'required|string|max:255',
@@ -102,6 +109,8 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
+        $this->authorize('update', Product::class);
+
         $validator = Validator::make($request->all(), [
             'kode_barcode' => 'required|unique:mst_barang,kode_barcode,' . $id,
             'nama_barang' => 'required|string|max:255',
@@ -175,6 +184,8 @@ class ProductController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('delete', Product::class);
+
         DB::beginTransaction();
 
         try {

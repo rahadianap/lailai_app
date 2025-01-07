@@ -2,12 +2,6 @@
 import Layout from "../../Layout/App.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
     Table,
@@ -18,7 +12,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { valueUpdater } from "@/lib/utils";
-import { PlusCircledIcon, ChevronDownIcon } from "@radix-icons/vue";
+import { PlusCircledIcon } from "@radix-icons/vue";
 import {
     FlexRender,
     getCoreRowModel,
@@ -29,7 +23,7 @@ import {
     useVueTable,
 } from "@tanstack/vue-table";
 import { h, ref } from "vue";
-import DropdownAction from "../../components/DataTableDropdown.vue";
+import DropdownAction from "./components/DataTableDropdown.vue";
 import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
@@ -38,7 +32,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
@@ -61,7 +54,8 @@ import {
 } from "@/components/ui/select";
 
 const props = defineProps({
-    data: Array,
+    data: Object,
+    permissions: Object,
 });
 
 const data = props.data.data;
@@ -200,6 +194,7 @@ const columns = [
                 { class: "relative" },
                 h(DropdownAction, {
                     product,
+                    permissions: props.permissions,
                     onEdit: () => onEdit(product.id),
                     onExpand: row.toggleExpanded,
                     onDelete: () => onDelete(product.id),
@@ -307,24 +302,6 @@ const form = useForm({
         },
     ],
 });
-
-const addNewDetail = () => {
-    form.details.push({
-        saldo_awal: 0,
-        harga_jual_karton: 0,
-        harga_jual_eceran: 0,
-        harga_beli_karton: 0,
-        harga_beli_eceran: 0,
-        hpp_avg_karton: 0,
-        hpp_avg_eceran: 0,
-        current_stock: 0,
-        nilai_akhir: 0,
-    });
-};
-
-const removeDetail = (index) => {
-    form.details.splice(index, 1);
-};
 
 const resetForm = () => {
     form.reset();

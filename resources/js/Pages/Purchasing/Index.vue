@@ -23,7 +23,7 @@ import {
     useVueTable,
 } from "@tanstack/vue-table";
 import { h, ref, watch, computed } from "vue";
-import DropdownAction from "../../components/DataTableDropdown.vue";
+import DropdownAction from "../Products/components/DataTableDropdown.vue";
 import { Badge } from "@/components/ui/badge";
 import {
     Dialog,

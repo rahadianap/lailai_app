@@ -36,7 +36,36 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
-            //
+            'user' => [
+                'name' => auth()->user()->name ?? '',
+                'role' => auth()->user()->role ?? '',
+            ],
+            'permissions' => [
+                'products_view' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'products_create' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'products_edit' => in_array(auth()->user()->role, ['admin']),
+                'products_delete' => in_array(auth()->user()->role, ['admin']),
+                'pos_view' => in_array(auth()->user()->role, ['kasir', 'admin', 'manager']),
+                'pos_create' => in_array(auth()->user()->role, ['kasir', 'admin', 'manager']),
+                'pos_edit' => in_array(auth()->user()->role, ['admin']),
+                'pos_delete' => in_array(auth()->user()->role, ['admin']),
+                'po_view' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'po_create' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'po_edit' => in_array(auth()->user()->role, ['admin']),
+                'po_delete' => in_array(auth()->user()->role, ['admin']),
+                'purchasing_view' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'purchasing_create' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'purchasing_edit' => in_array(auth()->user()->role, ['admin']),
+                'purchasing_delete' => in_array(auth()->user()->role, ['admin']),
+                'vouchers_view' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'vouchers_create' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'vouchers_edit' => in_array(auth()->user()->role, ['admin']),
+                'vouchers_delete' => in_array(auth()->user()->role, ['admin']),
+                'members_view' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'members_create' => in_array(auth()->user()->role, ['admin', 'manager']),
+                'members_edit' => in_array(auth()->user()->role, ['admin']),
+                'members_delete' => in_array(auth()->user()->role, ['admin']),
+            ],
         ]);
     }
 }

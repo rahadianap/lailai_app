@@ -5,17 +5,16 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-vue-next";
 
 const props = defineProps({
     product: Object,
-})
+    permissions: Object,
+});
 
-const emit = defineEmits(['expand', 'edit', 'delete'])
-
+const emit = defineEmits(["expand", "edit", "delete"]);
 </script>
 
 <template>
@@ -31,10 +30,16 @@ const emit = defineEmits(['expand', 'edit', 'delete'])
             <DropdownMenuItem @click="$emit('expand')">
                 Expand
             </DropdownMenuItem>
-            <DropdownMenuItem @click="$emit('edit')">
+            <DropdownMenuItem
+                v-if="permissions.products_edit"
+                @click="$emit('edit')"
+            >
                 Edit
             </DropdownMenuItem>
-            <DropdownMenuItem @click="$emit('delete')">
+            <DropdownMenuItem
+                v-if="permissions.products_delete"
+                @click="$emit('delete')"
+            >
                 Delete
             </DropdownMenuItem>
         </DropdownMenuContent>
