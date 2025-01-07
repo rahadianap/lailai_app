@@ -202,7 +202,7 @@ const columns = [
                     product,
                     onEdit: () => onEdit(product.id),
                     onExpand: row.toggleExpanded,
-                    onDelete: () => onDelete(product.id),   
+                    onDelete: () => onDelete(product.id),
                 }),
             );
         },
@@ -374,7 +374,7 @@ const submit = () => {
             });
             setTimeout(() => {
                 window.location.reload();
-            }, 3000);
+            }, 1000);
         },
     });
 };
@@ -402,10 +402,14 @@ const onEdit = async (id) => {
         form.isi_barang = data.data.isi_barang;
         form.is_taxable = data.data.is_taxable === "1" ? true : false;
         form.details[0].saldo_awal = data.data.details["saldo_awal"];
-        form.details[0].harga_jual_karton = data.data.details["harga_jual_karton"];
-        form.details[0].harga_jual_eceran = data.data.details["harga_jual_eceran"];
-        form.details[0].harga_beli_karton = data.data.details["harga_beli_karton"];
-        form.details[0].harga_beli_eceran = data.data.details["harga_beli_eceran"];
+        form.details[0].harga_jual_karton =
+            data.data.details["harga_jual_karton"];
+        form.details[0].harga_jual_eceran =
+            data.data.details["harga_jual_eceran"];
+        form.details[0].harga_beli_karton =
+            data.data.details["harga_beli_karton"];
+        form.details[0].harga_beli_eceran =
+            data.data.details["harga_beli_eceran"];
         form.details[0].hpp_avg_karton = data.data.details["hpp_avg_karton"];
         form.details[0].hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
         form.details[0].current_stock = data.data.details["current_stock"];
@@ -416,40 +420,41 @@ const onEdit = async (id) => {
 };
 
 const onDelete = (id) => {
-      Swal.fire({
-        title: 'Are you sure?',
+    Swal.fire({
+        title: "Are you sure?",
         text: "You won't be able to revert this!",
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!'
-      }).then((result) => {
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
         if (result.isConfirmed) {
-          const form = useForm({})
-          form.delete(`/products/${id}`, {
-            preserveState: true,
-            preserveScroll: true,
-            onSuccess: () => {
-              Swal.fire(
-                'Deleted!',
-                'Your product has been deleted.',
-                'success'
-              )
-              // Refresh the product list
-              router.reload({ only: ['data'] })
-            },
-            onError: () => {
-              Swal.fire(
-                'Error!',
-                'There was a problem deleting the product.',
-                'error'
-              )
-            }
-          })
+            const form = useForm({});
+            form.delete(`/products/${id}`, {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    Swal.fire(
+                        "Deleted!",
+                        "Your product has been deleted.",
+                        "success",
+                    );
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                },
+                onError: () => {
+                    Swal.fire(
+                        "Error!",
+                        "There was a problem deleting the product.",
+                        "error",
+                    );
+                },
+            });
         }
-      })
-    }
+    });
+};
 
 const formatPrice = (price) => {
     return new Intl.NumberFormat("id-ID", {

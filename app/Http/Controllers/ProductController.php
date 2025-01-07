@@ -103,7 +103,7 @@ class ProductController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'kode_barcode' => 'required|unique:mst_barang,kode_barcode,'.$id,
+            'kode_barcode' => 'required|unique:mst_barang,kode_barcode,' . $id,
             'nama_barang' => 'required|string|max:255',
             'nama_satuan' => 'required|string|max:50',
             'nama_kategori' => 'required|string|max:50',
@@ -179,12 +179,20 @@ class ProductController extends Controller
 
         try {
             $product = Product::findOrFail($id);
+            $product->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $product->details()->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
             $product->details()->delete();
             $product->delete();
 
             DB::commit();
 
-            return response()->json(['message' => 'Product deleted successfully']);
+            return redirect()->back()->with('success', 'Product Delete Successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -219,36 +227,36 @@ class ProductController extends Controller
         try {
             $id = 'PRD-000001';
             $maxId = Product::withTrashed()->where('kode_barang', 'LIKE', 'PRD-%')->max('kode_barang');
-            if (! $maxId) {
+            if (!$maxId) {
                 $id = 'PRD-000001';
             } else {
                 $maxId = str_replace('PRD-', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'PRD-00000'.$count;
+                    $id = 'PRD-00000' . $count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'PRD-0000'.$count;
+                    $id = 'PRD-0000' . $count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'PRD-000'.$count;
+                    $id = 'PRD-000' . $count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'PRD-00'.$count;
+                    $id = 'PRD-00' . $count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'PRD-0'.$count;
+                    $id = 'PRD-0' . $count;
                 } else {
-                    $id = 'PRD-'.$count;
+                    $id = 'PRD-' . $count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'PRD-'.Str::uuid()->toString();
+            return 'PRD-' . Str::uuid()->toString();
         }
     }
 
     private function validateProductData(Request $request)
     {
         return $request->validate([
-            'kode_barcode' => 'required|string|max:255|unique:mst_barang,kode_barcode,'.($request->id ?? 'NULL').',id',
+            'kode_barcode' => 'required|string|max:255|unique:mst_barang,kode_barcode,' . ($request->id ?? 'NULL') . ',id',
             'nama_barang' => 'required|string|max:255',
             'nama_satuan' => 'required|exists:mst_satuan_barang,nama_satuan',
             'nama_kategori' => 'required|exists:mst_kategori_barang,nama_kategori',
