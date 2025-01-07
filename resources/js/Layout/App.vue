@@ -10,19 +10,28 @@ import {
 } from "../components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
 import {
-    CircleUser,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "../components/ui/collapsible";
+import {
     Home,
-    Menu,
     Package,
-    Package2,
     Scroll,
     ShoppingCart,
     HandCoins,
     Tickets,
     Users,
+    Package2,
+    CircleUser,
+    Menu,
+    Settings,
+    HelpCircle,
+    ChevronDown,
+    ChevronRight,
 } from "lucide-vue-next";
 import { Link, usePage, useForm } from "@inertiajs/vue3";
-import { computed } from "vue";
+import { ref, computed } from "vue";
 
 const page = usePage();
 const user = computed(() => page.props.user);
@@ -35,6 +44,69 @@ const canViewPurchasing = computed(() => permissions.value.purchasing_view);
 const canViewVouchers = computed(() => permissions.value.vouchers_view);
 const canViewMembers = computed(() => permissions.value.members_view);
 const canViewPOS = computed(() => permissions.value.pos_view);
+
+// Navigation groups
+const navigationGroups = [
+    {
+        title: "Main",
+        items: [
+            { name: "Dashboard", href: "/dashboard", icon: Home, show: true },
+        ],
+    },
+    {
+        title: "Master Data",
+        items: [
+            {
+                name: "Products",
+                href: "/products",
+                icon: Package,
+                show: canViewProducts,
+            },
+            {
+                name: "Vouchers",
+                href: "/vouchers",
+                icon: Tickets,
+                show: canViewVouchers,
+            },
+            {
+                name: "Members",
+                href: "/members",
+                icon: Users,
+                show: canViewMembers,
+            },
+        ],
+    },
+    {
+        title: "Transactions",
+        items: [
+            {
+                name: "Purchase Order",
+                href: "/purchase-order",
+                icon: Scroll,
+                show: canViewPO,
+            },
+            {
+                name: "Purchasing",
+                href: "/purchasing",
+                icon: ShoppingCart,
+                show: canViewPurchasing,
+            },
+            {
+                name: "POS",
+                href: "/pos",
+                icon: HandCoins,
+                show: canViewPOS,
+            },
+        ],
+    },
+];
+
+// State for collapsible groups
+const collapsibleStates = ref(navigationGroups.map(() => true));
+
+const toggleCollapsible = (index) => {
+    collapsibleStates.value[index] = !collapsibleStates.value[index];
+};
 
 const form = useForm({});
 
@@ -84,151 +156,123 @@ const logout = () => {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-                <div class="flex-1">
-                    <nav
-                        class="grid items-start px-2 text-sm font-medium lg:px-4"
-                    >
-                        <Link
-                            href="/dashboard"
-                            :class="
-                                $page.url === '/dashboard'
-                                    ? 'bg-muted text-primary'
-                                    : 'text-muted-foreground'
-                            "
-                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
+                <div class="flex-1 overflow-auto">
+                    <nav class="grid items-start px-2 text-sm font-medium">
+                        <div
+                            v-for="(group, groupIndex) in navigationGroups"
+                            :key="groupIndex"
                         >
-                            <Home class="w-4 h-4" />
-                            Dashboard
-                        </Link>
-                        <Link
-                            v-if="canViewProducts"
-                            href="/products"
-                            :class="
-                                $page.url === '/'
-                                    ? 'bg-muted text-primary'
-                                    : 'text-muted-foreground'
-                            "
-                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
-                        >
-                            <Package class="w-4 h-4" />
-                            Products
-                        </Link>
-                        <Link
-                            v-if="canViewPO"
-                            href="/purchase-order"
-                            :class="
-                                $page.url === '/'
-                                    ? 'bg-muted text-primary'
-                                    : 'text-muted-foreground'
-                            "
-                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
-                        >
-                            <Scroll class="w-4 h-4" />
-                            Purchase Order
-                        </Link>
-                        <Link
-                            v-if="canViewPurchasing"
-                            href="/purchasing"
-                            :class="
-                                $page.url === '/'
-                                    ? 'bg-muted text-primary'
-                                    : 'text-muted-foreground'
-                            "
-                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
-                        >
-                            <ShoppingCart class="w-4 h-4" />
-                            Purchasing
-                        </Link>
-                        <Link
-                            v-if="canViewPOS"
-                            href="/pos"
-                            :class="
-                                $page.url === '/'
-                                    ? 'bg-muted text-primary'
-                                    : 'text-muted-foreground'
-                            "
-                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
-                        >
-                            <HandCoins class="w-4 h-4" />
-                            POS
-                        </Link>
-                        <Link
-                            v-if="canViewVouchers"
-                            href="/vouchers"
-                            :class="
-                                $page.url === '/'
-                                    ? 'bg-muted text-primary'
-                                    : 'text-muted-foreground'
-                            "
-                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
-                        >
-                            <Tickets class="w-4 h-4" />
-                            Vouchers
-                        </Link>
-                        <Link
-                            v-if="canViewMembers"
-                            href="/members"
-                            :class="
-                                $page.url === '/'
-                                    ? 'bg-muted text-primary'
-                                    : 'text-muted-foreground'
-                            "
-                            class="flex items-center gap-3 px-3 py-2 transition-all rounded-lg hover:text-primary"
-                        >
-                            <Users class="w-4 h-4" />
-                            Members
-                        </Link>
+                            <Collapsible
+                                v-if="group.items.some((item) => item.show)"
+                                :open="collapsibleStates[groupIndex]"
+                                @update:open="toggleCollapsible(groupIndex)"
+                            >
+                                <CollapsibleTrigger
+                                    class="flex w-full items-center justify-between py-2 px-4 text-sm font-semibold"
+                                >
+                                    {{ group.title }}
+                                    <ChevronDown
+                                        v-if="collapsibleStates[groupIndex]"
+                                        class="h-4 w-4"
+                                    />
+                                    <ChevronRight v-else class="h-4 w-4" />
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <div
+                                        v-for="item in group.items"
+                                        :key="item.name"
+                                    >
+                                        <Link
+                                            v-if="item.show"
+                                            :href="item.href"
+                                            :class="
+                                                $page.url === item.href
+                                                    ? 'bg-emerald-500 text-gray-100'
+                                                    : 'text-muted-foreground'
+                                            "
+                                            class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:text-primary"
+                                        >
+                                            <component
+                                                :is="item.icon"
+                                                class="w-4 h-4"
+                                            />
+                                            {{ item.name }}
+                                        </Link>
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
+                        </div>
                     </nav>
                 </div>
             </div>
         </div>
         <div class="flex flex-col">
-            <div class="flex flex-col justify-between">
-                <header
-                    class="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6"
-                >
-                    <Sheet>
-                        <SheetTrigger as-child>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                class="shrink-0 md:hidden"
+            <header
+                class="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-muted/40 px-6"
+            >
+                <Sheet>
+                    <SheetTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            class="shrink-0 md:hidden"
+                        >
+                            <Menu class="w-5 h-5" />
+                            <span class="sr-only">Toggle navigation menu</span>
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" class="w-[300px] sm:w-[400px]">
+                        <nav class="grid gap-2 text-lg font-medium">
+                            <div
+                                v-for="(group, groupIndex) in navigationGroups"
+                                :key="groupIndex"
+                                class="py-2"
                             >
-                                <Menu class="w-5 h-5" />
-                                <span class="sr-only"
-                                    >Toggle navigation menu</span
+                                <Collapsible
+                                    v-if="group.items.some((item) => item.show)"
+                                    :open="collapsibleStates[groupIndex]"
+                                    @update:open="toggleCollapsible(groupIndex)"
                                 >
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" class="flex flex-col">
-                            <nav class="grid gap-2 text-lg font-medium">
-                                <Link
-                                    href="#"
-                                    class="flex items-center gap-2 text-lg font-semibold"
-                                >
-                                    <Package2 class="w-6 h-6" />
-                                    <span class="sr-only">Acme Inc</span>
-                                </Link>
-                                <Link
-                                    href="/dashboard"
-                                    class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
-                                >
-                                    <Home class="w-5 h-5" />
-                                    Dashboard
-                                </Link>
-                                <Link
-                                    href="/products"
-                                    class="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground"
-                                >
-                                    <Package class="w-5 h-5" />
-                                    Orders
-                                </Link>
-                            </nav>
-                        </SheetContent>
-                    </Sheet>
-                </header>
-            </div>
-            <main class="flex flex-col flex-1 gap-4 p-4 lg:gap-6 lg:p-6">
+                                    <CollapsibleTrigger
+                                        class="flex w-full items-center justify-between py-2 px-4 text-sm font-semibold"
+                                    >
+                                        {{ group.title }}
+                                        <ChevronDown
+                                            v-if="collapsibleStates[groupIndex]"
+                                            class="h-4 w-4"
+                                        />
+                                        <ChevronRight v-else class="h-4 w-4" />
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <div
+                                            v-for="item in group.items"
+                                            :key="item.name"
+                                        >
+                                            <Link
+                                                v-if="item.show"
+                                                :href="item.href"
+                                                :class="
+                                                    $page.url === item.href
+                                                        ? 'bg-muted text-primary'
+                                                        : 'text-muted-foreground'
+                                                "
+                                                class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:text-primary"
+                                            >
+                                                <component
+                                                    :is="item.icon"
+                                                    class="w-5 h-5"
+                                                />
+                                                {{ item.name }}
+                                            </Link>
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            </div>
+                        </nav>
+                    </SheetContent>
+                </Sheet>
+            </header>
+            <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
                 <slot />
             </main>
         </div>
