@@ -58,4 +58,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{members}', [\App\Http\Controllers\MemberController::class, 'edit'])->name('members.edit');  //with GET
         Route::put('/{members}', [\App\Http\Controllers\MemberController::class, 'update'])->name('members.update');  //with GET
     });
+    Route::prefix('/categories')->group(function () {
+        Route::get('/', [\App\Http\Controllers\CategoryController::class, 'index'])->name('categories.index');
+        Route::post('/', [\App\Http\Controllers\CategoryController::class, 'store'])->name('categories.store');
+        Route::get('/{categories}', [\App\Http\Controllers\CategoryController::class, 'edit'])->name('categories.edit');  //with GET
+        Route::put('/{categories}', [\App\Http\Controllers\CategoryController::class, 'update'])->name('categories.update');  //with GET
+    });
 });

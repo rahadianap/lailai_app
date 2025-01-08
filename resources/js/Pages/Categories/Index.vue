@@ -2,12 +2,6 @@
 import Layout from "../../Layout/App.vue";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
     Table,
@@ -18,7 +12,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { valueUpdater } from "@/lib/utils";
-import { PlusCircledIcon, ChevronDownIcon } from "@radix-icons/vue";
+import { PlusCircledIcon } from "@radix-icons/vue";
 import {
     FlexRender,
     getCoreRowModel,
@@ -28,8 +22,8 @@ import {
     getSortedRowModel,
     useVueTable,
 } from "@tanstack/vue-table";
-import { h, ref } from "vue";
-import DropdownAction from "../Products/components/DataTableDropdown.vue";
+import { h, ref, computed } from "vue";
+import DropdownAction from "./components/Table.vue";
 import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
@@ -38,10 +32,10 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
+import SearchableSelect from "../../components/SearchableSelect.vue";
 import { useForm } from "@inertiajs/vue3";
 import Swal from "sweetalert2";
 import { router } from "@inertiajs/vue3";
@@ -58,73 +52,65 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 
 const props = defineProps({
-    data: Array,
+    data: Object,
+    permissions: Object,
 });
 
 const data = props.data.data;
 
 const showCreate = ref(false);
 
+const canViewCategories = computed(() => props.permissions.categories_view);
+const canCreateCategories = computed(() => props.permissions.categories_create);
+const canEditCategories = computed(() => props.permissions.categories_edit);
+const canDeleteCategories = computed(() => props.permissions.categories_delete);
+
 const showDialogCreate = () => {
-    showCreate.value = true;
+    if (canCreateCategories.value) {
+        showCreate.value = true;
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to create categories.",
+            icon: "error",
+        });
+    }
+};
+
+const selectedCategory = ref(null);
+
+const selectedUnit = ref(null);
+
+const onCategorySelect = (category) => {
+    selectedCategory.value = category;
+};
+
+const onUnitSelect = (unit) => {
+    selectedUnit.value = unit;
 };
 
 const columns = [
     {
-        accessorKey: "kode_member",
-        header: () => h("div", { class: "text-left" }, "Kode Member"),
+        accessorKey: "kode_kategori",
+        header: () => h("div", { class: "text-left" }, "Kode Kategori"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kode_member"),
+                row.getValue("kode_kategori"),
             );
         },
     },
     {
-        accessorKey: "nama_member",
-        header: () => h("div", { class: "text-left" }, "Nama Member"),
+        accessorKey: "nama_kategori",
+        header: () => h("div", { class: "text-left" }, "Nama Kategori"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("nama_member"),
-            );
-        },
-    },
-    {
-        accessorKey: "no_hp",
-        header: () => h("div", { class: "text-left" }, "Nomor HP"),
-        cell: ({ row }) => {
-            return h(
-                "div",
-                { class: "text-left font-medium" },
-                row.getValue("no_hp"),
-            );
-        },
-    },
-    {
-        accessorKey: "point",
-        header: () => h("div", { class: "text-left" }, "Jumlah Point"),
-        cell: ({ row }) => {
-            return h(
-                "div",
-                { class: "text-left font-medium" },
-                row.getValue("point"),
-            );
-        },
-    },
-    {
-        accessorKey: "exp_date",
-        header: () => h("div", { class: "text-left" }, "Expired Date"),
-        cell: ({ row }) => {
-            return h(
-                "div",
-                { class: "text-left font-medium" },
-                row.getValue("exp_date"),
+                row.getValue("nama_kategori"),
             );
         },
     },
@@ -152,14 +138,17 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const voucher = row.original;
+            const product = row.original;
 
             return h(
                 "div",
                 { class: "relative text-right" },
                 h(DropdownAction, {
-                    voucher,
-                    onEdit: () => onEdit(voucher.id),
+                    product,
+                    permissions: props.permissions,
+                    onEdit: () => onEdit(product.id),
+                    onExpand: row.toggleExpanded,
+                    onDelete: () => onDelete(product.id),
                 }),
             );
         },
@@ -194,7 +183,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/members",
+            "/categories",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -231,6 +220,9 @@ const table = useVueTable({
         get rowSelection() {
             return rowSelection.value;
         },
+        get expanded() {
+            return expanded.value;
+        },
         get pagination() {
             return pagination.value;
         },
@@ -241,28 +233,18 @@ const errors = ref({});
 
 const form = useForm({
     id: null,
-    kode_member: "",
-    nik: "",
-    nama_member: "",
-    email: "",
-    no_hp: "",
-    alamat: "",
+    nama_kategori: "",
 });
 
 const resetForm = () => {
     form.reset();
     form.clearErrors();
     form.id = null;
-    form.kode_member = "";
-    form.nik = "";
-    form.nama_member = "";
-    form.email = "";
-    form.no_hp = "";
-    form.alamat = "";
+    form.nama_kategori = "";
 };
 
 const submit = () => {
-    const url = form.id ? `/members/${form.id}` : "/members";
+    const url = form.id ? `/categories/${form.id}` : "/categories";
     const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
@@ -284,35 +266,82 @@ const submit = () => {
             });
             setTimeout(() => {
                 window.location.reload();
-            }, 3000);
+            }, 1000);
         },
     });
 };
 
 const onEdit = async (id) => {
-    //Open Dialog
-    showCreate.value = true;
-    try {
-        const res = await fetch(`/members/${id}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!res.ok) {
-            console.error("Error ");
+    if (canEditCategories.value) {
+        showCreate.value = true;
+        try {
+            const res = await fetch(`/categories/${id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            if (!res.ok) {
+                console.error("Error ");
+            }
+            const data = await res.json();
+            // Set to form
+            form.id = data.data.id;
+            form.nama_kategori = data.data.nama_kategori;
+        } catch (error) {
+            console.error(error);
         }
-        const data = await res.json();
-        // Set to form
-        form.id = data.data.id;
-        form.kode_member = data.data.kode_member;
-        form.nik = data.data.nik;
-        form.nama_member = data.data.nama_member;
-        form.email = data.data.email;
-        form.no_hp = data.data.no_hp;
-        form.alamat = data.data.alamat;
-    } catch (error) {
-        console.error(error);
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to edit categories.",
+            icon: "error",
+        });
+    }
+};
+
+const onDelete = (id) => {
+    if (canDeleteCategories.value) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = useForm({});
+                form.delete(`/categories/${id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire(
+                            "Deleted!",
+                            "Your product has been deleted.",
+                            "success",
+                        );
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    },
+                    onError: () => {
+                        Swal.fire(
+                            "Error!",
+                            "There was a problem deleting the product.",
+                            "error",
+                        );
+                    },
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to delete categories.",
+            icon: "error",
+        });
     }
 };
 
@@ -327,21 +356,25 @@ const formatPrice = (price) => {
 <template>
     <Layout>
         <div class="flex items-center">
-            <h1 class="text-lg font-semibold md:text-2xl">Members</h1>
+            <h1 class="text-lg font-semibold md:text-2xl">Categories</h1>
         </div>
-        <div class="w-full">
+        <div v-if="canViewCategories" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
-                        table.getColumn('kode_member')?.getFilterValue()
+                        table.getColumn('nama_kategori')?.getFilterValue()
                     "
                     class="max-w-sm"
-                    placeholder="Filter kode member..."
+                    placeholder="Filter kategori..."
                     @update:model-value="
-                        table.getColumn('kode_member')?.setFilterValue($event)
+                        table.getColumn('nama_kategori')?.setFilterValue($event)
                     "
                 />
-                <Button class="ml-4" variant="outline" @click="showDialogCreate"
+                <Button
+                    v-if="canCreateCategories"
+                    class="ml-4"
+                    variant="outline"
+                    @click="showDialogCreate"
                     ><PlusCircledIcon class="w-5 h-5"></PlusCircledIcon>Create
                     New</Button
                 >
@@ -478,7 +511,11 @@ const formatPrice = (price) => {
                 </div>
             </div>
         </div>
+        <div v-else class="text-center py-4">
+            You don't have permission to view categories.
+        </div>
         <Dialog
+            v-if="canCreateCategories || canEditCategories"
             v-model:open="showCreate"
             @update:open="
                 (val) => {
@@ -492,75 +529,25 @@ const formatPrice = (price) => {
                     <DialogHeader>
                         <DialogTitle
                             >{{ form.id ? "Edit" : "Create" }} Data Master
-                            Voucher</DialogTitle
+                            Kategori</DialogTitle
                         >
                         <DialogDescription>
-                            Data master voucher
+                            Data master kategori
                         </DialogDescription>
                     </DialogHeader>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div>
                         <div>
-                            <Label for="nik"> NIK </Label>
-                            <Input id="nik" v-model="form.nik" type="text" />
-                            <span
-                                v-if="errors?.nik"
-                                class="text-sm text-red-500"
-                                >{{ errors.nik }}</span
-                            >
-                        </div>
-                        <div>
-                            <Label for="nama_member"> Nama Member* </Label>
+                            <Label for="kode_barcode"> Nama Kategori </Label>
                             <Input
-                                id="nama_member"
-                                v-model="form.nama_member"
-                                type="text"
+                                id="nama_kategori"
+                                v-model="form.nama_kategori"
+                                class="mt-2"
                                 required
                             />
                             <span
-                                v-if="errors?.nama_member"
-                                class="text-sm text-red-500"
-                                >{{ errors.nama_member }}</span
-                            >
-                        </div>
-                        <div>
-                            <Label for="email"> Email </Label>
-                            <Input
-                                id="email"
-                                v-model="form.email"
-                                type="email"
-                            />
-                            <span
-                                v-if="errors?.email"
-                                class="text-sm text-red-500"
-                                >{{ errors.email }}</span
-                            >
-                        </div>
-                        <div>
-                            <Label for="no_hp"> Nomor HP* </Label>
-                            <Input
-                                id="no_hp"
-                                v-model="form.no_hp"
-                                type="text"
-                                required
-                            />
-                            <span
-                                v-if="errors?.no_hp"
-                                class="text-sm text-red-500"
-                                >{{ errors.no_hp }}</span
-                            >
-                        </div>
-                        <div class="col-span-2">
-                            <Label for="alamat"> Alamat </Label>
-                            <Textarea
-                                id="alamat"
-                                v-model="form.alamat"
-                                class="w-full shrink editable-input rounded-md border border-input p-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                required
-                            />
-                            <span
-                                v-if="errors?.alamat"
-                                class="text-sm text-red-500"
-                                >{{ errors.alamat }}</span
+                                v-if="errors?.nama_kategori"
+                                class="text-sm text-red-500 mt-2"
+                                >{{ errors.nama_kategori }}</span
                             >
                         </div>
                     </div>

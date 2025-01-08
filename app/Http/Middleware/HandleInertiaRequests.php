@@ -64,6 +64,10 @@ class HandleInertiaRequests extends Middleware
             'members_create' => $value,
             'members_edit' => $value,
             'members_delete' => $value,
+            'categories_view' => $value,
+            'categories_create' => $value,
+            'categories_edit' => $value,
+            'categories_delete' => $value,
         ];
     }
 
@@ -76,6 +80,7 @@ class HandleInertiaRequests extends Middleware
         $permissions['purchasing_delete'] = false;
         $permissions['vouchers_delete'] = false;
         $permissions['members_delete'] = false;
+        $permissions['categories_delete'] = false;
         return $permissions;
     }
 

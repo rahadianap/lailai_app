@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ProductController extends Controller

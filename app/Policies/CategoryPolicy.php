@@ -4,7 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 
-class ProductPolicy
+class CategoryPolicy
 {
     public function view(User $user)
     {

@@ -25,8 +25,7 @@ import {
     Package2,
     CircleUser,
     Menu,
-    Settings,
-    HelpCircle,
+    Boxes,
     ChevronDown,
     ChevronRight,
 } from "lucide-vue-next";
@@ -53,6 +52,12 @@ const navigationGroups = [
     {
         title: "Master Data",
         items: [
+            {
+                name: "Categories",
+                href: "/categories",
+                icon: Boxes,
+                permission: "categories_view",
+            },
             {
                 name: "Products",
                 href: "/products",
