@@ -8,7 +8,7 @@ class ProductPolicy
 {
     public function view(User $user)
     {
-        return in_array($user->role, ['admin', 'manager']);
+        return in_array($user->role, ['admin', 'manager', 'kasir']);
     }
 
     public function create(User $user)

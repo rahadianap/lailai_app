@@ -22,7 +22,7 @@ import {
     getSortedRowModel,
     useVueTable,
 } from "@tanstack/vue-table";
-import { h, ref } from "vue";
+import { h, ref, computed } from "vue";
 import DropdownAction from "./components/DataTableDropdown.vue";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -62,8 +62,21 @@ const data = props.data.data;
 
 const showCreate = ref(false);
 
+const canViewProducts = computed(() => props.permissions.products_view);
+const canCreateProducts = computed(() => props.permissions.products_create);
+const canEditProducts = computed(() => props.permissions.products_edit);
+const canDeleteProducts = computed(() => props.permissions.products_delete);
+
 const showDialogCreate = () => {
-    showCreate.value = true;
+    if (canCreateProducts.value) {
+        showCreate.value = true;
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to create products.",
+            icon: "error",
+        });
+    }
 };
 
 const selectedCategory = ref(null);
@@ -357,80 +370,97 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-    //Open Dialog
-    showCreate.value = true;
-    try {
-        const res = await fetch(`/products/${id}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!res.ok) {
-            console.error("Error ");
+    if (canEditProducts.value) {
+        showCreate.value = true;
+        try {
+            const res = await fetch(`/products/${id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            if (!res.ok) {
+                console.error("Error ");
+            }
+            const data = await res.json();
+            // Set to form
+            form.id = data.data.id;
+            form.kode_barcode = data.data.kode_barcode;
+            form.nama_barang = data.data.nama_barang;
+            form.nama_satuan = data.data.nama_satuan;
+            form.nama_kategori = data.data.nama_kategori;
+            form.isi_barang = data.data.isi_barang;
+            form.is_taxable = data.data.is_taxable === "1" ? true : false;
+            form.details[0].saldo_awal = data.data.details["saldo_awal"];
+            form.details[0].harga_jual_karton =
+                data.data.details["harga_jual_karton"];
+            form.details[0].harga_jual_eceran =
+                data.data.details["harga_jual_eceran"];
+            form.details[0].harga_beli_karton =
+                data.data.details["harga_beli_karton"];
+            form.details[0].harga_beli_eceran =
+                data.data.details["harga_beli_eceran"];
+            form.details[0].hpp_avg_karton =
+                data.data.details["hpp_avg_karton"];
+            form.details[0].hpp_avg_eceran =
+                data.data.details["hpp_avg_eceran"];
+            form.details[0].current_stock = data.data.details["current_stock"];
+            form.details[0].nilai_akhir = data.data.details["nilai_akhir"];
+        } catch (error) {
+            console.error(error);
         }
-        const data = await res.json();
-        // Set to form
-        form.id = data.data.id;
-        form.kode_barcode = data.data.kode_barcode;
-        form.nama_barang = data.data.nama_barang;
-        form.nama_satuan = data.data.nama_satuan;
-        form.nama_kategori = data.data.nama_kategori;
-        form.isi_barang = data.data.isi_barang;
-        form.is_taxable = data.data.is_taxable === "1" ? true : false;
-        form.details[0].saldo_awal = data.data.details["saldo_awal"];
-        form.details[0].harga_jual_karton =
-            data.data.details["harga_jual_karton"];
-        form.details[0].harga_jual_eceran =
-            data.data.details["harga_jual_eceran"];
-        form.details[0].harga_beli_karton =
-            data.data.details["harga_beli_karton"];
-        form.details[0].harga_beli_eceran =
-            data.data.details["harga_beli_eceran"];
-        form.details[0].hpp_avg_karton = data.data.details["hpp_avg_karton"];
-        form.details[0].hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
-        form.details[0].current_stock = data.data.details["current_stock"];
-        form.details[0].nilai_akhir = data.data.details["nilai_akhir"];
-    } catch (error) {
-        console.error(error);
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to edit products.",
+            icon: "error",
+        });
     }
 };
 
 const onDelete = (id) => {
-    Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const form = useForm({});
-            form.delete(`/products/${id}`, {
-                preserveState: true,
-                preserveScroll: true,
-                onSuccess: () => {
-                    Swal.fire(
-                        "Deleted!",
-                        "Your product has been deleted.",
-                        "success",
-                    );
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                },
-                onError: () => {
-                    Swal.fire(
-                        "Error!",
-                        "There was a problem deleting the product.",
-                        "error",
-                    );
-                },
-            });
-        }
-    });
+    if (canDeleteProducts.value) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = useForm({});
+                form.delete(`/products/${id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire(
+                            "Deleted!",
+                            "Your product has been deleted.",
+                            "success",
+                        );
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    },
+                    onError: () => {
+                        Swal.fire(
+                            "Error!",
+                            "There was a problem deleting the product.",
+                            "error",
+                        );
+                    },
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to delete products.",
+            icon: "error",
+        });
+    }
 };
 
 const formatPrice = (price) => {
@@ -446,7 +476,7 @@ const formatPrice = (price) => {
         <div class="flex items-center">
             <h1 class="text-lg font-semibold md:text-2xl">Products</h1>
         </div>
-        <div class="w-full">
+        <div v-if="canViewProducts" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
@@ -458,7 +488,11 @@ const formatPrice = (price) => {
                         table.getColumn('kode_barcode')?.setFilterValue($event)
                     "
                 />
-                <Button class="ml-4" variant="outline" @click="showDialogCreate"
+                <Button
+                    v-if="canCreateProducts"
+                    class="ml-4"
+                    variant="outline"
+                    @click="showDialogCreate"
                     ><PlusCircledIcon class="w-5 h-5"></PlusCircledIcon>Create
                     New</Button
                 >
@@ -740,7 +774,11 @@ const formatPrice = (price) => {
                 </div>
             </div>
         </div>
+        <div v-else class="text-center py-4">
+            You don't have permission to view products.
+        </div>
         <Dialog
+            v-if="canCreateProducts || canEditProducts"
             v-model:open="showCreate"
             @update:open="
                 (val) => {

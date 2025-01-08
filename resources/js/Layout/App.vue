@@ -37,20 +37,17 @@ const page = usePage();
 const user = computed(() => page.props.user);
 const permissions = computed(() => page.props.permissions);
 
-// Computed properties based on permissions
-const canViewProducts = computed(() => permissions.value.products_view);
-const canViewPO = computed(() => permissions.value.po_view);
-const canViewPurchasing = computed(() => permissions.value.purchasing_view);
-const canViewVouchers = computed(() => permissions.value.vouchers_view);
-const canViewMembers = computed(() => permissions.value.members_view);
-const canViewPOS = computed(() => permissions.value.pos_view);
-
 // Navigation groups
 const navigationGroups = [
     {
         title: "Main",
         items: [
-            { name: "Dashboard", href: "/dashboard", icon: Home, show: true },
+            {
+                name: "Dashboard",
+                href: "/dashboard",
+                icon: Home,
+                permission: null,
+            },
         ],
     },
     {
@@ -60,19 +57,19 @@ const navigationGroups = [
                 name: "Products",
                 href: "/products",
                 icon: Package,
-                show: canViewProducts,
+                permission: "products_view",
             },
             {
                 name: "Vouchers",
                 href: "/vouchers",
                 icon: Tickets,
-                show: canViewVouchers,
+                permission: "vouchers_view",
             },
             {
                 name: "Members",
                 href: "/members",
                 icon: Users,
-                show: canViewMembers,
+                permission: "members_view",
             },
         ],
     },
@@ -83,19 +80,19 @@ const navigationGroups = [
                 name: "Purchase Order",
                 href: "/purchase-order",
                 icon: Scroll,
-                show: canViewPO,
+                permission: "po_view",
             },
             {
                 name: "Purchasing",
                 href: "/purchasing",
                 icon: ShoppingCart,
-                show: canViewPurchasing,
+                permission: "purchasing_view",
             },
             {
                 name: "POS",
                 href: "/pos",
                 icon: HandCoins,
-                show: canViewPOS,
+                permission: "pos_view",
             },
         ],
     },
@@ -106,7 +103,7 @@ const navigationGroups = [
                 name: "Users",
                 href: "/users",
                 icon: Scroll,
-                show: canViewPO,
+                permissions: null,
             },
         ],
     },
@@ -117,6 +114,15 @@ const collapsibleStates = ref(navigationGroups.map(() => true));
 
 const toggleCollapsible = (index) => {
     collapsibleStates.value[index] = !collapsibleStates.value[index];
+};
+
+const hasPermission = (permission) => {
+    if (permission === null) return true;
+    return permissions.value[permission];
+};
+
+const hasGroupPermission = (group) => {
+    return group.items.some((item) => hasPermission(item.permission));
 };
 
 const form = useForm({});
@@ -174,7 +180,7 @@ const logout = () => {
                             :key="groupIndex"
                         >
                             <Collapsible
-                                v-if="group.items.some((item) => item.show)"
+                                v-if="hasGroupPermission(group)"
                                 :open="collapsibleStates[groupIndex]"
                                 @update:open="toggleCollapsible(groupIndex)"
                             >
@@ -194,7 +200,9 @@ const logout = () => {
                                         :key="item.name"
                                     >
                                         <Link
-                                            v-if="item.show"
+                                            v-if="
+                                                hasPermission(item.permission)
+                                            "
                                             :href="item.href"
                                             :class="
                                                 $page.url === item.href

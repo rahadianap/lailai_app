@@ -11,32 +11,74 @@ use Inertia\Inertia;
 class UserController extends Controller
 {
     private $allPermissions = [
-        'products_view', 'products_create', 'products_edit', 'products_delete',
-        'pos_view', 'pos_create', 'pos_edit', 'pos_delete',
-        'po_view', 'po_create', 'po_edit', 'po_delete',
-        'purchasing_view', 'purchasing_create', 'purchasing_edit', 'purchasing_delete',
-        'vouchers_view', 'vouchers_create', 'vouchers_edit', 'vouchers_delete',
-        'members_view', 'members_create', 'members_edit', 'members_delete',
+        'products_view',
+        'products_create',
+        'products_edit',
+        'products_delete',
+        'pos_view',
+        'pos_create',
+        'pos_edit',
+        'pos_delete',
+        'po_view',
+        'po_create',
+        'po_edit',
+        'po_delete',
+        'purchasing_view',
+        'purchasing_create',
+        'purchasing_edit',
+        'purchasing_delete',
+        'vouchers_view',
+        'vouchers_create',
+        'vouchers_edit',
+        'vouchers_delete',
+        'members_view',
+        'members_create',
+        'members_edit',
+        'members_delete',
     ];
 
     private $rolePermissions = [
         'admin' => [
-            'products_view', 'products_create', 'products_edit', 'products_delete',
-            'pos_view', 'pos_create', 'pos_edit', 'pos_delete',
-            'po_view', 'po_create', 'po_edit', 'po_delete',
-            'purchasing_view', 'purchasing_create', 'purchasing_edit', 'purchasing_delete',
-            'vouchers_view', 'vouchers_create', 'vouchers_edit', 'vouchers_delete',
-            'members_view', 'members_create', 'members_edit', 'members_delete',
+            'products_view',
+            'products_create',
+            'products_edit',
+            'products_delete',
+            'pos_view',
+            'pos_create',
+            'pos_edit',
+            'pos_delete',
+            'po_view',
+            'po_create',
+            'po_edit',
+            'po_delete',
+            'purchasing_view',
+            'purchasing_create',
+            'purchasing_edit',
+            'purchasing_delete',
+            'vouchers_view',
+            'vouchers_create',
+            'vouchers_edit',
+            'vouchers_delete',
+            'members_view',
+            'members_create',
+            'members_edit',
+            'members_delete',
         ],
         'manager' => [
-            'products_view', 'products_create',
-            'pos_view', 'pos_create',
-            'po_view', 'po_create',
-            'purchasing_view', 'purchasing_create',
-            'vouchers_view', 'vouchers_create',
-            'members_view', 'members_create',
+            'products_view',
+            'products_create',
+            'pos_view',
+            'pos_create',
+            'po_view',
+            'po_create',
+            'purchasing_view',
+            'purchasing_create',
+            'vouchers_view',
+            'vouchers_create',
+            'members_view',
+            'members_create',
         ],
-        'user' => [
+        'kasir' => [
             'products_view',
             'pos_view',
         ],
@@ -45,7 +87,7 @@ class UserController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $roles = ['user', 'manager', 'admin'];
+        $roles = ['kasir', 'manager', 'admin'];
 
         return Inertia::render('Users/Index', [
             'user' => $user,
@@ -58,7 +100,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'role' => ['required', 'string', Rule::in(['user', 'manager', 'admin'])],
+            'role' => ['required', 'string', Rule::in(['kasir', 'manager', 'admin'])],
             'permissions' => ['array'],
         ]);
 

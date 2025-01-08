@@ -7,20 +7,8 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that's loaded on the first page visit.
-     *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
@@ -29,17 +17,17 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
-            'user' => $this->getUserData(),
+            'user' => [
+                'name' => auth()->user()->name ?? '',
+                'role' => auth()->user()->role ?? '',
+            ],
             'permissions' => $this->getPermissions(),
         ]);
     }
 
-    /**
-     * Get user data if authenticated.
-     */
     private function getUserData(): ?array
     {
-        if (! auth()->check()) {
+        if (!auth()->check()) {
             return null;
         }
 
@@ -49,67 +37,73 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    /**
-     * Get permissions based on user role.
-     */
+    private function getDefaultPermissions($value): array
+    {
+        return [
+            'products_view' => $value,
+            'products_create' => $value,
+            'products_edit' => $value,
+            'products_delete' => $value,
+            'pos_view' => $value,
+            'pos_create' => $value,
+            'pos_edit' => $value,
+            'pos_delete' => $value,
+            'po_view' => $value,
+            'po_create' => $value,
+            'po_edit' => $value,
+            'po_delete' => $value,
+            'purchasing_view' => $value,
+            'purchasing_create' => $value,
+            'purchasing_edit' => $value,
+            'purchasing_delete' => $value,
+            'vouchers_view' => $value,
+            'vouchers_create' => $value,
+            'vouchers_edit' => $value,
+            'vouchers_delete' => $value,
+            'members_view' => $value,
+            'members_create' => $value,
+            'members_edit' => $value,
+            'members_delete' => $value,
+        ];
+    }
+
+    private function getManagerPermissions(): array
+    {
+        $permissions = $this->getDefaultPermissions(true);
+        $permissions['products_delete'] = false;
+        $permissions['pos_delete'] = false;
+        $permissions['po_delete'] = false;
+        $permissions['purchasing_delete'] = false;
+        $permissions['vouchers_delete'] = false;
+        $permissions['members_delete'] = false;
+        return $permissions;
+    }
+
+    private function getKasirPermissions(): array
+    {
+        $permissions = $this->getDefaultPermissions(false);
+        $permissions['pos_view'] = true;
+        $permissions['products_view'] = true;
+        return $permissions;
+    }
+
     private function getPermissions(): array
     {
-        if (! auth()->check()) {
-            return [
-                'products_view' => false,
-                'products_create' => false,
-                'products_edit' => false,
-                'products_delete' => false,
-                'pos_view' => false,
-                'pos_create' => false,
-                'pos_edit' => false,
-                'pos_delete' => false,
-                'po_view' => false,
-                'po_create' => false,
-                'po_edit' => false,
-                'po_delete' => false,
-                'purchasing_view' => false,
-                'purchasing_create' => false,
-                'purchasing_edit' => false,
-                'purchasing_delete' => false,
-                'vouchers_view' => false,
-                'vouchers_create' => false,
-                'vouchers_edit' => false,
-                'vouchers_delete' => false,
-                'members_view' => false,
-                'members_create' => false,
-                'members_edit' => false,
-                'members_delete' => false,
-            ];
+        if (!auth()->check()) {
+            return $this->getDefaultPermissions(false);
         }
 
         $role = auth()->user()->role;
 
-        return [
-            'products_view' => in_array($role, ['admin', 'manager']),
-            'products_create' => in_array($role, ['admin', 'manager']),
-            'products_edit' => $role === 'admin',
-            'products_delete' => $role === 'admin',
-            'pos_view' => in_array($role, ['kasir', 'admin', 'manager']),
-            'pos_create' => in_array($role, ['kasir', 'admin', 'manager']),
-            'pos_edit' => $role === 'admin',
-            'pos_delete' => $role === 'admin',
-            'po_view' => in_array($role, ['admin', 'manager']),
-            'po_create' => in_array($role, ['admin', 'manager']),
-            'po_edit' => $role === 'admin',
-            'po_delete' => $role === 'admin',
-            'purchasing_view' => in_array($role, ['admin', 'manager']),
-            'purchasing_create' => in_array($role, ['admin', 'manager']),
-            'purchasing_edit' => $role === 'admin',
-            'purchasing_delete' => $role === 'admin',
-            'vouchers_view' => in_array($role, ['admin', 'manager']),
-            'vouchers_create' => in_array($role, ['admin', 'manager']),
-            'vouchers_edit' => $role === 'admin',
-            'vouchers_delete' => $role === 'admin',
-            'members_view' => in_array($role, ['admin', 'manager']),
-            'members_create' => in_array($role, ['admin', 'manager']),
-            'members_edit' => $role === 'admin',
-            'members_delete' => $role === 'admin',
-        ];
+        switch ($role) {
+            case 'admin':
+                return $this->getDefaultPermissions(true);
+            case 'manager':
+                return $this->getManagerPermissions();
+            case 'kasir':
+                return $this->getKasirPermissions();
+            default:
+                return $this->getDefaultPermissions(false);
+        }
     }
 }
