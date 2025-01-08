@@ -62,7 +62,7 @@ const isPermissionEnabled = computed(() => (permission) => {
         ].includes(permission);
     }
     if (form.role === "kasir") {
-        return ["products_view", "pos_view"].includes(permission);
+        return ["pos_view"].includes(permission);
     }
     return false;
 });

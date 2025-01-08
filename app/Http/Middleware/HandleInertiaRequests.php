@@ -83,7 +83,6 @@ class HandleInertiaRequests extends Middleware
     {
         $permissions = $this->getDefaultPermissions(false);
         $permissions['pos_view'] = true;
-        $permissions['products_view'] = true;
         return $permissions;
     }
 

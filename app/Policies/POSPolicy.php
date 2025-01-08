@@ -8,6 +8,6 @@ class POSPolicy
 {
     public function view(User $user)
     {
-        return in_array($user->role, ['admin', 'manager', 'kasir']);
+        return in_array($user->role, ['admin', 'manager']);
     }
 }

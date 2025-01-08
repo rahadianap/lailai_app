@@ -79,7 +79,6 @@ class UserController extends Controller
             'members_create',
         ],
         'kasir' => [
-            'products_view',
             'pos_view',
         ],
     ];
