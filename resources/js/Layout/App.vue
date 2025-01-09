@@ -28,6 +28,8 @@ import {
     Boxes,
     ChevronDown,
     ChevronRight,
+    Ruler,
+    Handshake,
 } from "lucide-vue-next";
 import { Link, usePage, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
@@ -57,6 +59,18 @@ const navigationGroups = [
                 href: "/categories",
                 icon: Boxes,
                 permission: "categories_view",
+            },
+            {
+                name: "Units",
+                href: "/units",
+                icon: Ruler,
+                permission: "units_view",
+            },
+            {
+                name: "Suppliers",
+                href: "/suppliers",
+                icon: Handshake,
+                permission: "suppliers_view",
             },
             {
                 name: "Products",
@@ -214,7 +228,7 @@ const logout = () => {
                                                     ? 'bg-emerald-500 text-gray-100'
                                                     : 'text-muted-foreground'
                                             "
-                                            class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:text-primary"
+                                            class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:text-gray-700"
                                         >
                                             <component
                                                 :is="item.icon"

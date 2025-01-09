@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import SearchableSelect from "../../components/SearchableSelect.vue";
 import { useForm } from "@inertiajs/vue3";
 import Swal from "sweetalert2";
 import { router } from "@inertiajs/vue3";
@@ -63,18 +62,18 @@ const data = props.data.data;
 
 const showCreate = ref(false);
 
-const canViewCategories = computed(() => props.permissions.categories_view);
-const canCreateCategories = computed(() => props.permissions.categories_create);
-const canEditCategories = computed(() => props.permissions.categories_edit);
-const canDeleteCategories = computed(() => props.permissions.categories_delete);
+const canViewSuppliers = computed(() => props.permissions.suppliers_view);
+const canCreateSuppliers = computed(() => props.permissions.suppliers_create);
+const canEditSuppliers = computed(() => props.permissions.suppliers_edit);
+const canDeleteSuppliers = computed(() => props.permissions.suppliers_delete);
 
 const showDialogCreate = () => {
-    if (canCreateCategories.value) {
+    if (canCreateSuppliers.value) {
         showCreate.value = true;
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to create categories.",
+            text: "You don't have permission to create suppliers.",
             icon: "error",
         });
     }
@@ -82,25 +81,67 @@ const showDialogCreate = () => {
 
 const columns = [
     {
-        accessorKey: "kode_kategori",
-        header: () => h("div", { class: "text-left" }, "Kode Kategori"),
+        accessorKey: "kode_supplier",
+        header: () => h("div", { class: "text-left ml-4" }, "Kode Supplier"),
         cell: ({ row }) => {
             return h(
                 "div",
-                { class: "text-left font-medium" },
-                row.getValue("kode_kategori"),
+                { class: "text-left font-medium ml-4" },
+                row.getValue("kode_supplier"),
             );
         },
     },
     {
-        accessorKey: "nama_kategori",
-        header: () => h("div", { class: "text-left" }, "Nama Kategori"),
+        accessorKey: "nama_supplier",
+        header: () => h("div", { class: "text-left" }, "Nama Supplier"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("nama_kategori"),
+                row.getValue("nama_supplier"),
             );
+        },
+    },
+    {
+        accessorKey: "alamat",
+        header: () => h("div", { class: "text-left" }, "Alamat"),
+        cell: ({ row }) => {
+            return h(
+                "div",
+                { class: "text-left font-medium" },
+                row.getValue("alamat"),
+            );
+        },
+    },
+    {
+        accessorKey: "no_hp1",
+        header: () => h("div", { class: "text-left" }, "Nomor HP"),
+        cell: ({ row }) => {
+            return h(
+                "div",
+                { class: "text-left font-medium" },
+                row.getValue("no_hp1"),
+            );
+        },
+    },
+    {
+        accessorKey: "is_retur",
+        header: () => h("div", { class: "text-center" }, "Returable"),
+        cell: ({ row }) => {
+            const status = row.getValue("is_retur");
+            if (status == true) {
+                return h(
+                    "div",
+                    { class: "text-center font-medium" },
+                    h(Badge, "Retur"),
+                );
+            } else {
+                return h(
+                    "div",
+                    { class: "text-center font-medium" },
+                    h(Badge, { variant: "outline" }, "Non-Retur"),
+                );
+            }
         },
     },
     {
@@ -127,17 +168,17 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const product = row.original;
+            const supplier = row.original;
 
             return h(
                 "div",
-                { class: "relative text-right" },
+                { class: "relative text-right mr-4" },
                 h(DropdownAction, {
-                    product,
+                    supplier,
                     permissions: props.permissions,
-                    onEdit: () => onEdit(product.id),
+                    onEdit: () => onEdit(supplier.id),
                     onExpand: row.toggleExpanded,
-                    onDelete: () => onDelete(product.id),
+                    onDelete: () => onDelete(supplier.id),
                 }),
             );
         },
@@ -172,7 +213,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/categories",
+            "/suppliers",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -222,18 +263,36 @@ const errors = ref({});
 
 const form = useForm({
     id: null,
-    nama_kategori: "",
+    no_ktp: "",
+    npwp: "",
+    nama_supplier: "",
+    alamat: "",
+    tgl_lahir: "",
+    no_hp1: "",
+    no_hp2: "",
+    email: "",
+    keterangan: "",
+    is_retur: false,
 });
 
 const resetForm = () => {
     form.reset();
     form.clearErrors();
     form.id = null;
-    form.nama_kategori = "";
+    form.no_ktp = "";
+    form.npwp = "";
+    form.nama_supplier = "";
+    form.alamat = "";
+    form.tgl_lahir = "";
+    form.no_hp1 = "";
+    form.no_hp2 = "";
+    form.email = "";
+    form.keterangan = "";
+    form.is_retur = false;
 };
 
 const submit = () => {
-    const url = form.id ? `/categories/${form.id}` : "/categories";
+    const url = form.id ? `/suppliers/${form.id}` : "/suppliers";
     const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
@@ -261,10 +320,10 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-    if (canEditCategories.value) {
+    if (canEditSuppliers.value) {
         showCreate.value = true;
         try {
-            const res = await fetch(`/categories/${id}`, {
+            const res = await fetch(`/suppliers/${id}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -276,21 +335,30 @@ const onEdit = async (id) => {
             const data = await res.json();
             // Set to form
             form.id = data.data.id;
-            form.nama_kategori = data.data.nama_kategori;
+            form.nama_supplier = data.data.nama_supplier;
+            form.no_ktp = data.data.no_ktp;
+            form.npwp = data.data.npwp;
+            form.alamat = data.data.alamat;
+            form.tgl_lahir = data.data.tgl_lahir;
+            form.no_hp1 = data.data.no_hp1;
+            form.no_hp2 = data.data.no_hp2;
+            form.email = data.data.email;
+            form.keterangan = data.data.keterangan;
+            form.is_retur = data.data.is_retur === "1" ? true : false;
         } catch (error) {
             console.error(error);
         }
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to edit categories.",
+            text: "You don't have permission to edit suppliers.",
             icon: "error",
         });
     }
 };
 
 const onDelete = (id) => {
-    if (canDeleteCategories.value) {
+    if (canDeleteSuppliers.value) {
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -302,13 +370,13 @@ const onDelete = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.delete(`/categories/${id}`, {
+                form.delete(`/suppliers/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
                         Swal.fire(
                             "Deleted!",
-                            "Your product has been deleted.",
+                            "Your supplier has been deleted.",
                             "success",
                         );
                         setTimeout(() => {
@@ -318,7 +386,7 @@ const onDelete = (id) => {
                     onError: () => {
                         Swal.fire(
                             "Error!",
-                            "There was a problem deleting the product.",
+                            "There was a problem deleting the supplier.",
                             "error",
                         );
                     },
@@ -328,7 +396,7 @@ const onDelete = (id) => {
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to delete categories.",
+            text: "You don't have permission to delete suppliers.",
             icon: "error",
         });
     }
@@ -345,22 +413,22 @@ const formatPrice = (price) => {
 <template>
     <Layout>
         <div class="flex items-center">
-            <h1 class="text-lg font-semibold md:text-2xl">Categories</h1>
+            <h1 class="text-lg font-semibold md:text-2xl">Suppliers</h1>
         </div>
-        <div v-if="canViewCategories" class="w-full">
+        <div v-if="canViewSuppliers" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
-                        table.getColumn('nama_kategori')?.getFilterValue()
+                        table.getColumn('nama_supplier')?.getFilterValue()
                     "
                     class="max-w-sm"
-                    placeholder="Filter kategori..."
+                    placeholder="Filter supplier..."
                     @update:model-value="
-                        table.getColumn('nama_kategori')?.setFilterValue($event)
+                        table.getColumn('nama_supplier')?.setFilterValue($event)
                     "
                 />
                 <Button
-                    v-if="canCreateCategories"
+                    v-if="canCreateSuppliers"
                     class="ml-4"
                     variant="outline"
                     @click="showDialogCreate"
@@ -501,10 +569,10 @@ const formatPrice = (price) => {
             </div>
         </div>
         <div v-else class="text-center py-4">
-            You don't have permission to view categories.
+            You don't have permission to view suppliers.
         </div>
         <Dialog
-            v-if="canCreateCategories || canEditCategories"
+            v-if="canCreateSuppliers || canEditSuppliers"
             v-model:open="showCreate"
             @update:open="
                 (val) => {
@@ -514,30 +582,145 @@ const formatPrice = (price) => {
             "
         >
             <Form>
-                <DialogContent class="w-[500px]">
+                <DialogContent class="w-[1500px]">
                     <DialogHeader>
                         <DialogTitle
                             >{{ form.id ? "Edit" : "Create" }} Data Master
-                            Kategori</DialogTitle
+                            Supplier</DialogTitle
                         >
                         <DialogDescription>
-                            Data master kategori
+                            Data master supplier
                         </DialogDescription>
                     </DialogHeader>
-                    <div>
+                    <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <Label for="kode_barcode"> Nama Kategori </Label>
+                            <Label for="no_ktp"> Nomor KTP </Label>
                             <Input
-                                id="nama_kategori"
-                                v-model="form.nama_kategori"
+                                id="no_ktp"
+                                v-model="form.no_ktp"
+                                class="mt-2"
+                            />
+                            <span
+                                v-if="errors?.no_ktp"
+                                class="text-sm text-red-500 mt-2"
+                                >{{ errors.no_ktp }}</span
+                            >
+                        </div>
+                        <div>
+                            <Label for="npwp"> NPWP </Label>
+                            <Input id="npwp" v-model="form.npwp" class="mt-2" />
+                            <span
+                                v-if="errors?.npwp"
+                                class="text-sm text-red-500 mt-2"
+                                >{{ errors.npwp }}</span
+                            >
+                        </div>
+                        <div>
+                            <Label for="nama_supplier"> Nama Supplier </Label>
+                            <Input
+                                id="nama_supplier"
+                                v-model="form.nama_supplier"
                                 class="mt-2"
                                 required
                             />
                             <span
-                                v-if="errors?.nama_kategori"
+                                v-if="errors?.nama_supplier"
                                 class="text-sm text-red-500 mt-2"
-                                >{{ errors.nama_kategori }}</span
+                                >{{ errors.nama_supplier }}</span
                             >
+                        </div>
+
+                        <div>
+                            <Label for="alamat"> Alamat </Label>
+                            <Input
+                                id="alamat"
+                                v-model="form.alamat"
+                                class="mt-2"
+                            />
+                            <span
+                                v-if="errors?.alamat"
+                                class="text-sm text-red-500 mt-2"
+                                >{{ errors.alamat }}</span
+                            >
+                        </div>
+                        <div>
+                            <Label for="tgl_lahir"> Tanggal Lahir </Label>
+                            <Input
+                                id="tgl_lahir"
+                                type="date"
+                                v-model="form.tgl_lahir"
+                                class="mt-2"
+                            />
+                            <span
+                                v-if="errors?.tgl_lahir"
+                                class="text-sm text-red-500 mt-2"
+                                >{{ errors.tgl_lahir }}</span
+                            >
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label for="no_hp1"> Nomor HP (1) </Label>
+                                <Input
+                                    id="no_hp1"
+                                    v-model="form.no_hp1"
+                                    class="mt-2"
+                                />
+                                <span
+                                    v-if="errors?.no_hp1"
+                                    class="text-sm text-red-500 mt-2"
+                                    >{{ errors.no_hp1 }}</span
+                                >
+                            </div>
+                            <div>
+                                <Label for="no_hp2"> Nomor HP (2) </Label>
+                                <Input
+                                    id="no_hp2"
+                                    v-model="form.no_hp2"
+                                    class="mt-2"
+                                />
+                                <span
+                                    v-if="errors?.no_hp2"
+                                    class="text-sm text-red-500 mt-2"
+                                    >{{ errors.no_hp2 }}</span
+                                >
+                            </div>
+                        </div>
+                        <div>
+                            <Label for="email"> Email </Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                v-model="form.email"
+                                class="mt-2"
+                            />
+                            <span
+                                v-if="errors?.email"
+                                class="text-sm text-red-500 mt-2"
+                                >{{ errors.email }}</span
+                            >
+                        </div>
+                        <div class="col-span-2">
+                            <Label for="keterangan"> Keterangan </Label>
+                            <Textarea
+                                id="keterangan"
+                                v-model="form.keterangan"
+                                class="w-full shrink editable-input rounded-md border border-gray-900 p-2 mt-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                required
+                            />
+                            <span
+                                v-if="errors?.keterangan"
+                                class="text-sm text-red-500 mt-2"
+                                >{{ errors.keterangan }}</span
+                            >
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <Checkbox
+                                id="is_retur"
+                                :checked="form.is_retur"
+                                @update:checked="form.is_retur = $event"
+                                required
+                            />
+                            <Label for="is_retur">Returable</Label>
                         </div>
                     </div>
                     <DialogFooter>

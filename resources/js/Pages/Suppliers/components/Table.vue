@@ -28,13 +28,13 @@ const emit = defineEmits(["edit", "delete"]);
         <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-                v-if="permissions.categories_edit"
+                v-if="permissions.suppliers_edit"
                 @click="$emit('edit')"
             >
                 Edit
             </DropdownMenuItem>
             <DropdownMenuItem
-                v-if="permissions.categories_delete"
+                v-if="permissions.suppliers_delete"
                 @click="$emit('delete')"
             >
                 Delete

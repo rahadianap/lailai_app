@@ -63,5 +63,20 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [\App\Http\Controllers\CategoryController::class, 'store'])->name('categories.store');
         Route::get('/{categories}', [\App\Http\Controllers\CategoryController::class, 'edit'])->name('categories.edit');  //with GET
         Route::put('/{categories}', [\App\Http\Controllers\CategoryController::class, 'update'])->name('categories.update');  //with GET
+        Route::delete('/{categories}', [\App\Http\Controllers\CategoryController::class, 'destroy'])->name('categories.destroy');
+    });
+    Route::prefix('/units')->group(function () {
+        Route::get('/', [\App\Http\Controllers\UnitController::class, 'index'])->name('units.index');
+        Route::post('/', [\App\Http\Controllers\UnitController::class, 'store'])->name('units.store');
+        Route::get('/{units}', [\App\Http\Controllers\UnitController::class, 'edit'])->name('units.edit');  //with GET
+        Route::put('/{units}', [\App\Http\Controllers\UnitController::class, 'update'])->name('units.update');  //with GET
+        Route::delete('/{units}', [\App\Http\Controllers\UnitController::class, 'destroy'])->name('units.destroy');
+    });
+    Route::prefix('/suppliers')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SupplierController::class, 'index'])->name('suppliers.index');
+        Route::post('/', [\App\Http\Controllers\SupplierController::class, 'store'])->name('suppliers.store');
+        Route::get('/{suppliers}', [\App\Http\Controllers\SupplierController::class, 'edit'])->name('suppliers.edit');  //with GET
+        Route::put('/{suppliers}', [\App\Http\Controllers\SupplierController::class, 'update'])->name('suppliers.update');  //with GET
+        Route::delete('/{suppliers}', [\App\Http\Controllers\SupplierController::class, 'destroy'])->name('suppliers.destroy');
     });
 });

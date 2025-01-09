@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
-import SearchableSelect from "../../components/SearchableSelect.vue";
 import { useForm } from "@inertiajs/vue3";
 import Swal from "sweetalert2";
 import { router } from "@inertiajs/vue3";
@@ -63,18 +62,18 @@ const data = props.data.data;
 
 const showCreate = ref(false);
 
-const canViewCategories = computed(() => props.permissions.categories_view);
-const canCreateCategories = computed(() => props.permissions.categories_create);
-const canEditCategories = computed(() => props.permissions.categories_edit);
-const canDeleteCategories = computed(() => props.permissions.categories_delete);
+const canViewUnits = computed(() => props.permissions.units_view);
+const canCreateUnits = computed(() => props.permissions.units_create);
+const canEditUnits = computed(() => props.permissions.units_edit);
+const canDeleteUnits = computed(() => props.permissions.units_delete);
 
 const showDialogCreate = () => {
-    if (canCreateCategories.value) {
+    if (canCreateUnits.value) {
         showCreate.value = true;
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to create categories.",
+            text: "You don't have permission to create units.",
             icon: "error",
         });
     }
@@ -82,24 +81,24 @@ const showDialogCreate = () => {
 
 const columns = [
     {
-        accessorKey: "kode_kategori",
-        header: () => h("div", { class: "text-left" }, "Kode Kategori"),
+        accessorKey: "kode_satuan",
+        header: () => h("div", { class: "text-left ml-4" }, "Kode Satuan"),
         cell: ({ row }) => {
             return h(
                 "div",
-                { class: "text-left font-medium" },
-                row.getValue("kode_kategori"),
+                { class: "text-left font-medium ml-4" },
+                row.getValue("kode_satuan"),
             );
         },
     },
     {
-        accessorKey: "nama_kategori",
-        header: () => h("div", { class: "text-left" }, "Nama Kategori"),
+        accessorKey: "nama_satuan",
+        header: () => h("div", { class: "text-left" }, "Nama Satuan"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("nama_kategori"),
+                row.getValue("nama_satuan"),
             );
         },
     },
@@ -131,7 +130,7 @@ const columns = [
 
             return h(
                 "div",
-                { class: "relative text-right" },
+                { class: "relative text-right mr-4" },
                 h(DropdownAction, {
                     product,
                     permissions: props.permissions,
@@ -172,7 +171,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/categories",
+            "/units",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -222,18 +221,18 @@ const errors = ref({});
 
 const form = useForm({
     id: null,
-    nama_kategori: "",
+    nama_satuan: "",
 });
 
 const resetForm = () => {
     form.reset();
     form.clearErrors();
     form.id = null;
-    form.nama_kategori = "";
+    form.nama_satuan = "";
 };
 
 const submit = () => {
-    const url = form.id ? `/categories/${form.id}` : "/categories";
+    const url = form.id ? `/units/${form.id}` : "/units";
     const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
@@ -261,10 +260,10 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-    if (canEditCategories.value) {
+    if (canEditUnits.value) {
         showCreate.value = true;
         try {
-            const res = await fetch(`/categories/${id}`, {
+            const res = await fetch(`/units/${id}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -276,21 +275,21 @@ const onEdit = async (id) => {
             const data = await res.json();
             // Set to form
             form.id = data.data.id;
-            form.nama_kategori = data.data.nama_kategori;
+            form.nama_satuan = data.data.nama_satuan;
         } catch (error) {
             console.error(error);
         }
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to edit categories.",
+            text: "You don't have permission to edit units.",
             icon: "error",
         });
     }
 };
 
 const onDelete = (id) => {
-    if (canDeleteCategories.value) {
+    if (canDeleteUnits.value) {
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -302,7 +301,7 @@ const onDelete = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.delete(`/categories/${id}`, {
+                form.delete(`/units/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
@@ -328,7 +327,7 @@ const onDelete = (id) => {
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to delete categories.",
+            text: "You don't have permission to delete units.",
             icon: "error",
         });
     }
@@ -345,22 +344,22 @@ const formatPrice = (price) => {
 <template>
     <Layout>
         <div class="flex items-center">
-            <h1 class="text-lg font-semibold md:text-2xl">Categories</h1>
+            <h1 class="text-lg font-semibold md:text-2xl">Units</h1>
         </div>
-        <div v-if="canViewCategories" class="w-full">
+        <div v-if="canViewUnits" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
-                        table.getColumn('nama_kategori')?.getFilterValue()
+                        table.getColumn('nama_satuan')?.getFilterValue()
                     "
                     class="max-w-sm"
-                    placeholder="Filter kategori..."
+                    placeholder="Filter satuan..."
                     @update:model-value="
-                        table.getColumn('nama_kategori')?.setFilterValue($event)
+                        table.getColumn('nama_satuan')?.setFilterValue($event)
                     "
                 />
                 <Button
-                    v-if="canCreateCategories"
+                    v-if="canCreateUnits"
                     class="ml-4"
                     variant="outline"
                     @click="showDialogCreate"
@@ -501,10 +500,10 @@ const formatPrice = (price) => {
             </div>
         </div>
         <div v-else class="text-center py-4">
-            You don't have permission to view categories.
+            You don't have permission to view units.
         </div>
         <Dialog
-            v-if="canCreateCategories || canEditCategories"
+            v-if="canCreateUnits || canEditUnits"
             v-model:open="showCreate"
             @update:open="
                 (val) => {
@@ -518,25 +517,25 @@ const formatPrice = (price) => {
                     <DialogHeader>
                         <DialogTitle
                             >{{ form.id ? "Edit" : "Create" }} Data Master
-                            Kategori</DialogTitle
+                            Satuan</DialogTitle
                         >
                         <DialogDescription>
-                            Data master kategori
+                            Data master satuan
                         </DialogDescription>
                     </DialogHeader>
                     <div>
                         <div>
-                            <Label for="kode_barcode"> Nama Kategori </Label>
+                            <Label for="kode_barcode"> Nama Satuan </Label>
                             <Input
-                                id="nama_kategori"
-                                v-model="form.nama_kategori"
+                                id="nama_satuan"
+                                v-model="form.nama_satuan"
                                 class="mt-2"
                                 required
                             />
                             <span
-                                v-if="errors?.nama_kategori"
+                                v-if="errors?.nama_satuan"
                                 class="text-sm text-red-500 mt-2"
-                                >{{ errors.nama_kategori }}</span
+                                >{{ errors.nama_satuan }}</span
                             >
                         </div>
                     </div>

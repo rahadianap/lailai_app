@@ -17,6 +17,9 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
+            'flash' => [
+                'error' => fn() => $request->session()->get('error')
+            ],
             'user' => [
                 'name' => auth()->user()->name ?? '',
                 'role' => auth()->user()->role ?? '',
@@ -68,6 +71,14 @@ class HandleInertiaRequests extends Middleware
             'categories_create' => $value,
             'categories_edit' => $value,
             'categories_delete' => $value,
+            'units_view' => $value,
+            'units_create' => $value,
+            'units_edit' => $value,
+            'units_delete' => $value,
+            'suppliers_view' => $value,
+            'suppliers_create' => $value,
+            'suppliers_edit' => $value,
+            'suppliers_delete' => $value,
         ];
     }
 
@@ -81,6 +92,8 @@ class HandleInertiaRequests extends Middleware
         $permissions['vouchers_delete'] = false;
         $permissions['members_delete'] = false;
         $permissions['categories_delete'] = false;
+        $permissions['units_delete'] = false;
+        $permissions['suppliers_delete'] = false;
         return $permissions;
     }
 

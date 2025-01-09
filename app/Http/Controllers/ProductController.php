@@ -262,25 +262,4 @@ class ProductController extends Controller
             return 'PRD-' . Str::uuid()->toString();
         }
     }
-
-    private function validateProductData(Request $request)
-    {
-        return $request->validate([
-            'kode_barcode' => 'required|string|max:255|unique:mst_barang,kode_barcode,' . ($request->id ?? 'NULL') . ',id',
-            'nama_barang' => 'required|string|max:255',
-            'nama_satuan' => 'required|exists:mst_satuan_barang,nama_satuan',
-            'nama_kategori' => 'required|exists:mst_kategori_barang,nama_kategori',
-            'isi_barang' => 'required|numeric|min:0',
-            'is_taxable' => 'required|boolean',
-            'details.saldo_awal' => 'required|numeric|min:0',
-            'details.harga_jual_karton' => 'required|numeric|min:0',
-            'details.harga_jual_eceran' => 'required|numeric|min:0',
-            'details.harga_beli_karton' => 'required|numeric|min:0',
-            'details.harga_beli_eceran' => 'required|numeric|min:0',
-            'details.hpp_avg_karton' => 'required|numeric|min:0',
-            'details.hpp_avg_eceran' => 'required|numeric|min:0',
-            'details.current_stock' => 'required|numeric|min:0',
-            'details.nilai_akhir' => 'required|numeric|min:0',
-        ]);
-    }
 }

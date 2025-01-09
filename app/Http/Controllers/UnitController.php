@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -12,29 +12,28 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
-class CategoryController extends Controller
+class UnitController extends Controller
 {
     use AuthorizesRequests;
-
     public function index(Request $request): Response
     {
-        $this->authorize('view', Category::class);
+        $this->authorize('view', Unit::class);
 
         $perPage = $request->input('per_page', 10);
 
-        $data = Category::paginate(perPage: $perPage);
+        $data = Unit::paginate(perPage: $perPage);
 
-        return Inertia::render('Categories/Index', [
+        return Inertia::render('Units/Index', [
             'data' => $data,
         ]);
     }
 
     public function store(Request $request)
     {
-        $this->authorize('create', Category::class);
+        $this->authorize('create', Unit::class);
 
         $validator = Validator::make($request->all(), [
-            'nama_kategori' => 'required|unique:mst_kategori_barang,nama_kategori',
+            'nama_satuan' => 'required|unique:mst_satuan_barang,nama_satuan',
         ]);
 
         if ($validator->fails()) {
@@ -44,15 +43,15 @@ class CategoryController extends Controller
         DB::beginTransaction();
 
         try {
-            Category::create([
-                'kode_kategori' => $this->getKodeKategori(),
-                'nama_kategori' => $request->nama_kategori,
+            Unit::create([
+                'kode_satuan' => $this->getKodeSatuan(),
+                'nama_satuan' => $request->nama_satuan,
                 'created_by' => auth()->user()->name,
             ]);
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Category Create Successfully.');
+            return redirect()->back()->with('success', 'Unit Create Successfully.');
         } catch (ValidationException $e) {
             DB::rollBack();
             // return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 422);
@@ -60,23 +59,23 @@ class CategoryController extends Controller
                 ->toResponse($request);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'An error occurred while creating the category', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'An error occurred while creating the unit', 'error' => $e->getMessage()], 500);
         }
     }
 
     public function edit($id)
     {
-        $category = Category::findOrFail($id);
+        $unit = Unit::findOrFail($id);
 
-        return response()->json(['data' => $category]);
+        return response()->json(['data' => $unit]);
     }
 
     public function update(Request $request, $id)
     {
-        $this->authorize('update', Category::class);
+        $this->authorize('update', Unit::class);
 
         $validator = Validator::make($request->all(), [
-            'nama_kategori' => 'required|unique:mst_kategori_barang,nama_kategori',
+            'nama_satuan' => 'required|unique:mst_satuan_barang,nama_satuan',
         ]);
 
         if ($validator->fails()) {
@@ -88,20 +87,20 @@ class CategoryController extends Controller
         DB::beginTransaction();
 
         try {
-            $category = Category::findOrFail($id);
-            $category->update([
-                'nama_kategori' => $request->nama_kategori,
+            $unit = Unit::findOrFail($id);
+            $unit->update([
+                'nama_satuan' => $request->nama_satuan,
                 'updated_by' => auth()->user()->name,
             ]);
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Category Update Successfully.');
+            return redirect()->back()->with('success', 'Unit Update Successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([
-                'message' => 'An error occurred while updating the category',
+                'message' => 'An error occurred while updating the unit',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -109,50 +108,50 @@ class CategoryController extends Controller
 
     public function destroy($id)
     {
-        $this->authorize('delete', Category::class);
+        $this->authorize('delete', Unit::class);
 
         DB::beginTransaction();
 
         try {
-            $category = Category::findOrFail($id);
-            $category->update([
+            $unit = Unit::findOrFail($id);
+            $unit->update([
                 'is_aktif' => 0,
                 'deleted_by' => auth()->user()->name,
             ]);
-            $category->delete();
+            $unit->delete();
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Category Delete Successfully.');
+            return redirect()->back()->with('success', 'Unit Delete Successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['message' => 'An error occurred while deleting the category', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'An error occurred while deleting the unit', 'error' => $e->getMessage()], 500);
         }
     }
 
-    public function getKodeKategori()
+    public function getKodeSatuan()
     {
         try {
-            $id = 'CAT-001';
-            $maxId = Category::withTrashed()->where('kode_kategori', 'LIKE', 'CAT-%')->max('kode_kategori');
+            $id = 'UQC-001';
+            $maxId = Unit::withTrashed()->where('kode_satuan', 'LIKE', 'UQC-%')->max('kode_satuan');
             if (!$maxId) {
-                $id = 'CAT-001';
+                $id = 'UQC-001';
             } else {
-                $maxId = str_replace('CAT-', '', $maxId);
+                $maxId = str_replace('UQC-', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'CAT-00' . $count;
+                    $id = 'UQC-00' . $count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'CAT-0' . $count;
+                    $id = 'UQC-0' . $count;
                 } else {
-                    $id = 'CAT-' . $count;
+                    $id = 'UQC-' . $count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'CAT-' . Str::uuid()->toString();
+            return 'UQC-' . Str::uuid()->toString();
         }
     }
 }
