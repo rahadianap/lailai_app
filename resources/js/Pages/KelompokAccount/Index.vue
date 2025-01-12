@@ -181,7 +181,7 @@ const columns = [
 
             return h(
                 "div",
-                { class: "relative text-right" },
+                { class: "relative text-right mr-4" },
                 h(DropdownAction, {
                     group,
                     permissions: props.permissions,

@@ -110,6 +110,30 @@ class KelompokAccountController extends Controller
         }
     }
 
+    public function destroy($id)
+    {
+        $this->authorize('delete', KelompokAccount::class);
+
+        DB::beginTransaction();
+
+        try {
+            $unit = KelompokAccount::findOrFail($id);
+            $unit->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $unit->delete();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'KelompokAccount Delete Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while deleting the unit', 'error' => $e->getMessage()], 500);
+        }
+    }
+
     public function getKodeKelompokAccount()
     {
         try {
