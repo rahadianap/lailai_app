@@ -79,4 +79,11 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{suppliers}', [\App\Http\Controllers\SupplierController::class, 'update'])->name('suppliers.update');  //with GET
         Route::delete('/{suppliers}', [\App\Http\Controllers\SupplierController::class, 'destroy'])->name('suppliers.destroy');
     });
+    Route::prefix('/account-group')->group(function () {
+        Route::get('/', [\App\Http\Controllers\KelompokAccountController::class, 'index'])->name('account-group.index');
+        Route::post('/', [\App\Http\Controllers\KelompokAccountController::class, 'store'])->name('account-group.store');
+        Route::get('/{account-group}', [\App\Http\Controllers\KelompokAccountController::class, 'edit'])->name('account-group.edit');  //with GET
+        Route::put('/{account-group}', [\App\Http\Controllers\KelompokAccountController::class, 'update'])->name('account-group.update');  //with GET
+        Route::delete('/{account-group}', [\App\Http\Controllers\KelompokAccountController::class, 'destroy'])->name('account-group.destroy');
+    });
 });

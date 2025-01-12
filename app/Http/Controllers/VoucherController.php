@@ -9,11 +9,15 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class VoucherController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request): Response
     {
+        $this->authorize('view', Voucher::class);
+
         $perPage = $request->input('per_page', 10);
 
         $data = Voucher::paginate(perPage: $perPage);

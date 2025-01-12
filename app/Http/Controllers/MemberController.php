@@ -10,11 +10,15 @@ use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class MemberController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request): Response
     {
+        $this->authorize('view', Member::class);
+
         $perPage = $request->input('per_page', 10);
 
         $data = Member::paginate(perPage: $perPage);

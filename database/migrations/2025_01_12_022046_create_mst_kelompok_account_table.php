@@ -10,13 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('mst_voucher', function (Blueprint $table) {
+        Schema::create('mst_kelompok_account', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_voucher');
-            $table->integer('nominal');
-            $table->date('exp_date');
-            $table->string('status');
-            $table->string('keterangan');
+            $table->string('kode_kelompok_account', 3);
+            $table->string('kelompok', 50);
+            $table->string('nama_kelompok_account');
+            $table->string('jenis_kelompok_account', 10);
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();
@@ -31,6 +30,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('mst_voucher');
+        Schema::dropIfExists('mst_kelompok_account');
     }
 };

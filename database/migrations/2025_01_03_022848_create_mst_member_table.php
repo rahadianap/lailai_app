@@ -21,7 +21,7 @@ return new class extends Migration {
             $table->integer('point');
             $table->date('tgl_daftar');
             $table->dateTime('exp_date');
-            $table->string('is_aktif');
+            $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();
             $table->string('deleted_by')->nullable();

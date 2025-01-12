@@ -30,6 +30,7 @@ import {
     ChevronRight,
     Ruler,
     Handshake,
+    Badge,
 } from "lucide-vue-next";
 import { Link, usePage, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
@@ -54,6 +55,12 @@ const navigationGroups = [
     {
         title: "Master Data",
         items: [
+            {
+                name: "Account Group",
+                href: "/account-group",
+                icon: Badge,
+                permission: "kelompok_account_view",
+            },
             {
                 name: "Categories",
                 href: "/categories",
@@ -122,7 +129,7 @@ const navigationGroups = [
                 name: "Users",
                 href: "/users",
                 icon: Scroll,
-                permissions: null,
+                permission: "users_view",
             },
         ],
     },

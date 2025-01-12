@@ -79,6 +79,14 @@ class HandleInertiaRequests extends Middleware
             'suppliers_create' => $value,
             'suppliers_edit' => $value,
             'suppliers_delete' => $value,
+            'kelompok_account_view' => $value,
+            'kelompok_account_create' => $value,
+            'kelompok_account_edit' => $value,
+            'kelompok_account_delete' => $value,
+            'users_view' => $value,
+            'users_create' => $value,
+            'users_edit' => $value,
+            'users_delete' => $value,
         ];
     }
 
@@ -94,6 +102,8 @@ class HandleInertiaRequests extends Middleware
         $permissions['categories_delete'] = false;
         $permissions['units_delete'] = false;
         $permissions['suppliers_delete'] = false;
+        $permissions['kelompok_account_delete'] = false;
+        $permissions['users_delete'] = false;
         return $permissions;
     }
 

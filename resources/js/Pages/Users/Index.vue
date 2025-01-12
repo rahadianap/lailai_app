@@ -59,6 +59,16 @@ const isPermissionEnabled = computed(() => (permission) => {
             "purchasing_edit",
             "vouchers_edit",
             "members_edit",
+            "categories_edit",
+            "categories_delete",
+            "units_edit",
+            "units_delete",
+            "suppliers_edit",
+            "suppliers_delete",
+            "kelompok_account_edit",
+            "kelompok_account_delete",
+            "users_edit",
+            "users_delete",
         ].includes(permission);
     }
     if (form.role === "kasir") {
