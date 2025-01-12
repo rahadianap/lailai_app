@@ -177,16 +177,16 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const data = row.original;
+            const group = row.original;
 
             return h(
                 "div",
                 { class: "relative text-right" },
                 h(DropdownAction, {
-                    data,
+                    group,
                     permissions: props.permissions,
-                    onEdit: () => onEdit(data.id),
-                    onDelete: () => onDelete(data.id),
+                    onEdit: () => onEdit(group.id),
+                    onDelete: () => onDelete(group.id),
                 }),
             );
         },
@@ -271,6 +271,7 @@ const form = useForm({
     kode_kelompok_account: "",
     kelompok: "",
     nama_kelompok_account: "",
+    jenis_kelompok_account: "",
 });
 
 const resetForm = () => {
@@ -280,35 +281,35 @@ const resetForm = () => {
     form.kode_kelompok_account = "";
     form.kelompok = "";
     form.nama_kelompok_account = "";
+    form.jenis_kelompok_account = "";
 };
 
 const submit = () => {
-    console.log(form);
-    // const url = form.id ? `/account-group/${form.id}` : "/account-group";
-    // const method = form.id ? "put" : "post";
-    // form[method](url, {
-    //     preserveState: true,
-    //     onError: (error) => {
-    //         errors.value = error;
-    //         Swal.fire({
-    //             title: "Oops!",
-    //             text: "Something went wrong",
-    //             icon: "error",
-    //         });
-    //     },
-    //     onSuccess: () => {
-    //         showCreate.value = false;
-    //         Swal.fire({
-    //             title: "Yeay!",
-    //             text: "Your work has been saved",
-    //             icon: "success",
-    //             showConfirmButton: false,
-    //         });
-    //         setTimeout(() => {
-    //             window.location.reload();
-    //         }, 3000);
-    //     },
-    // });
+    const url = form.id ? `/account-group/${form.id}` : "/account-group";
+    const method = form.id ? "put" : "post";
+    form[method](url, {
+        preserveState: true,
+        onError: (error) => {
+            errors.value = error;
+            Swal.fire({
+                title: "Oops!",
+                text: "Something went wrong",
+                icon: "error",
+            });
+        },
+        onSuccess: () => {
+            showCreate.value = false;
+            Swal.fire({
+                title: "Yeay!",
+                text: "Your work has been saved",
+                icon: "success",
+                showConfirmButton: false,
+            });
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        },
+    });
 };
 
 const onEdit = async (id) => {
@@ -322,7 +323,7 @@ const onEdit = async (id) => {
                 },
             });
             if (!res.ok) {
-                console.error("Error ");
+                console.error(res);
             }
             const data = await res.json();
             // Set to form
@@ -330,6 +331,7 @@ const onEdit = async (id) => {
             form.kode_kelompok_account = data.data.kode_kelompok_account;
             form.kelompok = data.data.kelompok;
             form.nama_kelompok_account = data.data.nama_kelompok_account;
+            form.jenis_kelompok_account = data.data.jenis_kelompok_account;
         } catch (error) {
             console.error(error);
         }

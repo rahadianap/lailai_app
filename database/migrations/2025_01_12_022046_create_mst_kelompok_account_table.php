@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('mst_kelompok_account', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_kelompok_account', 3);
+            $table->string('kode_kelompok_account', 10);
             $table->string('kelompok', 50);
             $table->string('nama_kelompok_account');
             $table->string('jenis_kelompok_account', 10);

@@ -10,7 +10,7 @@ import {
 import { MoreHorizontal } from "lucide-vue-next";
 
 const props = defineProps({
-    product: Object,
+    group: Object,
     permissions: Object,
 });
 
