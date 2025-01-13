@@ -31,6 +31,7 @@ import {
     Ruler,
     Handshake,
     Badge,
+    FileChartLine,
 } from "lucide-vue-next";
 import { Link, usePage, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
@@ -57,9 +58,15 @@ const navigationGroups = [
         items: [
             {
                 name: "Account Group",
-                href: "/account-group",
+                href: "/account-groups",
                 icon: Badge,
                 permission: "kelompok_account_view",
+            },
+            {
+                name: "COA",
+                href: "/accounts",
+                icon: FileChartLine,
+                permission: "account_view",
             },
             {
                 name: "Categories",

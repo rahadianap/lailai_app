@@ -2,6 +2,7 @@
 import Layout from "../../Layout/App.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Table,
     TableBody,
@@ -50,6 +51,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import SearchableSelect from "../../components/SearchableSelect.vue";
 
 const props = defineProps({
     data: Array,
@@ -58,37 +60,29 @@ const props = defineProps({
 
 const data = props.data.data;
 
-const canViewKelompokAccount = computed(
-    () => props.permissions.kelompok_account_view,
-);
-const canCreateKelompokAccount = computed(
-    () => props.permissions.kelompok_account_create,
-);
-const canEditKelompokAccount = computed(
-    () => props.permissions.kelompok_account_edit,
-);
-const canDeleteKelompokAccount = computed(
-    () => props.permissions.kelompok_account_delete,
-);
+const canViewAccount = computed(() => props.permissions.account_view);
+const canCreateAccount = computed(() => props.permissions.account_create);
+const canEditAccount = computed(() => props.permissions.account_edit);
+const canDeleteAccount = computed(() => props.permissions.account_delete);
 
-const selectedGroup = ref(null);
+const selectedTipe = ref(null);
 
-const selectedJenis = ref(null);
+const selectedLevel = ref(null);
 
-const onGroupSelect = (group) => {
-    selectedGroup.value = group;
-    console.log(group);
+const onLevelSelect = (level) => {
+    selectedLevel.value = level;
+    console.log(level);
 };
 
-const onJenisSelect = (jenis) => {
-    selectedJenis.value = jenis;
-    console.log(jenis);
+const onTipeSelect = (level) => {
+    selectedTipe.value = level;
+    console.log(level);
 };
 
 const showCreate = ref(false);
 
 const showDialogCreate = () => {
-    if (canCreateKelompokAccount.value) {
+    if (canCreateAccount.value) {
         showCreate.value = true;
     } else {
         Swal.fire({
@@ -101,30 +95,30 @@ const showDialogCreate = () => {
 
 const columns = [
     {
-        accessorKey: "kode_kelompok_account",
-        header: () => h("div", { class: "text-left" }, "Kode Group"),
+        accessorKey: "nomor_account",
+        header: () => h("div", { class: "text-left" }, "Nomor Account"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kode_kelompok_account"),
+                row.getValue("nomor_account"),
             );
         },
     },
     {
-        accessorKey: "kelompok",
-        header: () => h("div", { class: "text-left" }, "Group"),
+        accessorKey: "nama_account",
+        header: () => h("div", { class: "text-left" }, "Nama Account"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kelompok"),
+                row.getValue("nama_account"),
             );
         },
     },
     {
         accessorKey: "nama_kelompok_account",
-        header: () => h("div", { class: "text-left" }, "Nama Group"),
+        header: () => h("div", { class: "text-left" }, "Group"),
         cell: ({ row }) => {
             return h(
                 "div",
@@ -134,21 +128,21 @@ const columns = [
         },
     },
     {
-        accessorKey: "jenis_kelompok_account",
-        header: () => h("div", { class: "text-center" }, "Jenis Group"),
+        accessorKey: "tipe_account",
+        header: () => h("div", { class: "text-center" }, "Tipe Account"),
         cell: ({ row }) => {
-            const jenis = row.getValue("jenis_kelompok_account");
-            if (jenis == 1) {
+            const jenis = row.getValue("tipe_account");
+            if (jenis === "INDUK") {
                 return h(
                     "div",
                     { class: "text-center font-medium" },
-                    h(Badge, "Debit"),
+                    h(Badge, "INDUK"),
                 );
             } else {
                 return h(
                     "div",
                     { class: "text-center font-medium" },
-                    h(Badge, { variant: "outline" }, "Kredit"),
+                    h(Badge, { variant: "outline" }, "ANAK"),
                 );
             }
         },
@@ -221,7 +215,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/account-groups",
+            "/accounts",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -268,24 +262,28 @@ const errors = ref({});
 
 const form = useForm({
     id: null,
-    kode_kelompok_account: "",
-    kelompok: "",
+    nomor_account: "",
+    nama_account: "",
     nama_kelompok_account: "",
-    jenis_kelompok_account: "",
+    level: "",
+    kas_bank: false,
+    tipe_account: "",
 });
 
 const resetForm = () => {
     form.reset();
     form.clearErrors();
     form.id = null;
-    form.kode_kelompok_account = "";
-    form.kelompok = "";
+    form.nomor_account = "";
+    form.nama_account = "";
     form.nama_kelompok_account = "";
-    form.jenis_kelompok_account = "";
+    form.level = "";
+    form.kas_bank = false;
+    form.tipe_account = "";
 };
 
 const submit = () => {
-    const url = form.id ? `/account-groups/${form.id}` : "/account-groups";
+    const url = form.id ? `/accounts/${form.id}` : "/accounts";
     const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
@@ -313,10 +311,10 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-    if (canEditKelompokAccount.value) {
+    if (canEditAccount.value) {
         showCreate.value = true;
         try {
-            const res = await fetch(`/account-groups/${id}`, {
+            const res = await fetch(`/accounts/${id}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -328,10 +326,12 @@ const onEdit = async (id) => {
             const data = await res.json();
             // Set to form
             form.id = data.data.id;
-            form.kode_kelompok_account = data.data.kode_kelompok_account;
-            form.kelompok = data.data.kelompok;
+            form.nomor_account = data.data.nomor_account;
+            form.nama_account = data.data.nama_account;
             form.nama_kelompok_account = data.data.nama_kelompok_account;
-            form.jenis_kelompok_account = data.data.jenis_kelompok_account;
+            form.level = data.data.level;
+            form.kas_bank = data.data.kas_bank === "1" ? true : false;
+            form.tipe_account = data.data.tipe_account;
         } catch (error) {
             console.error(error);
         }
@@ -345,7 +345,7 @@ const onEdit = async (id) => {
 };
 
 const onDelete = (id) => {
-    if (canDeleteKelompokAccount.value) {
+    if (canDeleteAccount.value) {
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -357,7 +357,7 @@ const onDelete = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.delete(`/account-groups/${id}`, {
+                form.delete(`/accounts/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
@@ -393,22 +393,18 @@ const onDelete = (id) => {
 <template>
     <Layout>
         <div class="flex items-center">
-            <h1 class="text-lg font-semibold md:text-2xl">Account Group</h1>
+            <h1 class="text-lg font-semibold md:text-2xl">Chart of Account</h1>
         </div>
-        <div v-if="canViewKelompokAccount" class="w-full">
+        <div v-if="canViewAccount" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
-                        table
-                            .getColumn('kode_kelompok_account')
-                            ?.getFilterValue()
+                        table.getColumn('nomor_account')?.getFilterValue()
                     "
                     class="max-w-sm"
-                    placeholder="Filter kode kelompok..."
+                    placeholder="Filter nomor account..."
                     @update:model-value="
-                        table
-                            .getColumn('kode_kelompok_account')
-                            ?.setFilterValue($event)
+                        table.getColumn('nomor_account')?.setFilterValue($event)
                     "
                 />
                 <Button class="ml-4" variant="outline" @click="showDialogCreate"
@@ -562,65 +558,55 @@ const onDelete = (id) => {
                     <DialogHeader>
                         <DialogTitle
                             >{{ form.id ? "Edit" : "Create" }} Data Master
-                            Account Group</DialogTitle
+                            CoA</DialogTitle
                         >
-                        <DialogDescription>
-                            Data master account group
-                        </DialogDescription>
+                        <DialogDescription> Data master CoA </DialogDescription>
                     </DialogHeader>
                     <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <Label for="kelompok"> Group </Label>
-                            <Select
-                                id="kelompok"
-                                v-model="form.kelompok"
+                            <Label for="nomor_account"> Nomor Account </Label>
+                            <Input
+                                id="nomor_account"
+                                v-model="form.nomor_account"
                                 type="text"
                                 required
-                                @select="onGroupSelect"
-                            >
-                                <SelectTrigger
-                                    class="border rounded-md border-gray-900 required:border-blue-500"
-                                >
-                                    <SelectValue placeholder="Select a group" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="AKTIVA">
-                                            AKTIVA
-                                        </SelectItem>
-                                        <SelectItem value="PASSIVA">
-                                            PASSIVA
-                                        </SelectItem>
-                                        <SelectItem value="MODAL">
-                                            MODAL
-                                        </SelectItem>
-                                        <SelectItem value="PENDAPATAN">
-                                            PENDAPATAN
-                                        </SelectItem>
-                                        <SelectItem value="RETUR">
-                                            RETUR
-                                        </SelectItem>
-                                        <SelectItem value="BIAYA">
-                                            BIAYA
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
+                            />
                             <span
-                                v-if="errors?.kelompok"
+                                v-if="errors?.nomor_account"
                                 class="text-sm text-red-500"
-                                >{{ errors.kelompok }}</span
+                                >{{ errors.nomor_account }}</span
                             >
                         </div>
                         <div>
-                            <Label for="nama_kelompok_account">
-                                Nama Group
-                            </Label>
+                            <Label for="nama_account"> Nama Account </Label>
                             <Input
-                                id="nama_kelompok_account"
-                                v-model="form.nama_kelompok_account"
+                                id="nama_account"
+                                v-model="form.nama_account"
                                 type="text"
                                 required
+                            />
+                            <span
+                                v-if="errors?.nama_account"
+                                class="text-sm text-red-500"
+                                >{{ errors.nama_account }}</span
+                            >
+                        </div>
+                        <div>
+                            <Label for="nama_kelompok_account"> Satuan </Label>
+                            <SearchableSelect
+                                required
+                                v-model="form.nama_kelompok_account"
+                                placeholder="Search groups..."
+                                api-endpoint="http://127.0.0.1:8000/api/coa/groups"
+                                value-field="nama_kelompok_account"
+                                display-field="nama_kelompok_account"
+                                search-param="search"
+                                :per-page="10"
+                                :debounce-time="300"
+                                loading-text="Loading groups..."
+                                no-results-text="No groups found"
+                                load-more-text="Load more groups"
+                                @select="onUnitSelect"
                             />
                             <span
                                 v-if="errors?.nama_kelompok_account"
@@ -629,15 +615,44 @@ const onDelete = (id) => {
                             >
                         </div>
                         <div>
-                            <Label for="jenis_kelompok_account">
-                                Jenis Group
-                            </Label>
+                            <Label for="level"> Level </Label>
                             <Select
-                                id="jenis_kelompok_account"
-                                v-model="form.jenis_kelompok_account"
+                                id="level"
+                                v-model="form.level"
                                 type="text"
                                 required
-                                @select="onJenisSelect"
+                                @select="onLevelSelect"
+                            >
+                                <SelectTrigger
+                                    class="border rounded-md border-gray-900 required:border-blue-500"
+                                >
+                                    <SelectValue
+                                        placeholder="Select account level"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem value="1"> 1 </SelectItem>
+                                        <SelectItem value="2"> 2 </SelectItem>
+                                        <SelectItem value="3"> 3 </SelectItem>
+                                        <SelectItem value="4"> 4 </SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                            <span
+                                v-if="errors?.level"
+                                class="text-sm text-red-500"
+                                >{{ errors.level }}</span
+                            >
+                        </div>
+                        <div>
+                            <Label for="tipe_account"> Tipe Account </Label>
+                            <Select
+                                id="tipe_account"
+                                v-model="form.tipe_account"
+                                type="text"
+                                required
+                                @select="onTipeSelect"
                             >
                                 <SelectTrigger
                                     class="border rounded-md border-gray-900 required:border-blue-500"
@@ -646,21 +661,35 @@ const onDelete = (id) => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="1">
-                                            Debit
+                                        <SelectItem value="INDUK">
+                                            INDUK
                                         </SelectItem>
-                                        <SelectItem value="0">
-                                            Kredit
+                                        <SelectItem value="ANAK">
+                                            ANAK
                                         </SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
                             <span
-                                v-if="errors?.jenis_kelompok_account"
+                                v-if="errors?.tipe_account"
                                 class="text-sm text-red-500"
-                                >{{ errors.jenis_kelompok_account }}</span
+                                >{{ errors.tipe_account }}</span
                             >
                         </div>
+                    </div>
+                    <div class="flex items-center space-x-2 mt-4">
+                        <Checkbox v-model="form.kas_bank" />
+                        <label
+                            for="terms"
+                            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                            Kas Bank
+                        </label>
+                        <span
+                            v-if="errors?.kas_bank"
+                            class="text-sm text-red-500"
+                            >{{ errors.kas_bank }}</span
+                        >
                     </div>
                     <DialogFooter>
                         <Button @click="submit"> Save </Button>

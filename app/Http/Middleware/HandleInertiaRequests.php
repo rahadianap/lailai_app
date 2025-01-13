@@ -83,6 +83,10 @@ class HandleInertiaRequests extends Middleware
             'kelompok_account_create' => $value,
             'kelompok_account_edit' => $value,
             'kelompok_account_delete' => $value,
+            'account_view' => $value,
+            'account_create' => $value,
+            'account_edit' => $value,
+            'account_delete' => $value,
             'users_view' => $value,
             'users_create' => $value,
             'users_edit' => $value,
@@ -103,6 +107,7 @@ class HandleInertiaRequests extends Middleware
         $permissions['units_delete'] = false;
         $permissions['suppliers_delete'] = false;
         $permissions['kelompok_account_delete'] = false;
+        $permissions['account_delete'] = false;
         $permissions['users_delete'] = false;
         return $permissions;
     }

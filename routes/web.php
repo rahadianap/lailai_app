@@ -79,11 +79,18 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{suppliers}', [\App\Http\Controllers\SupplierController::class, 'update'])->name('suppliers.update');  //with GET
         Route::delete('/{suppliers}', [\App\Http\Controllers\SupplierController::class, 'destroy'])->name('suppliers.destroy');
     });
-    Route::prefix('/account-group')->group(function () {
-        Route::get('/', [\App\Http\Controllers\KelompokAccountController::class, 'index'])->name('account-group.index');
-        Route::post('/', [\App\Http\Controllers\KelompokAccountController::class, 'store'])->name('account-group.store');
-        Route::get('/{id}', [\App\Http\Controllers\KelompokAccountController::class, 'edit'])->name('account-group.edit');  //with GET
-        Route::put('/{id}', [\App\Http\Controllers\KelompokAccountController::class, 'update'])->name('account-group.update');  //with GET
-        Route::delete('/{id}', [\App\Http\Controllers\KelompokAccountController::class, 'destroy'])->name('account-group.destroy');
+    Route::prefix('/account-groups')->group(function () {
+        Route::get('/', [\App\Http\Controllers\KelompokAccountController::class, 'index'])->name('account-groups.index');
+        Route::post('/', [\App\Http\Controllers\KelompokAccountController::class, 'store'])->name('account-groups.store');
+        Route::get('/{id}', [\App\Http\Controllers\KelompokAccountController::class, 'edit'])->name('account-groups.edit');  //with GET
+        Route::put('/{id}', [\App\Http\Controllers\KelompokAccountController::class, 'update'])->name('account-groups.update');  //with GET
+        Route::delete('/{id}', [\App\Http\Controllers\KelompokAccountController::class, 'destroy'])->name('account-groups.destroy');
+    });
+    Route::prefix('/accounts')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AccountController::class, 'index'])->name('accounts.index');
+        Route::post('/', [\App\Http\Controllers\AccountController::class, 'store'])->name('accounts.store');
+        Route::get('/{id}', [\App\Http\Controllers\AccountController::class, 'edit'])->name('accounts.edit');  //with GET
+        Route::put('/{id}', [\App\Http\Controllers\AccountController::class, 'update'])->name('accounts.update');  //with GET
+        Route::delete('/{id}', [\App\Http\Controllers\AccountController::class, 'destroy'])->name('accounts.destroy');
     });
 });

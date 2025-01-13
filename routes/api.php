@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchasingController;
@@ -20,3 +21,4 @@ Route::get('/pos/products', [SalesController::class, 'search']);
 Route::get('/pos/products/barcode/{barcode}', [SalesController::class, 'getByBarcode']);
 Route::get('/pos/vouchers', [SalesController::class, 'getVouchers']);
 Route::get('/pos/members', [SalesController::class, 'getMembers']);
+Route::get('/coa/groups', [AccountController::class, 'getGroups']);
