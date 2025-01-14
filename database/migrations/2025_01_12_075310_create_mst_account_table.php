@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->string('level', 2);
             $table->boolean('kas_bank');
             $table->string('tipe_account', length: 10);
+            $table->decimal('saldo_awal', 18, 2);
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();

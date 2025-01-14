@@ -21,6 +21,7 @@ class Account extends Model
         'level',
         'kas_bank',
         'tipe_account',
+        'saldo_awal',
         'is_aktif',
         'created_by',
         'updated_by',

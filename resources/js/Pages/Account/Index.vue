@@ -69,14 +69,21 @@ const selectedTipe = ref(null);
 
 const selectedLevel = ref(null);
 
+const selectedGroup = ref(null);
+
 const onLevelSelect = (level) => {
     selectedLevel.value = level;
     console.log(level);
 };
 
-const onTipeSelect = (level) => {
-    selectedTipe.value = level;
-    console.log(level);
+const onTipeSelect = (tipe) => {
+    selectedTipe.value = tipe;
+    console.log(tipe);
+};
+
+const onGroupSelect = (group) => {
+    selectedGroup.value = group;
+    console.log(group);
 };
 
 const showCreate = ref(false);
@@ -268,6 +275,7 @@ const form = useForm({
     level: "",
     kas_bank: false,
     tipe_account: "",
+    saldo_awal: 0,
 });
 
 const resetForm = () => {
@@ -280,6 +288,7 @@ const resetForm = () => {
     form.level = "";
     form.kas_bank = false;
     form.tipe_account = "";
+    form.saldo_awal = 0;
 };
 
 const submit = () => {
@@ -332,6 +341,7 @@ const onEdit = async (id) => {
             form.level = data.data.level;
             form.kas_bank = data.data.kas_bank === "1" ? true : false;
             form.tipe_account = data.data.tipe_account;
+            form.saldo_awal = data.data.saldo_awal;
         } catch (error) {
             console.error(error);
         }
@@ -592,7 +602,7 @@ const onDelete = (id) => {
                             >
                         </div>
                         <div>
-                            <Label for="nama_kelompok_account"> Satuan </Label>
+                            <Label for="nama_kelompok_account"> Group </Label>
                             <SearchableSelect
                                 required
                                 v-model="form.nama_kelompok_account"
@@ -606,7 +616,7 @@ const onDelete = (id) => {
                                 loading-text="Loading groups..."
                                 no-results-text="No groups found"
                                 load-more-text="Load more groups"
-                                @select="onUnitSelect"
+                                @select="onGroupSelect"
                             />
                             <span
                                 v-if="errors?.nama_kelompok_account"
@@ -674,6 +684,21 @@ const onDelete = (id) => {
                                 v-if="errors?.tipe_account"
                                 class="text-sm text-red-500"
                                 >{{ errors.tipe_account }}</span
+                            >
+                        </div>
+                        <div>
+                            <Label for="saldo_awal"> Saldo Awal </Label>
+                            <Input
+                                id="saldo_awal"
+                                v-model="form.saldo_awal"
+                                type="number"
+                                min="0"
+                                required
+                            />
+                            <span
+                                v-if="errors?.saldo_awal"
+                                class="text-sm text-red-500"
+                                >{{ errors.saldo_awal }}</span
                             >
                         </div>
                     </div>

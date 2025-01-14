@@ -53,6 +53,7 @@ class AccountController extends Controller
                 'level' => $request->level,
                 'kas_bank' => $request->kas_bank,
                 'tipe_account' => $request->tipe_account,
+                'saldo_awal' => $request->saldo_awal,
                 'created_by' => auth()->user()->name,
             ]);
 
@@ -66,7 +67,81 @@ class AccountController extends Controller
                 ->toResponse($request);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'An error occurred while creating the category', 'error' => $e->getMessage()], 500);
+            return response()->json(['message' => 'An error occurred while creating the account', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function edit($id)
+    {
+        $account = Account::findOrFail($id);
+
+        return response()->json(['data' => $account]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $this->authorize('update', Account::class);
+
+        $validator = Validator::make($request->all(), [
+            'nomor_account' => 'required|unique:mst_account,nomor_account',
+            'nama_account' => 'required|unique:mst_account,nama_account',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $account = Account::findOrFail($id);
+            $account->update([
+                'nomor_account' => $request->nomor_account,
+                'nama_account' => $request->nama_account,
+                'nama_kelompok_account' => $request->nama_kelompok_account,
+                'level' => $request->level,
+                'kas_bank' => $request->kas_bank,
+                'tipe_account' => $request->tipe_account,
+                'saldo_awal' => $request->saldo_awal,
+                'updated_by' => auth()->user()->name,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Account Update Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'An error occurred while updating the account',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $this->authorize('delete', Account::class);
+
+        DB::beginTransaction();
+
+        try {
+            $account = Account::findOrFail($id);
+            $account->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $account->delete();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Account Delete Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while deleting the account', 'error' => $e->getMessage()], 500);
         }
     }
 
