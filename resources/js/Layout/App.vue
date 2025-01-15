@@ -32,6 +32,7 @@ import {
     Handshake,
     Badge,
     FileChartLine,
+    Repeat,
 } from "lucide-vue-next";
 import { Link, usePage, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
@@ -120,6 +121,12 @@ const navigationGroups = [
                 href: "/purchasing",
                 icon: ShoppingCart,
                 permission: "purchasing_view",
+            },
+            {
+                name: "Retur Beli",
+                href: "/retur-beli",
+                icon: Repeat,
+                permission: "retur_beli_view",
             },
             {
                 name: "POS",
