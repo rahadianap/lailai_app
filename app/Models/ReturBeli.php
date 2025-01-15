@@ -16,7 +16,7 @@ class ReturBeli extends Model
 
     protected $fillable = [
         'kode_retur_beli',
-        'purchasing_id',
+        'kode_pembelian',
         'nama_supplier',
         'keterangan',
         'status',

@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchasingController;
+use App\Http\Controllers\ReturBeliController;
 use App\Http\Controllers\SalesController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,3 +23,8 @@ Route::get('/pos/products/barcode/{barcode}', [SalesController::class, 'getByBar
 Route::get('/pos/vouchers', [SalesController::class, 'getVouchers']);
 Route::get('/pos/members', [SalesController::class, 'getMembers']);
 Route::get('/coa/groups', [AccountController::class, 'getGroups']);
+Route::get('/retur-beli/suppliers', [ReturBeliController::class, 'getSuppliers']);
+Route::get('/retur-beli/purchasing', [ReturBeliController::class, 'getPurchasing']);
+Route::get('/retur-beli/products', [ReturBeliController::class, 'getProducts']);
+Route::get('/retur-beli/products/{id}', [ReturBeliController::class, 'fetchDetails']);
+Route::get('/retur-beli/purchasing/{id}', [ReturBeliController::class, 'fetchPurchasingDetails']);

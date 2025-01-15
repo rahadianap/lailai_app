@@ -75,27 +75,23 @@ const onSupplierSelect = (supplier) => {
     selectedSupplier.value = supplier.nama_supplier;
 };
 
-const onPOSelect = async (po) => {
+const onPurchasingSelect = async (purchasing) => {
     try {
         const response = await fetch(
-            `http://127.0.0.1:8000/api/purchasing/po/${po.id}`,
+            `http://127.0.0.1:8000/api/retur-beli/purchasing/${purchasing.id}`,
         );
         if (!response.ok) {
-            throw new Error("Failed to fetch PO details");
+            throw new Error("Failed to fetch purchasing details");
         }
         const poDetails = await response.json();
-        console.log(poDetails);
 
         // Update form with PO details
         form.nama_supplier = poDetails[0].nama_supplier;
         form.keterangan = poDetails[0].keterangan;
         form.details = poDetails.map((detail) => ({
             ...detail,
-            jumlah:
-                detail.qty * detail.harga -
-                (detail.diskon + detail.diskon_global),
+            jumlah: detail.qty_beli * detail.harga,
         }));
-
         calculateTotals();
     } catch (error) {
         console.error("Error fetching PO details:", error);
@@ -111,7 +107,7 @@ const onProductSelect = async (product) => {
     selectedProduct.value = product;
     try {
         const response = await fetch(
-            `http://127.0.0.1:8000/api/purchasing/products/${product.kode_barcode}`,
+            `http://127.0.0.1:8000/api/retur-beli/products/${product.kode_barcode}`,
         );
         if (!response.ok) {
             throw new Error("Failed to fetch product details");
@@ -121,17 +117,8 @@ const onProductSelect = async (product) => {
         // Update the current detail with the fetched product information
         const currentDetail = form.details[form.details.length - 1];
         currentDetail.nama_barang = productDetails.nama_barang;
-        currentDetail.nama_satuan = productDetails.nama_satuan;
-        currentDetail.isi_barang = productDetails.isi_barang;
-        currentDetail.harga = productDetails.harga_beli_karton;
-
-        // Set default values for other fields
-        currentDetail.qty = 1;
-        currentDetail.diskon = 0;
-        currentDetail.diskon_global = 0;
-        currentDetail.jumlah = productDetails.harga_beli_karton;
-        currentDetail.is_taxable = productDetails.is_taxable;
-        currentDetail.exp_date = ""; // You might want to set a default date here
+        currentDetail.qty_beli = productDetails.qty;
+        currentDetail.nama_satuan_beli = productDetails.nama_satuan;
         calculateJumlah(currentDetail);
     } catch (error) {
         console.error("Error fetching product details:", error);
@@ -145,6 +132,17 @@ const onProductSelect = async (product) => {
 };
 
 const columns = [
+    {
+        accessorKey: "kode_retur_beli",
+        header: () => h("div", { class: "text-left" }, "Kode Retur Beli"),
+        cell: ({ row }) => {
+            return h(
+                "div",
+                { class: "text-left font-medium" },
+                row.getValue("kode_retur_beli"),
+            );
+        },
+    },
     {
         accessorKey: "kode_pembelian",
         header: () => h("div", { class: "text-left" }, "Kode Pembelian"),
@@ -168,21 +166,21 @@ const columns = [
         },
     },
     {
-        accessorKey: "kode_po",
-        header: () => h("div", { class: "text-left" }, "Kode PO"),
+        accessorKey: "keterangan",
+        header: () => h("div", { class: "text-left" }, "Keterangan"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kode_po"),
+                row.getValue("keterangan"),
             );
         },
     },
     {
-        accessorKey: "is_aktif",
+        accessorKey: "status",
         header: () => h("div", { class: "text-center" }, "Status"),
         cell: ({ row }) => {
-            const status = row.getValue("is_aktif");
+            const status = row.getValue("status");
             if (status == true) {
                 return h(
                     "div",
@@ -245,7 +243,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/purchasing",
+            "/retur-beli",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -296,77 +294,21 @@ const errors = ref({});
 const form = useForm({
     id: null,
     nama_supplier: "",
-    kode_po: "",
+    kode_pembelian: "",
     keterangan: "",
-    purchase_type: "ppn",
-    rebate: 0,
-    diskon_total: 0,
-    subtotal: 0,
-    dpp_total: 0,
-    ppn_total: 0,
-    total: 0,
-    grand_total: 0,
     details: [
         {
             kode_barcode: "",
             nama_barang: "",
-            exp_date: "",
-            qty: 0,
-            nama_satuan: 0,
-            isi_barang: 0,
+            qty_beli: 0,
+            qty_retur: 0,
+            nama_satuan_beli: "",
+            nama_satuan_retur: "Pcs",
             harga: 0,
-            diskon: 0,
-            diskon_global: 0,
             jumlah: 0,
-            dpp: 0,
-            ppn: 0,
-            harga_jual: 0,
-            taxable: false,
         },
     ],
 });
-
-const newDetailInput = ref({
-    kode_barcode: "",
-    nama_barang: "",
-    exp_date: "",
-    qty: 0,
-    nama_satuan: 0,
-    isi_barang: 0,
-    harga: 0,
-    diskon: 0,
-    diskon_global: 0,
-    jumlah: 0,
-    dpp: 0,
-    ppn: 0,
-    harga_jual: 0,
-    taxable: false,
-});
-
-const addNewDetailFromInput = () => {
-    if (isItemExist(newDetailInput.value)) {
-        Swal.fire({
-            title: "Item Already Exists",
-            text: "This item is already in the details table.",
-            icon: "warning",
-            showConfirmButton: false,
-            timer: 2000,
-        });
-    } else {
-        form.details.push({ ...newDetailInput.value });
-        calculateJumlah(newDetail);
-        // Reset the input after adding
-        Object.keys(newDetailInput.value).forEach((key) => {
-            newDetailInput.value[key] = 0;
-        });
-    }
-};
-
-const isItemExist = (newItem) => {
-    return form.details.some(
-        (item) => item.kode_barcode === newItem.kode_barcode,
-    );
-};
 
 const totalDiskon = computed(() => {
     return form.details.reduce(
@@ -380,12 +322,12 @@ const totalSub = computed(() => {
 });
 
 const calculateJumlah = (detail) => {
-    detail.jumlah = detail.qty * detail.harga - detail.diskon;
+    detail.jumlah = detail.qty_beli * detail.harga - detail.diskon;
     form.subtotal = totalSub;
 };
 
 const setDiskonGlobal = (detail) => {
-    detail.jumlah = detail.qty * detail.harga - detail.diskon;
+    detail.jumlah = detail.qty_beli * detail.harga - detail.diskon;
     form.subtotal = totalSub;
     form.diskon_total = totalDiskon;
     form.dpp_total = form.subtotal - form.diskon_total;
@@ -455,7 +397,7 @@ const resetForm = () => {
 };
 
 const submit = () => {
-    const url = form.id ? `/purchasing/${form.id}` : "/purchasing";
+    const url = form.id ? `/retur-beli/${form.id}` : "/retur-beli";
     const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
@@ -487,7 +429,7 @@ const onEdit = async (id) => {
     //Open Dialog
     showCreate.value = true;
     try {
-        const res = await fetch(`/purchasing/${id}`, {
+        const res = await fetch(`/retur-beli/${id}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -500,19 +442,9 @@ const onEdit = async (id) => {
         // Set to form
         form.id = data.data.id;
         form.kode_barcode = data.data.kode_barcode;
-        form.kode_barcode = data.data.kode_barcode;
-        form.nama_satuan = data.data.nama_satuan;
-        form.nama_kategori = data.data.nama_kategori;
-        form.isi_barang = data.data.isi_barang;
-        form.is_taxable = data.data.is_taxable === "1" ? true : false;
+        form.nama_barang = data.data.nama_barang;
+        form.nama_satuan_retur = data.data.nama_satuan_retur;
         form.details.kode_barcode = data.data.details["kode_barcode"];
-        form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
-        form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
-        form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
-        form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
-        form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
-        form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
-        form.details.current_stock = data.data.details["current_stock"];
     } catch (error) {
         console.error(error);
     }
@@ -529,19 +461,19 @@ const formatPrice = (price) => {
 <template>
     <Layout>
         <div class="flex items-center">
-            <h1 class="text-lg font-semibold md:text-2xl">Purchasing</h1>
+            <h1 class="text-lg font-semibold md:text-2xl">Retur Beli</h1>
         </div>
         <div class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
-                        table.getColumn('kode_pembelian')?.getFilterValue()
+                        table.getColumn('kode_retur_beli')?.getFilterValue()
                     "
                     class="max-w-sm"
-                    placeholder="Filter kode pembelian..."
+                    placeholder="Filter kode retur..."
                     @update:model-value="
                         table
-                            .getColumn('kode_pembelian')
+                            .getColumn('kode_retur_beli')
                             ?.setFilterValue($event)
                     "
                 />
@@ -846,11 +778,11 @@ const formatPrice = (price) => {
                 >
                     <DialogHeader>
                         <DialogTitle
-                            >{{ form.id ? "Edit" : "Create" }} Data
-                            Pembelian</DialogTitle
+                            >{{ form.id ? "Edit" : "Create" }} Data Retur
+                            Beli</DialogTitle
                         >
                         <DialogDescription>
-                            Data master pembelian
+                            Data master retur beli
                         </DialogDescription>
                     </DialogHeader>
                     <div class="flex flex-row justify-start gap-4">
@@ -858,10 +790,9 @@ const formatPrice = (price) => {
                             <Label for="nama_supplier"> Supplier </Label>
                             <SearchableSelect
                                 class="mt-2 editable-input"
-                                required
                                 v-model="form.nama_supplier"
                                 placeholder="Search suppliers..."
-                                api-endpoint="http://127.0.0.1:8000/api/purchasing/suppliers"
+                                api-endpoint="http://127.0.0.1:8000/api/retur-beli/suppliers"
                                 value-field="nama_supplier"
                                 display-field="nama_supplier"
                                 search-param="search"
@@ -880,28 +811,28 @@ const formatPrice = (price) => {
                             </p>
                         </div>
                         <div>
-                            <Label for="kode_po"> Nomor PO </Label>
+                            <Label for="kode_pembelian"> Kode Pembelian </Label>
                             <SearchableSelect
                                 class="mt-2 editable-input"
                                 required
-                                v-model="form.kode_po"
-                                placeholder="Search PO..."
-                                api-endpoint="http://127.0.0.1:8000/api/purchasing/po"
-                                value-field="kode_po"
-                                display-field="kode_po"
+                                v-model="form.kode_pembelian"
+                                placeholder="Search purchasing..."
+                                api-endpoint="http://127.0.0.1:8000/api/retur-beli/purchasing"
+                                value-field="kode_pembelian"
+                                display-field="kode_pembelian"
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
-                                loading-text="Loading PO..."
-                                no-results-text="No PO found"
-                                load-more-text="Load more PO"
-                                @select="onPOSelect"
+                                loading-text="Loading purchasing..."
+                                no-results-text="No purchasing found"
+                                load-more-text="Load more purchasing"
+                                @select="onPurchasingSelect"
                             />
                             <p
-                                v-if="form.errors.kode_po"
+                                v-if="form.errors.kode_pembelian"
                                 class="mt-1 text-sm text-red-500"
                             >
-                                {{ form.errors.kode_po }}
+                                {{ form.errors.kode_pembelian }}
                             </p>
                         </div>
                     </div>
@@ -922,34 +853,11 @@ const formatPrice = (price) => {
                     </div>
                     <!-- </div> -->
                     <DialogHeader class="mt-4">
-                        <DialogTitle>Data Detail Pembelian</DialogTitle>
+                        <DialogTitle>Data Detail Retur Beli</DialogTitle>
                         <DialogDescription>
-                            Data detail pembelian
+                            Data detail retur beli
                         </DialogDescription>
                     </DialogHeader>
-                    <div class="flex flex-row justify-end gap-4">
-                        <RadioGroup
-                            v-model="form.purchase_type"
-                            class="flex mt-2 space-x-4"
-                        >
-                            <div class="flex items-center space-x-2">
-                                <RadioGroupItem id="ppn" value="ppn" />
-                                <Label for="ppn" class="text-xs">PPN</Label>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <RadioGroupItem id="inc_ppn" value="inc_ppn" />
-                                <Label for="inc_ppn" class="text-xs"
-                                    >Inc.PPN</Label
-                                >
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <RadioGroupItem id="no_ppn" value="type3" />
-                                <Label for="no_ppn" class="text-xs"
-                                    >No PPn</Label
-                                >
-                            </div>
-                        </RadioGroup>
-                    </div>
                     <div class="flex-grow">
                         <div
                             class="h-full max-h-[calc(90vh-300px)] overflow-y-auto border rounded-md relative"
@@ -959,18 +867,12 @@ const formatPrice = (price) => {
                                     <TableRow>
                                         <TableHead>Kode Barcode</TableHead>
                                         <TableHead>Nama Barang</TableHead>
-                                        <TableHead>Expired Date</TableHead>
-                                        <TableHead>Qty</TableHead>
-                                        <TableHead>Satuan</TableHead>
-                                        <TableHead>Isi</TableHead>
+                                        <TableHead>Qty Beli</TableHead>
+                                        <TableHead>Satuan Beli</TableHead>
+                                        <TableHead>Qty Retur</TableHead>
+                                        <TableHead>Satuan Retur</TableHead>
                                         <TableHead>Harga Beli</TableHead>
-                                        <TableHead>Diskon</TableHead>
-                                        <TableHead>Diskon Global</TableHead>
                                         <TableHead>Jumlah</TableHead>
-                                        <TableHead>DPP</TableHead>
-                                        <TableHead>PPN</TableHead>
-                                        <TableHead>Harga Jual</TableHead>
-                                        <TableHead>Taxable</TableHead>
                                         <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -985,7 +887,7 @@ const formatPrice = (price) => {
                                                 required
                                                 v-model="detail.kode_barcode"
                                                 placeholder="Search..."
-                                                api-endpoint="http://127.0.0.1:8000/api/purchasing/products"
+                                                api-endpoint="http://127.0.0.1:8000/api/retur-beli/products"
                                                 value-field="kode_barcode"
                                                 display-field="kode_barcode"
                                                 search-param="search"
@@ -1023,31 +925,46 @@ const formatPrice = (price) => {
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="exp_date"
-                                                v-model="detail.exp_date"
-                                                type="date"
+                                                id="qty_beli"
+                                                v-model="detail.qty_beli"
+                                                type="number"
                                                 class="col-span-3 editable-input"
                                                 required
+                                                @input="setDiskonGlobal(detail)"
+                                                min="0"
+                                                step="0"
+                                                readonly
                                             />
                                             <p
                                                 v-if="
                                                     form.errors[
-                                                        `details.${index}.exp_date`
+                                                        `details.${index}.qty_beli`
                                                     ]
                                                 "
                                                 class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
-                                                        `details.${index}.exp_date`
+                                                        `details.${index}.qty_beli`
                                                     ]
                                                 }}
                                             </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="qty"
-                                                v-model="detail.qty"
+                                                id="nama_satuan_beli"
+                                                v-model="
+                                                    detail.nama_satuan_beli
+                                                "
+                                                class="col-span-3"
+                                                required
+                                                readonly
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                id="qty_retur"
+                                                v-model="detail.qty_retur"
                                                 type="number"
                                                 class="col-span-3 editable-input"
                                                 required
@@ -1058,32 +975,24 @@ const formatPrice = (price) => {
                                             <p
                                                 v-if="
                                                     form.errors[
-                                                        `details.${index}.qty`
+                                                        `details.${index}.qty_retur`
                                                     ]
                                                 "
                                                 class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
-                                                        `details.${index}.qty`
+                                                        `details.${index}.qty_retur`
                                                     ]
                                                 }}
                                             </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="nama_satuan"
-                                                v-model="detail.nama_satuan"
-                                                class="col-span-3"
-                                                required
-                                                readonly
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="isi_barang"
-                                                v-model="detail.isi_barang"
-                                                type="number"
+                                                id="nama_satuan_retur"
+                                                v-model="
+                                                    detail.nama_satuan_retur
+                                                "
                                                 class="col-span-3"
                                                 required
                                                 readonly
@@ -1117,58 +1026,6 @@ const formatPrice = (price) => {
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="diskon"
-                                                v-model="detail.diskon"
-                                                type="number"
-                                                class="col-span-3 editable-input"
-                                                @input="calculateJumlah(detail)"
-                                                required
-                                                min="0"
-                                                step="0"
-                                            />
-                                            <p
-                                                v-if="
-                                                    form.errors[
-                                                        `details.${index}.diskon`
-                                                    ]
-                                                "
-                                                class="mt-1 text-sm text-red-500"
-                                            >
-                                                {{
-                                                    form.errors[
-                                                        `details.${index}.diskon`
-                                                    ]
-                                                }}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="diskon_global"
-                                                v-model="detail.diskon_global"
-                                                type="number"
-                                                class="col-span-3 editable-input"
-                                                @input="setDiskonGlobal(detail)"
-                                                required
-                                                min="0"
-                                                step="0"
-                                            />
-                                            <p
-                                                v-if="
-                                                    form.errors[
-                                                        `details.${index}.diskon_global`
-                                                    ]
-                                                "
-                                                class="mt-1 text-sm text-red-500"
-                                            >
-                                                {{
-                                                    form.errors[
-                                                        `details.${index}.diskon_global`
-                                                    ]
-                                                }}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
                                                 id="jumlah"
                                                 v-model="detail.jumlah"
                                                 type="number"
@@ -1176,59 +1033,6 @@ const formatPrice = (price) => {
                                                 required
                                                 readonly
                                             />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="dpp"
-                                                v-model="detail.dpp"
-                                                type="number"
-                                                class="col-span-3"
-                                                required
-                                                readonly
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="ppn"
-                                                v-model="detail.ppn"
-                                                type="number"
-                                                class="col-span-3"
-                                                required
-                                                readonly
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="harga_jual"
-                                                v-model="detail.harga_jual"
-                                                type="number"
-                                                class="col-span-3 editable-input"
-                                                required
-                                                min="0"
-                                                step="0"
-                                            />
-                                            <p
-                                                v-if="
-                                                    form.errors[
-                                                        `details.${index}.harga_jual`
-                                                    ]
-                                                "
-                                                class="mt-1 text-sm text-red-500"
-                                            >
-                                                {{
-                                                    form.errors[
-                                                        `details.${index}.harga_jual`
-                                                    ]
-                                                }}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell>
-                                            <TableCell>
-                                                <Checkbox
-                                                    disabled
-                                                    v-model="detail.is_taxable"
-                                                />
-                                            </TableCell>
                                         </TableCell>
                                         <TableCell>
                                             <Button
@@ -1240,104 +1044,6 @@ const formatPrice = (price) => {
                                     </TableRow>
                                 </TableBody>
                             </Table>
-                        </div>
-                    </div>
-                    <Button @click="addNewDetailFromInput">Add</Button>
-                    <div class="p-4 mt-4 border rounded-lg bg-gray-50">
-                        <div class="grid grid-cols-3 gap-4">
-                            <!-- Left Column -->
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >Rebate</span
-                                    >
-                                    <div class="flex items-center gap-2">
-                                        <Input
-                                            v-model="form.rebate"
-                                            type="number"
-                                            class="w-32 text-right"
-                                            @input="calculateTotals"
-                                        />
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >Diskon Rp</span
-                                    >
-                                    <div class="flex items-center gap-2">
-                                        <Input
-                                            v-model="form.diskon_total"
-                                            type="number"
-                                            class="w-32 text-right"
-                                            readonly
-                                        />
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >Subtotal</span
-                                    >
-                                    <div class="flex items-center gap-2">
-                                        <Input
-                                            v-model="form.subtotal"
-                                            type="number"
-                                            class="w-32 text-right"
-                                            readonly
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Middle Column -->
-                            <div class="col-span-1">
-                                <!-- Placeholder for middle column if needed -->
-                            </div>
-
-                            <!-- Right Column -->
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium">DPP</span>
-                                    <Input
-                                        v-model="form.dpp_total"
-                                        type="number"
-                                        class="w-32 text-right"
-                                        readonly
-                                    />
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >PPN 11%</span
-                                    >
-                                    <Input
-                                        v-model="form.ppn_total"
-                                        type="number"
-                                        class="w-32 text-right"
-                                        readonly
-                                    />
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >Total</span
-                                    >
-                                    <Input
-                                        v-model="form.total"
-                                        type="number"
-                                        class="w-32 font-bold text-right"
-                                        readonly
-                                    />
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium"
-                                        >Grand Total</span
-                                    >
-                                    <Input
-                                        v-model="form.grand_total"
-                                        type="number"
-                                        class="w-32 font-bold text-right"
-                                        readonly
-                                    />
-                                </div>
-                            </div>
                         </div>
                     </div>
                     <DialogFooter>

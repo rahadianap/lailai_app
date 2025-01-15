@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('trx_retur_beli', function (Blueprint $table) {
             $table->id();
             $table->string('kode_retur_beli');
-            $table->string('purchasing_id')->nullable();
+            $table->string('kode_pembelian');
             $table->string('nama_supplier');
             $table->string('keterangan')->nullable();
             $table->string('status');
