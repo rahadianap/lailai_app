@@ -1,7 +1,6 @@
 <script setup>
 import Layout from "../../Layout/App.vue";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
     Table,
@@ -22,8 +21,8 @@ import {
     getSortedRowModel,
     useVueTable,
 } from "@tanstack/vue-table";
-import { h, ref } from "vue";
-import DropdownAction from "../Products/components/DataTableDropdown.vue";
+import { h, ref, computed } from "vue";
+import DropdownAction from "./components/Table.vue";
 import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
@@ -56,16 +55,29 @@ import { Trash2 } from "lucide-vue-next";
 import { Textarea } from "@/components/ui/textarea";
 
 const props = defineProps({
-    data: Array,
+    data: Object,
+    permissions: Object,
 });
+
+const canViewPO = computed(() => props.permissions.po_view);
+const canCreatePO = computed(() => props.permissions.po_create);
+const canEditPO = computed(() => props.permissions.po_edit);
+const canDeletePO = computed(() => props.permissions.po_delete);
 
 const data = props.data.data;
 
 const showCreate = ref(false);
 
 const showDialogCreate = () => {
-    showCreate.value = true;
-    console.log(data);
+    if (canCreatePO.value) {
+        showCreate.value = true;
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to create products.",
+            icon: "error",
+        });
+    }
 };
 
 const selectedSupplier = ref(null);
@@ -179,7 +191,9 @@ const columns = [
                 { class: "relative text-right" },
                 h(DropdownAction, {
                     po,
+                    permissions: props.permissions,
                     onEdit: () => onEdit(po.id),
+                    onDelete: () => onDelete(po.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -378,38 +392,46 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-    //Open Dialog
-    showCreate.value = true;
-    try {
-        const res = await fetch(`/purchase-order/${id}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!res.ok) {
-            console.error("Error ");
+    if (canEditPO.value) {
+        showCreate.value = true;
+        try {
+            const res = await fetch(`/purchase-order/${id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            if (!res.ok) {
+                console.error("Error ");
+            }
+            const data = await res.json();
+            // Set to form
+            form.id = data.data.id;
+            form.nama_supplier = data.data.nama_supplier;
+            form.keterangan = data.data.keterangan;
+            // form.kode_barcode = data.data.kode_barcode;
+            // form.nama_satuan = data.data.nama_satuan;
+            // form.nama_kategori = data.data.nama_kategori;
+            // form.isi_barang = data.data.isi_barang;
+            // form.is_taxable = data.data.is_taxable === "1" ? true : false;
+            // form.details.kode_barcode = data.data.details["kode_barcode"];
+            // form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
+            // form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
+            // form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
+            // form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
+            // form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
+            // form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
+            // form.details.current_stock = data.data.details["current_stock"];
+            // form.details.nilai_akhir = data.data.details["nilai_akhir"];
+        } catch (error) {
+            console.error(error);
         }
-        const data = await res.json();
-        // Set to form
-        form.id = data.data.id;
-        form.nama_supplier = data.data.nama_supplier;
-        // form.kode_barcode = data.data.kode_barcode;
-        // form.nama_satuan = data.data.nama_satuan;
-        // form.nama_kategori = data.data.nama_kategori;
-        // form.isi_barang = data.data.isi_barang;
-        // form.is_taxable = data.data.is_taxable === "1" ? true : false;
-        // form.details.kode_barcode = data.data.details["kode_barcode"];
-        // form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
-        // form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
-        // form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
-        // form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
-        // form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
-        // form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
-        // form.details.current_stock = data.data.details["current_stock"];
-        // form.details.nilai_akhir = data.data.details["nilai_akhir"];
-    } catch (error) {
-        console.error(error);
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to edit products.",
+            icon: "error",
+        });
     }
 };
 
@@ -426,7 +448,7 @@ const formatPrice = (price) => {
         <div class="flex items-center">
             <h1 class="text-lg font-semibold md:text-2xl">Purchase Order</h1>
         </div>
-        <div class="w-full">
+        <div v-if="canViewPO" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="table.getColumn('kode_po')?.getFilterValue()"
@@ -436,7 +458,11 @@ const formatPrice = (price) => {
                         table.getColumn('kode_po')?.setFilterValue($event)
                     "
                 />
-                <Button class="ml-4" variant="outline" @click="showDialogCreate"
+                <Button
+                    v-if="canCreatePO"
+                    class="ml-4"
+                    variant="outline"
+                    @click="showDialogCreate"
                     ><PlusCircledIcon class="w-5 h-5"></PlusCircledIcon>Create
                     New</Button
                 >
@@ -538,7 +564,7 @@ const formatPrice = (price) => {
                                                     <TableCell
                                                         class="font-normal"
                                                         >{{
-                                                            detail.isi_barang
+                                                            detail.isi
                                                         }}</TableCell
                                                     >
                                                     <TableCell

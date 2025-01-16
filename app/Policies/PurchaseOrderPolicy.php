@@ -6,7 +6,7 @@ use App\Models\PurchaseOrder;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class POPolicy
+class PurchaseOrderPolicy
 {
     public function view(User $user)
     {

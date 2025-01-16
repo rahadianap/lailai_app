@@ -10,13 +10,19 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PurchaseOrderController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request): Response
     {
+        $this->authorize('view', PurchaseOrder::class);
+
         $perPage = $request->input('per_page', 10);
 
         $data = PurchaseOrder::with('details')->where('is_aktif', 1)->paginate(perPage: $perPage);
@@ -28,14 +34,32 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', Product::class);
+
+        $validator = Validator::make($request->all(), [
+            'nama_supplier' => 'required|string|max:255',
+            'details' => 'required|array|min:1',
+            'details.*.kode_barcode' => 'required|string|max:255',
+            'details.*.nama_barang' => 'required|string|max:255',
+            'details.*.qty' => 'required|numeric|min:0',
+            'details.*.nama_satuan' => 'required|string|max:255',
+            'details.*.isi_barang' => 'required|numeric|min:0',
+            'details.*.harga' => 'required|numeric|min:0',
+            'details.*.diskon' => 'required|numeric|min:0',
+            'details.*.diskon_global' => 'required|numeric|min:0',
+            'details.*.jumlah' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        DB::beginTransaction();
+
         try {
-            $validatedData = $this->validateData($request);
-
-            DB::beginTransaction();
-
             $po = PurchaseOrder::create([
                 'kode_po' => $this->getKodePO(),
-                'nama_supplier' => $validatedData['nama_supplier'],
+                'nama_supplier' => $request->nama_supplier,
                 'status' => 'CREATED',
                 'keterangan' => $request->keterangan,
                 'created_by' => Auth()->user()->name,
@@ -55,7 +79,7 @@ class PurchaseOrderController extends Controller
                     'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
                     'jumlah' => $detail['jumlah'],
                     'diskon' => $detail['diskon'],
-                    'diskon_global' => $detail['jumlah'],
+                    'diskon_global' => $detail['diskon_global'],
                     'created_by' => Auth()->user()->name,
                 ]);
             }
@@ -72,6 +96,13 @@ class PurchaseOrderController extends Controller
 
             return response()->json(['message' => 'An error occurred while creating the po', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    public function edit($id)
+    {
+        $po = PurchaseOrder::with('details')->findOrFail($id);
+
+        return response()->json(['data' => $po]);
     }
 
     public function getSuppliers(Request $request)
@@ -163,21 +194,5 @@ class PurchaseOrderController extends Controller
         } catch (\Exception $e) {
             return 'FKT-PO/' . Str::uuid()->toString();
         }
-    }
-
-    private function validateData(Request $request)
-    {
-        return $request->validate([
-            'nama_supplier' => 'required|string|max:255',
-            // 'details.saldo_awal' => 'required|numeric|min:0',
-            // 'details.harga_jual_karton' => 'required|numeric|min:0',
-            // 'details.harga_jual_eceran' => 'required|numeric|min:0',
-            // 'details.harga_beli_karton' => 'required|numeric|min:0',
-            // 'details.harga_beli_eceran' => 'required|numeric|min:0',
-            // 'details.hpp_avg_karton' => 'required|numeric|min:0',
-            // 'details.hpp_avg_eceran' => 'required|numeric|min:0',
-            // 'details.current_stock' => 'required|numeric|min:0',
-            // 'details.nilai_akhir' => 'required|numeric|min:0',
-        ]);
     }
 }
