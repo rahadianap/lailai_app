@@ -883,7 +883,6 @@ const formatPrice = (price) => {
                             <Label for="kode_po"> Nomor PO </Label>
                             <SearchableSelect
                                 class="mt-2 editable-input"
-                                required
                                 v-model="form.kode_po"
                                 placeholder="Search PO..."
                                 api-endpoint="http://127.0.0.1:8000/api/purchasing/po"

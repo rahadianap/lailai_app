@@ -809,9 +809,9 @@ const formatPrice = (price) => {
                     </DialogHeader>
                     <div class="flex-grow">
                         <div
-                            class="h-full max-h-[calc(90vh-300px)] overflow-y-auto border rounded-md relative"
+                            class="h-full max-h-[calc(90vh-300px)] border rounded-md"
                         >
-                            <Table>
+                            <Table class="table-auto">
                                 <TableHeader class="sticky top-0 z-10 bg-white">
                                     <TableRow>
                                         <TableHead>Kode Barcode</TableHead>
@@ -953,26 +953,30 @@ const formatPrice = (price) => {
 
 <style scoped>
 .dialog-content {
-    display: flex;
+    display: block;
     flex-direction: column;
     max-height: 90vh;
 }
 
-.dialog-content > * {
-    flex-shrink: 0;
-}
-
-.dialog-content > .flex-grow {
-    flex-shrink: 1;
+.dialog-content table thead {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 10;
 }
 
 /* Add these new styles */
 :deep(.v-popper__popper) {
-    z-index: 100;
+    z-index: 9999;
 }
 
 :deep(.v-popper__popper .v-popper__wrapper) {
-    max-height: 200px;
-    overflow-y: auto;
+    max-height: none;
+}
+
+.sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 </style>
