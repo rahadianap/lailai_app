@@ -10,14 +10,20 @@ use App\Models\Purchasing;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PurchasingController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request): Response
     {
+        $this->authorize('view', Purchasing::class);
+
         $perPage = $request->input('per_page', 10);
 
         $data = Purchasing::with('details')->where('is_aktif', 1)->paginate(perPage: $perPage);
@@ -29,6 +35,40 @@ class PurchasingController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', Purchasing::class);
+
+        $validator = Validator::make($request->all(), [
+            'nama_supplier' => 'required|string|max:255',
+            'purchase_type' => 'required|string|max:255',
+            'rebate' => 'required|numeric|min:0',
+            'diskon_total' => 'required|numeric|min:0',
+            'dpp_total' => 'required|numeric|min:0',
+            'ppn_total' => 'required|numeric|min:0',
+            'total' => 'required|numeric|min:0',
+            'details' => 'required|array|min:1',
+            'details.*.kode_barcode' => 'required|string|max:255',
+            'details.*.nama_barang' => 'required|string|max:255',
+            'details.*.qty' => 'required|numeric|min:0',
+            'details.*.nama_satuan' => 'required|string|max:255',
+            'details.*.isi' => 'required|numeric|min:0',
+            'details.*.harga' => 'required|numeric|min:0',
+            'details.*.diskon' => 'required|numeric|min:0',
+            'details.*.diskon_global' => 'required|numeric|min:0',
+            'details.*.jumlah' => 'required|numeric|min:0',
+            'harga_satuan_kecil' => 'required|numeric|min:0',
+            'nilai_dpp' => 'required|numeric|min:0',
+            'nilai_ppn' => 'required|numeric|min:0',
+            'harga_jual' => 'required|numeric|min:0',
+            'exp_date' => 'required|date',
+            'is_taxable' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         try {
             $validatedData = $this->validateData($request);
 
