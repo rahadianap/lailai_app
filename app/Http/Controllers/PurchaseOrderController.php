@@ -34,7 +34,7 @@ class PurchaseOrderController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('create', Product::class);
+        $this->authorize('create', PurchaseOrder::class);
 
         $validator = Validator::make($request->all(), [
             'nama_supplier' => 'required|string|max:255',
@@ -103,6 +103,98 @@ class PurchaseOrderController extends Controller
         $po = PurchaseOrder::with('details')->findOrFail($id);
 
         return response()->json(['data' => $po]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $this->authorize('update', PurchaseOrder::class);
+
+        $validator = Validator::make($request->all(), [
+            'nama_supplier' => 'required|string|max:255',
+            'details' => 'required|array|min:1',
+            'details.*.kode_barcode' => 'required|string|max:255',
+            'details.*.nama_barang' => 'required|string|max:255',
+            'details.*.qty' => 'required|numeric|min:0',
+            'details.*.nama_satuan' => 'required|string|max:255',
+            'details.*.isi_barang' => 'required|numeric|min:0',
+            'details.*.harga' => 'required|numeric|min:0',
+            'details.*.diskon' => 'required|numeric|min:0',
+            'details.*.diskon_global' => 'required|numeric|min:0',
+            'details.*.jumlah' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $po = PurchaseOrder::findOrFail($id);
+            $po->update([
+                'nama_supplier' => $request->nama_supplier,
+                'keterangan' => $request->keterangan,
+                'updated_by' => auth()->user()->name,
+            ]);
+
+            foreach ($request->details as $detail) {
+                DetailPurchaseOrder::where('purchase_order_id', $po->id)->update([
+                    'kode_barcode' => $detail['kode_barcode'],
+                    'nama_barang' => $detail['nama_barang'],
+                    'qty' => $detail['qty'],
+                    'nama_satuan' => $detail['nama_satuan'],
+                    'isi' => $detail['isi_barang'],
+                    'harga' => $detail['harga'],
+                    'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
+                    'jumlah' => $detail['jumlah'],
+                    'diskon' => $detail['diskon'],
+                    'diskon_global' => $detail['diskon_global'],
+                    'updated_by' => auth()->user()->name,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'PurchaseOrder Update Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'An error occurred while updating the po',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $this->authorize('delete', PurchaseOrder::class);
+
+        DB::beginTransaction();
+
+        try {
+            $po = PurchaseOrder::findOrFail($id);
+            $po->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $po->details()->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $po->details()->delete();
+            $po->delete();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'PurchaseOrder Delete Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while deleting the po', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function getSuppliers(Request $request)

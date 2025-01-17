@@ -447,6 +447,51 @@ const onEdit = async (id) => {
     }
 };
 
+const onDelete = (id) => {
+    if (canDeletePO.value) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = useForm({});
+                form.delete(`/purchase-order/${id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire(
+                            "Deleted!",
+                            "Your po has been deleted.",
+                            "success",
+                        );
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    },
+                    onError: () => {
+                        Swal.fire(
+                            "Error!",
+                            "There was a problem deleting the po.",
+                            "error",
+                        );
+                    },
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to delete products.",
+            icon: "error",
+        });
+    }
+};
+
 const formatPrice = (price) => {
     return new Intl.NumberFormat("id-ID", {
         style: "currency",
