@@ -23,7 +23,7 @@ import {
     useVueTable,
 } from "@tanstack/vue-table";
 import { h, ref, watch, computed } from "vue";
-import DropdownAction from "../Products/components/DataTableDropdown.vue";
+import DropdownAction from "./components/Table.vue";
 import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
@@ -57,15 +57,29 @@ import { Trash2 } from "lucide-vue-next";
 import { Textarea } from "@/components/ui/textarea";
 
 const props = defineProps({
-    data: Array,
+    data: Object,
+    permissions: Object,
 });
+
+const canViewPurchasing = computed(() => props.permissions.purchasing_view);
+const canCreatePurchasing = computed(() => props.permissions.purchasing_create);
+const canEditPurchasing = computed(() => props.permissions.purchasing_edit);
+const canDeletePurchasing = computed(() => props.permissions.purchasing_delete);
 
 const data = props.data.data;
 
 const showCreate = ref(false);
 
 const showDialogCreate = () => {
-    showCreate.value = true;
+    if (canCreatePurchasing.value) {
+        showCreate.value = true;
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to create products.",
+            icon: "error",
+        });
+    }
 };
 
 const selectedProduct = ref(null);
@@ -202,14 +216,16 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const product = row.original;
+            const purchasing = row.original;
 
             return h(
                 "div",
                 { class: "relative text-right" },
                 h(DropdownAction, {
-                    product,
-                    onEdit: () => onEdit(product.id),
+                    purchasing,
+                    permissions: props.permissions,
+                    onEdit: () => onEdit(purchasing.id),
+                    onDelete: () => onDelete(purchasing.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -484,37 +500,89 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-    //Open Dialog
-    showCreate.value = true;
-    try {
-        const res = await fetch(`/purchasing/${id}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!res.ok) {
-            console.error("Error ");
+    if (canEditPurchasing.value) {
+        showCreate.value = true;
+        try {
+            const res = await fetch(`/purchasing/${id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            if (!res.ok) {
+                console.error("Error ");
+            }
+            const data = await res.json();
+            // Set to form
+            form.id = data.data.id;
+            form.kode_barcode = data.data.kode_barcode;
+            form.kode_barcode = data.data.kode_barcode;
+            form.nama_satuan = data.data.nama_satuan;
+            form.nama_kategori = data.data.nama_kategori;
+            form.isi_barang = data.data.isi_barang;
+            form.is_taxable = data.data.is_taxable === "1" ? true : false;
+            form.details.kode_barcode = data.data.details["kode_barcode"];
+            form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
+            form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
+            form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
+            form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
+            form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
+            form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
+            form.details.current_stock = data.data.details["current_stock"];
+        } catch (error) {
+            console.error(error);
         }
-        const data = await res.json();
-        // Set to form
-        form.id = data.data.id;
-        form.kode_barcode = data.data.kode_barcode;
-        form.kode_barcode = data.data.kode_barcode;
-        form.nama_satuan = data.data.nama_satuan;
-        form.nama_kategori = data.data.nama_kategori;
-        form.isi_barang = data.data.isi_barang;
-        form.is_taxable = data.data.is_taxable === "1" ? true : false;
-        form.details.kode_barcode = data.data.details["kode_barcode"];
-        form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
-        form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
-        form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
-        form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
-        form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
-        form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
-        form.details.current_stock = data.data.details["current_stock"];
-    } catch (error) {
-        console.error(error);
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to edit products.",
+            icon: "error",
+        });
+    }
+};
+
+const onDelete = (id) => {
+    if (canDeletePurchasing.value) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = useForm({});
+                form.delete(`/purchasing/${id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire(
+                            "Deleted!",
+                            "Your po has been deleted.",
+                            "success",
+                        );
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    },
+                    onError: () => {
+                        Swal.fire(
+                            "Error!",
+                            "There was a problem deleting the po.",
+                            "error",
+                        );
+                    },
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to delete products.",
+            icon: "error",
+        });
     }
 };
 
