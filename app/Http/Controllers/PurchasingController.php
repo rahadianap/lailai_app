@@ -163,14 +163,13 @@ class PurchasingController extends Controller
             'details.*.nama_barang' => 'required|string|max:255',
             'details.*.qty' => 'required|numeric|min:0',
             'details.*.nama_satuan' => 'required|string|max:255',
-            'details.*.isi' => 'required|numeric|min:0',
+            'details.*.isi_barang' => 'required|numeric|min:0',
             'details.*.harga' => 'required|numeric|min:0',
             'details.*.diskon' => 'required|numeric|min:0',
             'details.*.diskon_global' => 'required|numeric|min:0',
             'details.*.jumlah' => 'required|numeric|min:0',
-            'details.*.harga_satuan_kecil' => 'required|numeric|min:0',
-            'details.*.nilai_dpp' => 'required|numeric|min:0',
-            'details.*.nilai_ppn' => 'required|numeric|min:0',
+            'details.*.dpp' => 'required|numeric|min:0',
+            'details.*.ppn' => 'required|numeric|min:0',
             'details.*.harga_jual' => 'required|numeric|min:0',
             'details.*.exp_date' => 'required|date',
             'details.*.is_taxable' => 'required|boolean',
@@ -201,8 +200,8 @@ class PurchasingController extends Controller
 
             foreach ($request->details as $detail) {
                 DetailPurchasing::where('pembelian_id', $po->id)->update([
-                    'pembelian_id' => $purchase->id,
-                    'kode_pembelian' => $purchase->kode_pembelian,
+                    'pembelian_id' => $po->id,
+                    'kode_pembelian' => $po->kode_pembelian,
                     'nomor_faktur' => $this->getNoFaktur(),
                     'kode_barcode' => $detail['kode_barcode'],
                     'nama_barang' => $detail['nama_barang'],
@@ -218,7 +217,7 @@ class PurchasingController extends Controller
                     'nilai_ppn' => $detail['ppn'] || 0,
                     'harga_jual' => $detail['harga_jual'],
                     'exp_date' => $detail['exp_date'],
-                    'is_taxable' => $detail['taxable'],
+                    'is_taxable' => $detail['is_taxable'],
                     'updated_by' => auth()->user()->name,
                 ]);
             }
@@ -315,62 +314,62 @@ class PurchasingController extends Controller
     public function getKodePembelian()
     {
         try {
-            $id = 'PR'.'/'.date('Ymd').'/'.'000001';
-            $maxId = Purchasing::withTrashed()->where('kode_pembelian', 'LIKE', 'PR'.'/'.date('Ymd').'/')->max('kode_pembelian');
-            if (! $maxId) {
-                $id = 'PR'.'/'.date('Ymd').'/'.'000001';
+            $id = 'PR' . '/' . date('Ymd') . '/' . '000001';
+            $maxId = Purchasing::withTrashed()->where('kode_pembelian', 'LIKE', 'PR' . '/' . date('Ymd') . '/')->max('kode_pembelian');
+            if (!$maxId) {
+                $id = 'PR' . '/' . date('Ymd') . '/' . '000001';
             } else {
-                $maxId = str_replace('PR'.'/'.date('Ymd').'/', '', $maxId);
+                $maxId = str_replace('PR' . '/' . date('Ymd') . '/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'00000'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '00000' . $count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'0000'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '0000' . $count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'000'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '000' . $count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'00'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '00' . $count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'PR'.'/'.date('Ymd').'/'.'0'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . '0' . $count;
                 } else {
-                    $id = 'PR'.'/'.date('Ymd').'/'.$count;
+                    $id = 'PR' . '/' . date('Ymd') . '/' . $count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'PR/'.Str::uuid()->toString();
+            return 'PR/' . Str::uuid()->toString();
         }
     }
 
     public function getNoFaktur()
     {
         try {
-            $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000001';
-            $maxId = DetailPurchasing::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PR'.'/'.date('Ymd').'/')->max('nomor_faktur');
-            if (! $maxId) {
-                $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000001';
+            $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000001';
+            $maxId = DetailPurchasing::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PR' . '/' . date('Ymd') . '/')->max('nomor_faktur');
+            if (!$maxId) {
+                $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000001';
             } else {
-                $maxId = str_replace('FKT-PR'.'/'.date('Ymd').'/', '', $maxId);
+                $maxId = str_replace('FKT-PR' . '/' . date('Ymd') . '/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'00000'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '00000' . $count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'0000'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '0000' . $count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'000'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '000' . $count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'00'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '00' . $count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.'0'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . '0' . $count;
                 } else {
-                    $id = 'FKT-PR'.'/'.date('Ymd').'/'.$count;
+                    $id = 'FKT-PR' . '/' . date('Ymd') . '/' . $count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'FKT-PR/'.Str::uuid()->toString();
+            return 'FKT-PR/' . Str::uuid()->toString();
         }
     }
 }

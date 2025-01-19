@@ -513,22 +513,46 @@ const onEdit = async (id) => {
                 console.error("Error ");
             }
             const data = await res.json();
+            console.log(data.data);
             // Set to form
             form.id = data.data.id;
-            form.kode_barcode = data.data.kode_barcode;
-            form.kode_barcode = data.data.kode_barcode;
-            form.nama_satuan = data.data.nama_satuan;
-            form.nama_kategori = data.data.nama_kategori;
-            form.isi_barang = data.data.isi_barang;
-            form.is_taxable = data.data.is_taxable === "1" ? true : false;
-            form.details.kode_barcode = data.data.details["kode_barcode"];
-            form.details.harga_jual_karton = data.data.details["harga_jual_karton"];
-            form.details.harga_jual_eceran = data.data.details["harga_jual_eceran"];
-            form.details.harga_beli_karton = data.data.details["harga_beli_karton"];
-            form.details.harga_beli_eceran = data.data.details["harga_beli_eceran"];
-            form.details.hpp_avg_karton = data.data.details["hpp_avg_karton"];
-            form.details.hpp_avg_eceran = data.data.details["hpp_avg_eceran"];
-            form.details.current_stock = data.data.details["current_stock"];
+            form.nama_supplier = data.data.nama_supplier;
+            form.keterangan = data.data.keterangan;
+            form.kode_po = data.data.kode_po || null;
+            form.purchase_type = data.data.purchase_type;
+            form.rebate = data.data.rebate;
+            form.diskon_total = data.data.diskon_total;
+            form.subtotal = data.data.subtotal;
+            form.dpp_total = data.data.dpp_total;
+            form.ppn_total = data.data.ppn_total;
+            form.total = data.data.total;
+            form.grand_total = data.data.grand_total;
+            form.details = [];
+
+            // Use forEach to populate details
+            data.data.details.forEach((detail) => {
+                form.details.push({
+                    id: detail.id,
+                    kode_barcode: detail.kode_barcode,
+                    nama_barang: detail.nama_barang,
+                    exp_date: detail.exp_date,
+                    qty: detail.qty,
+                    nama_satuan: detail.nama_satuan,
+                    isi_barang: detail.isi,
+                    harga: detail.harga,
+                    jumlah: detail.jumlah,
+                    harga_satuan_kecil: detail.harga_satuan_kecil,
+                    hpp_avg_satuan: detail.hpp_avg_satuan,
+                    hpp_avg_perbiji: detail.hpp_avg_perbiji,
+                    dpp: detail.nilai_dpp,
+                    ppn: detail.nilai_ppn,
+                    harga_jual: detail.harga_jual,
+                    diskon: detail.diskon,
+                    diskon_global: detail.diskon_global,
+                    rebate: detail.rebate,
+                    is_taxable: detail.is_taxable,
+                });
+            });
         } catch (error) {
             console.error(error);
         }
