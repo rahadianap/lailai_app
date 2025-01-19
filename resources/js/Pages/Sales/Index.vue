@@ -15,7 +15,6 @@
                             class="editable-input"
                         />
                     </div>
-
                     <!-- Product search -->
                     <div class="searchable-select-wrapper mb-4 w-full">
                         <Label htmlFor="product_search">Search Products</Label>
@@ -254,11 +253,18 @@
             @removeMember="removeMember"
         />
     </PosLayout>
+    <DeleteConfirmationDialog
+        :isOpen="showDeleteConfirmation"
+        @update:isOpen="showDeleteConfirmation = $event"
+        @confirm="confirmDelete"
+        @cancel="cancelDelete"
+    />
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import PosLayout from "../../Layout/POSLayout.vue";
+import DeleteConfirmationDialog from "@/components/DeleteCart.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -306,6 +312,33 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener("keydown", handleKeyDown);
 });
+
+const showDeleteConfirmation = ref(false);
+const itemToDeleteIndex = ref(null);
+
+// const removeFromCart = (index) => {
+//     itemToDeleteIndex.value = index;
+//     showDeleteConfirmation.value = true;
+// };
+
+const confirmDelete = (password) => {
+    // Here you would typically verify the password with your backend
+    // For this example, we'll use a hardcoded password "admin123"
+    if (password === "admin123") {
+        if (itemToDeleteIndex.value !== null) {
+            cart.value.splice(itemToDeleteIndex.value, 1);
+            itemToDeleteIndex.value = null;
+        }
+        showDeleteConfirmation.value = false;
+    } else {
+        alert("Incorrect password. Deletion cancelled.");
+    }
+};
+
+const cancelDelete = () => {
+    itemToDeleteIndex.value = null;
+    showDeleteConfirmation.value = false;
+};
 
 const handleKeyDown = (event) => {
     // Ignore if focus is on an input element
@@ -436,7 +469,9 @@ const updateCartItem = (index) => {
 };
 
 const removeFromCart = (index) => {
-    cart.value.splice(index, 1);
+    // cart.value.splice(index, 1);
+    itemToDeleteIndex.value = index;
+    showDeleteConfirmation.value = true;
 };
 
 const subtotal = computed(() => {
