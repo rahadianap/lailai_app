@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'edit'])->name('purchase-order.edit');  //with GET
         Route::put('/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'update'])->name('purchase-order.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'destroy'])->name('purchase-order.destroy');
+        Route::put('/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'approve'])->name('purchase-order.approve');
     });
     Route::prefix('/purchasing')->group(function () {
         Route::get('/', [\App\Http\Controllers\PurchasingController::class, 'index'])->name('purchasing.index');

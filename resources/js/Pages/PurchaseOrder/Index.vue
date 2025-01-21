@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-vue-next";
 import { Textarea } from "@/components/ui/textarea";
+import axios from "axios";
 
 const props = defineProps({
     data: Object,
@@ -63,6 +64,7 @@ const canViewPO = computed(() => props.permissions.po_view);
 const canCreatePO = computed(() => props.permissions.po_create);
 const canEditPO = computed(() => props.permissions.po_edit);
 const canDeletePO = computed(() => props.permissions.po_delete);
+const canApprovePO = computed(() => props.permissions.po_approve);
 
 const data = props.data.data;
 
@@ -194,6 +196,8 @@ const columns = [
                     permissions: props.permissions,
                     onEdit: () => onEdit(po.id),
                     onDelete: () => onDelete(po.id),
+                    onApprove: () => onApprove(po.id),
+                    onPrint: () => onPrint(po.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -421,17 +425,17 @@ const onEdit = async (id) => {
                     qty: detail.qty,
                     nama_satuan: detail.nama_satuan,
                     isi_barang: detail.isi,
-                    harga: detail.harga,
-                    jumlah: detail.jumlah,
-                    harga_satuan_kecil: detail.harga_satuan_kecil,
-                    hpp_avg_satuan: detail.hpp_avg_satuan,
-                    hpp_avg_perbiji: detail.hpp_avg_perbiji,
-                    nilai_dpp: detail.nilai_dpp,
-                    nilai_ppn: detail.nilai_ppn,
-                    harga_jual: detail.harga_jual,
-                    diskon: detail.diskon,
-                    diskon_global: detail.diskon_global,
-                    rebate: detail.rebate,
+                    // harga: detail.harga,
+                    // jumlah: detail.jumlah,
+                    // harga_satuan_kecil: detail.harga_satuan_kecil,
+                    // hpp_avg_satuan: detail.hpp_avg_satuan,
+                    // hpp_avg_perbiji: detail.hpp_avg_perbiji,
+                    // nilai_dpp: detail.nilai_dpp,
+                    // nilai_ppn: detail.nilai_ppn,
+                    // harga_jual: detail.harga_jual,
+                    // diskon: detail.diskon,
+                    // diskon_global: detail.diskon_global,
+                    // rebate: detail.rebate,
                     is_taxable: detail.is_taxable,
                 });
             });
@@ -491,6 +495,70 @@ const onDelete = (id) => {
         });
     }
 };
+
+const onApprove = (id) => {
+    if (canApprovePO.value) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, approve it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = useForm({});
+                form.put(`/purchase-order/${id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire(
+                            "Approved!",
+                            "Your po has been approved.",
+                            "success",
+                        );
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    },
+                    onError: () => {
+                        Swal.fire(
+                            "Error!",
+                            "There was a problem approving the po.",
+                            "error",
+                        );
+                    },
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to delete products.",
+            icon: "error",
+        });
+    }
+};
+
+const onPrint = async (id) => {
+    axios({
+url: `http://127.0.0.1:8000/api/purchase-order/print/${id}`,
+method: 'GET',
+headers: {
+    'Content-Type': 'multipart/form-data',
+},'responseType': 'blob'}).then((response) => {
+     var fileURL = window.open(URL.createObjectURL(new Blob([response.data], {type: 'application/pdf'})),'name', 'width=500,height=500,resizable=yes,scrollbars=yes');
+     if(window.focus){
+        fileURL.focus();
+        var fileLink = document.createElement('a');
+        fileLink.href = fileURL;
+        fileLink.setAttribute('stream', 'PO.pdf');
+        document.body.appendChild(fileLink);
+        return false;
+    }
+});
+}
 
 const formatPrice = (price) => {
     return new Intl.NumberFormat("id-ID", {
@@ -582,10 +650,6 @@ const formatPrice = (price) => {
                                                         >Satuan</TableHead
                                                     >
                                                     <TableHead>Isi</TableHead>
-                                                    <TableHead>Harga</TableHead>
-                                                    <TableHead
-                                                        >Jumlah</TableHead
-                                                    >
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -622,22 +686,6 @@ const formatPrice = (price) => {
                                                         class="font-normal"
                                                         >{{
                                                             detail.isi
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-normal"
-                                                        >{{
-                                                            formatPrice(
-                                                                detail.harga,
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-normal"
-                                                        >{{
-                                                            formatPrice(
-                                                                detail.jumlah,
-                                                            )
                                                         }}</TableCell
                                                     >
                                                 </TableRow>
@@ -754,7 +802,7 @@ const formatPrice = (price) => {
         >
             <Form>
                 <DialogContent
-                    class="max-w-full w-full max-h-full h-full flex flex-col p-4 dialog-content"
+                    class="flex flex-col w-full h-full max-w-full max-h-full p-4 dialog-content"
                 >
                     <DialogHeader>
                         <DialogTitle
@@ -763,7 +811,7 @@ const formatPrice = (price) => {
                         >
                         <DialogDescription> Data master PO </DialogDescription>
                     </DialogHeader>
-                    <div class="flex flex-row justify-start gap-4">
+                    <div>
                         <div>
                             <Label for="nama_supplier"> Supplier </Label>
                             <SearchableSelect
@@ -773,7 +821,8 @@ const formatPrice = (price) => {
                                 placeholder="Search suppliers..."
                                 api-endpoint="http://127.0.0.1:8000/api/purchase-order/suppliers"
                                 value-field="nama_supplier"
-                                display-field="nama_supplier"
+                                :display-fields="['kode_supplier', 'nama_supplier']"
+                                display-separator=" | "
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
@@ -794,7 +843,7 @@ const formatPrice = (price) => {
                         <Textarea
                             id="keterangan"
                             v-model="form.keterangan"
-                            class="shrink w-full mt-2"
+                            class="w-full mt-2 shrink"
                         />
                         <span
                             v-if="errors?.keterangan"
@@ -819,10 +868,10 @@ const formatPrice = (price) => {
                                         <TableHead>Qty</TableHead>
                                         <TableHead>Satuan</TableHead>
                                         <TableHead>Isi</TableHead>
-                                        <TableHead>Harga</TableHead>
+                                        <!-- <TableHead>Harga</TableHead>
                                         <TableHead>Diskon</TableHead>
                                         <TableHead>Diskon Global</TableHead>
-                                        <TableHead>Jumlah</TableHead>
+                                        <TableHead>Jumlah</TableHead> -->
                                         <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -838,7 +887,7 @@ const formatPrice = (price) => {
                                                 placeholder="Search..."
                                                 api-endpoint="http://127.0.0.1:8000/api/purchase-order/products"
                                                 value-field="kode_barcode"
-                                                display-field="kode_barcode"
+                                                :display-fields="['kode_barcode', 'nama_barang']"
                                                 search-param="search"
                                                 :per-page="10"
                                                 :debounce-time="300"
@@ -889,9 +938,10 @@ const formatPrice = (price) => {
                                                 type="number"
                                                 class="col-span-3"
                                                 required
+                                                readonly
                                             />
                                         </TableCell>
-                                        <TableCell>
+                                        <!-- <TableCell>
                                             <Input
                                                 id="harga"
                                                 v-model="detail.harga"
@@ -928,7 +978,7 @@ const formatPrice = (price) => {
                                                 required
                                                 readonly
                                             />
-                                        </TableCell>
+                                        </TableCell> -->
                                         <TableCell>
                                             <Button
                                                 @click="removeDetail(index)"

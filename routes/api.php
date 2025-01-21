@@ -13,6 +13,7 @@ Route::get('/products/units', [ProductController::class, 'getUnits']);
 Route::get('/purchase-order/suppliers', [PurchaseOrderController::class, 'getSuppliers']);
 Route::get('/purchase-order/products', [PurchaseOrderController::class, 'getProducts']);
 Route::get('/purchase-order/products/{id}', [PurchaseOrderController::class, 'fetchDetails']);
+Route::get('/purchase-order/print/{id}', [PurchaseOrderController::class, 'print']);
 Route::get('/purchasing/suppliers', [PurchasingController::class, 'getSuppliers']);
 Route::get('/purchasing/products', [PurchasingController::class, 'getProducts']);
 Route::get('/purchasing/po', [PurchasingController::class, 'getPO']);

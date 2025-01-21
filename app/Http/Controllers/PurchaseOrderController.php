@@ -3,17 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\DetailPurchaseOrder;
+use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
-use App\Models\Product;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class PurchaseOrderController extends Controller
 {
@@ -44,10 +45,10 @@ class PurchaseOrderController extends Controller
             'details.*.qty' => 'required|numeric|min:0',
             'details.*.nama_satuan' => 'required|string|max:255',
             'details.*.isi_barang' => 'required|numeric|min:0',
-            'details.*.harga' => 'required|numeric|min:0',
-            'details.*.diskon' => 'required|numeric|min:0',
-            'details.*.diskon_global' => 'required|numeric|min:0',
-            'details.*.jumlah' => 'required|numeric|min:0',
+            // 'details.*.harga' => 'required|numeric|min:0',
+            // 'details.*.diskon' => 'required|numeric|min:0',
+            // 'details.*.diskon_global' => 'required|numeric|min:0',
+            // 'details.*.jumlah' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -75,11 +76,11 @@ class PurchaseOrderController extends Controller
                     'qty' => $detail['qty'],
                     'nama_satuan' => $detail['nama_satuan'],
                     'isi' => $detail['isi_barang'],
-                    'harga' => $detail['harga'],
-                    'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
-                    'jumlah' => $detail['jumlah'],
-                    'diskon' => $detail['diskon'],
-                    'diskon_global' => $detail['diskon_global'],
+                    // 'harga' => $detail['harga'],
+                    // 'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
+                    // 'jumlah' => $detail['jumlah'],
+                    // 'diskon' => $detail['diskon'],
+                    // 'diskon_global' => $detail['diskon_global'],
                     'created_by' => Auth()->user()->name,
                 ]);
             }
@@ -117,10 +118,10 @@ class PurchaseOrderController extends Controller
             'details.*.qty' => 'required|numeric|min:0',
             'details.*.nama_satuan' => 'required|string|max:255',
             'details.*.isi_barang' => 'required|numeric|min:0',
-            'details.*.harga' => 'required|numeric|min:0',
-            'details.*.diskon' => 'required|numeric|min:0',
-            'details.*.diskon_global' => 'required|numeric|min:0',
-            'details.*.jumlah' => 'required|numeric|min:0',
+            // 'details.*.harga' => 'required|numeric|min:0',
+            // 'details.*.diskon' => 'required|numeric|min:0',
+            // 'details.*.diskon_global' => 'required|numeric|min:0',
+            // 'details.*.jumlah' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -146,11 +147,11 @@ class PurchaseOrderController extends Controller
                     'qty' => $detail['qty'],
                     'nama_satuan' => $detail['nama_satuan'],
                     'isi' => $detail['isi_barang'],
-                    'harga' => $detail['harga'],
-                    'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
-                    'jumlah' => $detail['jumlah'],
-                    'diskon' => $detail['diskon'],
-                    'diskon_global' => $detail['diskon_global'],
+                    // 'harga' => $detail['harga'],
+                    // 'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
+                    // 'jumlah' => $detail['jumlah'],
+                    // 'diskon' => $detail['diskon'],
+                    // 'diskon_global' => $detail['diskon_global'],
                     'updated_by' => auth()->user()->name,
                 ]);
             }
@@ -197,12 +198,44 @@ class PurchaseOrderController extends Controller
         }
     }
 
+    public function approve($id)
+    {
+        $this->authorize('approve', PurchaseOrder::class);
+
+        DB::beginTransaction();
+
+        try {
+            $po = PurchaseOrder::findOrFail($id);
+            $po->update([
+                'status' => 'APPROVED',
+                'updated_by' => auth()->user()->name,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'PurchaseOrder Approved Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while approving the po', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function print($id)
+    {
+        $data = PurchaseOrder::with('details')->where('id', $id)->first();
+        $pdf = Pdf::loadView('po', ['data' => $data]);
+
+        return $pdf->setPaper('a4')->stream();
+    }
+
     public function getSuppliers(Request $request)
     {
         $search = $request->input('search', '');
         $perPage = 10;
 
-        $data = Supplier::where('nama_supplier', 'like', "%{$search}%")
+        $data = Supplier::where('kode_supplier', 'like', "%{$search}%")
+            ->orWhere('nama_supplier', 'like', "%{$search}%")
             ->paginate($perPage);
 
         return response()->json($data);
@@ -214,6 +247,7 @@ class PurchaseOrderController extends Controller
         $perPage = 10;
 
         $data = Product::where('kode_barcode', 'like', "%{$search}%")
+            ->orWhere('nama_barang', 'like', "%{$search}%")
             ->paginate($perPage);
 
         return response()->json($data);
@@ -229,62 +263,62 @@ class PurchaseOrderController extends Controller
     public function getKodePO()
     {
         try {
-            $id = 'PO' . '/' . date('Ymd') . '/' . '000001';
-            $maxId = PurchaseOrder::withTrashed()->where('kode_po', 'LIKE', 'PO' . '/' . date('Ymd') . '/')->max('kode_po');
-            if (!$maxId) {
-                $id = 'PO' . '/' . date('Ymd') . '/' . '000001';
+            $id = 'PO'.'/'.date('Ymd').'/'.'000001';
+            $maxId = PurchaseOrder::withTrashed()->where('kode_po', 'LIKE', 'PO'.'/'.date('Ymd').'/%')->max('kode_po');
+            if (! $maxId) {
+                $id = 'PO'.'/'.date('Ymd').'/'.'000001';
             } else {
-                $maxId = str_replace('PO' . '/' . date('Ymd') . '/', '', $maxId);
+                $maxId = str_replace('PO'.'/'.date('Ymd').'/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'PO' . '/' . date('Ymd') . '/' . '00000' . $count;
+                    $id = 'PO'.'/'.date('Ymd').'/'.'00000'.$count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'PO' . '/' . date('Ymd') . '/' . '0000' . $count;
+                    $id = 'PO'.'/'.date('Ymd').'/'.'0000'.$count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'PO' . '/' . date('Ymd') . '/' . '000' . $count;
+                    $id = 'PO'.'/'.date('Ymd').'/'.'000'.$count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'PO' . '/' . date('Ymd') . '/' . '00' . $count;
+                    $id = 'PO'.'/'.date('Ymd').'/'.'00'.$count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'PO' . '/' . date('Ymd') . '/' . '0' . $count;
+                    $id = 'PO'.'/'.date('Ymd').'/'.'0'.$count;
                 } else {
-                    $id = 'PO' . '/' . date('Ymd') . '/' . $count;
+                    $id = 'PO'.'/'.date('Ymd').'/'.$count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'PO/' . Str::uuid()->toString();
+            return 'PO/'.Str::uuid()->toString();
         }
     }
 
     public function getNoFaktur()
     {
         try {
-            $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '000001';
-            $maxId = DetailPurchaseOrder::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PO' . '/' . date('Ymd') . '/')->max('nomor_faktur');
-            if (!$maxId) {
-                $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '000001';
+            $id = 'FKT-PO'.'/'.date('Ymd').'/'.'000001';
+            $maxId = DetailPurchaseOrder::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PO'.'/'.date('Ymd').'/')->max('nomor_faktur');
+            if (! $maxId) {
+                $id = 'FKT-PO'.'/'.date('Ymd').'/'.'000001';
             } else {
-                $maxId = str_replace('FKT-PO' . '/' . date('Ymd') . '/', '', $maxId);
+                $maxId = str_replace('FKT-PO'.'/'.date('Ymd').'/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '00000' . $count;
+                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'00000'.$count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '0000' . $count;
+                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'0000'.$count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '000' . $count;
+                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'000'.$count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '00' . $count;
+                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'00'.$count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '0' . $count;
+                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'0'.$count;
                 } else {
-                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . $count;
+                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.$count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'FKT-PO/' . Str::uuid()->toString();
+            return 'FKT-PO/'.Str::uuid()->toString();
         }
     }
 }

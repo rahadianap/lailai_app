@@ -18,7 +18,7 @@ class HandleInertiaRequests extends Middleware
     {
         return array_merge(parent::share($request), [
             'flash' => [
-                'error' => fn() => $request->session()->get('error')
+                'error' => fn () => $request->session()->get('error'),
             ],
             'user' => [
                 'name' => auth()->user()->name ?? '',
@@ -30,7 +30,7 @@ class HandleInertiaRequests extends Middleware
 
     private function getUserData(): ?array
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return null;
         }
 
@@ -55,6 +55,7 @@ class HandleInertiaRequests extends Middleware
             'po_create' => $value,
             'po_edit' => $value,
             'po_delete' => $value,
+            'po_approve' => $value,
             'purchasing_view' => $value,
             'purchasing_create' => $value,
             'purchasing_edit' => $value,
@@ -114,6 +115,7 @@ class HandleInertiaRequests extends Middleware
         $permissions['account_delete'] = false;
         $permissions['users_delete'] = false;
         $permissions['retur_beli_delete'] = false;
+
         return $permissions;
     }
 
@@ -121,12 +123,13 @@ class HandleInertiaRequests extends Middleware
     {
         $permissions = $this->getDefaultPermissions(false);
         $permissions['pos_view'] = true;
+
         return $permissions;
     }
 
     private function getPermissions(): array
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return $this->getDefaultPermissions(false);
         }
 

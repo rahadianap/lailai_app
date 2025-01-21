@@ -2,9 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\PurchaseOrder;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class PurchaseOrderPolicy
 {
@@ -24,6 +22,11 @@ class PurchaseOrderPolicy
     }
 
     public function delete(User $user)
+    {
+        return $user->role === 'admin';
+    }
+
+    public function approve(User $user)
     {
         return $user->role === 'admin';
     }

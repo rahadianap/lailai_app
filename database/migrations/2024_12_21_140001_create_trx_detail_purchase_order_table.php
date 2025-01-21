@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -20,9 +21,9 @@ return new class extends Migration {
             $table->integer('qty');
             $table->string('nama_satuan');
             $table->integer('isi');
-            $table->integer('harga');
-            $table->integer('jumlah');
-            $table->decimal('harga_satuan_kecil', total: 10, places: 2);
+            $table->integer('harga')->nullable();
+            $table->integer('jumlah')->nullable();
+            $table->decimal('harga_satuan_kecil', total: 10, places: 2)->nullable();
             $table->decimal('hpp_avg_satuan', total: 10, places: 2)->nullable();
             $table->decimal('hpp_avg_perbiji', total: 10, places: 2)->nullable();
             $table->decimal('nilai_dpp', total: 10, places: 2)->nullable();

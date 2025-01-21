@@ -14,7 +14,7 @@ const props = defineProps({
     permissions: Object,
 });
 
-const emit = defineEmits(["expand", "edit", "delete"]);
+const emit = defineEmits(["expand", "edit", "delete", "approve", "print"]);
 </script>
 
 <template>
@@ -38,6 +38,17 @@ const emit = defineEmits(["expand", "edit", "delete"]);
                 @click="$emit('delete')"
             >
                 Delete
+            </DropdownMenuItem>
+            <DropdownMenuItem
+                v-if="permissions.po_approve"
+                @click="$emit('approve')"
+            >
+                Approve
+            </DropdownMenuItem>
+            <DropdownMenuItem
+                @click="$emit('print')"
+            >
+                Print
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
