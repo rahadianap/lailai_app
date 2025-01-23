@@ -215,9 +215,26 @@ const pagination = ref({
     pageIndex: props.data.current_page - 1,
     pageSize: props.data.per_page,
 });
+const statusFilter = ref("ALL"); // Initialize statusFilter with 'ALL'
+
+const filteredData = computed(() => {
+    return data.filter((item) => {
+        const statusMatch =
+            statusFilter.value === "ALL" || item.status === statusFilter.value; // Update statusMatch condition
+        const kodePoFilter =
+            columnFilters.value.find((filter) => filter.id === "kode_po")
+                ?.value || "";
+        const kodePoMatch =
+            !kodePoFilter ||
+            item.kode_po.toLowerCase().includes(kodePoFilter.toLowerCase());
+        return statusMatch && kodePoMatch;
+    });
+});
 
 const table = useVueTable({
-    data,
+    get data() {
+        return filteredData.value;
+    },
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -543,22 +560,30 @@ const onApprove = (id) => {
 
 const onPrint = async (id) => {
     axios({
-url: `http://127.0.0.1:8000/api/purchase-order/print/${id}`,
-method: 'GET',
-headers: {
-    'Content-Type': 'multipart/form-data',
-},'responseType': 'blob'}).then((response) => {
-     var fileURL = window.open(URL.createObjectURL(new Blob([response.data], {type: 'application/pdf'})),'name', 'width=500,height=500,resizable=yes,scrollbars=yes');
-     if(window.focus){
-        fileURL.focus();
-        var fileLink = document.createElement('a');
-        fileLink.href = fileURL;
-        fileLink.setAttribute('stream', 'PO.pdf');
-        document.body.appendChild(fileLink);
-        return false;
-    }
-});
-}
+        url: `http://127.0.0.1:8000/api/purchase-order/print/${id}`,
+        method: "GET",
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+        responseType: "blob",
+    }).then((response) => {
+        var fileURL = window.open(
+            URL.createObjectURL(
+                new Blob([response.data], { type: "application/pdf" }),
+            ),
+            "name",
+            "width=500,height=500,resizable=yes,scrollbars=yes",
+        );
+        if (window.focus) {
+            fileURL.focus();
+            var fileLink = document.createElement("a");
+            fileLink.href = fileURL;
+            fileLink.setAttribute("stream", "PO.pdf");
+            document.body.appendChild(fileLink);
+            return false;
+        }
+    });
+};
 
 const formatPrice = (price) => {
     return new Intl.NumberFormat("id-ID", {
@@ -575,14 +600,30 @@ const formatPrice = (price) => {
         </div>
         <div v-if="canViewPO" class="w-full">
             <div class="flex items-center justify-between py-4">
-                <Input
-                    :model-value="table.getColumn('kode_po')?.getFilterValue()"
-                    class="max-w-sm"
-                    placeholder="Filter kode PO..."
-                    @update:model-value="
-                        table.getColumn('kode_po')?.setFilterValue($event)
-                    "
-                />
+                <div class="flex-1">
+                    <Input
+                        :model-value="
+                            table.getColumn('kode_po')?.getFilterValue()
+                        "
+                        class="max-w-sm"
+                        placeholder="Filter kode PO..."
+                        @update:model-value="
+                            table.getColumn('kode_po')?.setFilterValue($event)
+                        "
+                    />
+                </div>
+                <div class="w-48">
+                    <Select v-model="statusFilter" class="select-trigger">
+                        <SelectTrigger>
+                            <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ALL">All</SelectItem>
+                            <SelectItem value="CREATED">Created</SelectItem>
+                            <SelectItem value="APPROVED">Approved</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
                 <Button
                     v-if="canCreatePO"
                     class="ml-4"
@@ -821,7 +862,10 @@ const formatPrice = (price) => {
                                 placeholder="Search suppliers..."
                                 api-endpoint="http://127.0.0.1:8000/api/purchase-order/suppliers"
                                 value-field="nama_supplier"
-                                :display-fields="['kode_supplier', 'nama_supplier']"
+                                :display-fields="[
+                                    'kode_supplier',
+                                    'nama_supplier',
+                                ]"
                                 display-separator=" | "
                                 search-param="search"
                                 :per-page="10"
@@ -887,7 +931,10 @@ const formatPrice = (price) => {
                                                 placeholder="Search..."
                                                 api-endpoint="http://127.0.0.1:8000/api/purchase-order/products"
                                                 value-field="kode_barcode"
-                                                :display-fields="['kode_barcode', 'nama_barang']"
+                                                :display-fields="[
+                                                    'kode_barcode',
+                                                    'nama_barang',
+                                                ]"
                                                 search-param="search"
                                                 :per-page="10"
                                                 :debounce-time="300"
@@ -1028,5 +1075,10 @@ const formatPrice = (price) => {
     position: sticky;
     top: 0;
     z-index: 10;
+}
+
+:deep(.select-trigger) {
+    width: 100%;
+    max-width: 200px;
 }
 </style>
