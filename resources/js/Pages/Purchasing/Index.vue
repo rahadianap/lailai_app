@@ -105,6 +105,14 @@ const onPOSelect = async (po) => {
         form.keterangan = poDetails[0].keterangan;
         form.details = poDetails.map((detail) => ({
             ...detail,
+            isi_barang: detail.isi,
+            harga: 0,
+            diskon: 0,
+            diskon_global: 0,
+            dpp: 0,
+            ppn: 0,
+            harga_jual: 0,
+            is_taxable: detail.is_taxable === "1" ? true : false,
             jumlah:
                 detail.qty * detail.harga -
                 (detail.diskon + detail.diskon_global),
@@ -144,7 +152,7 @@ const onProductSelect = async (product) => {
         currentDetail.diskon = 0;
         currentDetail.diskon_global = 0;
         currentDetail.jumlah = productDetails.harga_beli_karton;
-        currentDetail.is_taxable = productDetails.is_taxable;
+        currentDetail.is_taxable = productDetails.is_taxable === "1" ? true : false;
         currentDetail.exp_date = ""; // You might want to set a default date here
         calculateJumlah(currentDetail);
     } catch (error) {
@@ -979,7 +987,7 @@ const formatPrice = (price) => {
                                 placeholder="Search PO..."
                                 api-endpoint="http://127.0.0.1:8000/api/purchasing/po"
                                 value-field="kode_po"
-                                display-field="kode_po"
+                                :display-fields="['kode_po']"
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
@@ -1078,7 +1086,7 @@ const formatPrice = (price) => {
                                                 placeholder="Search..."
                                                 api-endpoint="http://127.0.0.1:8000/api/purchasing/products"
                                                 value-field="kode_barcode"
-                                                display-field="kode_barcode"
+                                                :display-fields="['kode_barcode']"
                                                 search-param="search"
                                                 :per-page="10"
                                                 :debounce-time="300"
@@ -1317,7 +1325,8 @@ const formatPrice = (price) => {
                                             <TableCell>
                                                 <Checkbox
                                                     disabled
-                                                    v-model="detail.is_taxable"
+                                                    :checked="detail.is_taxable"
+                                                    @update:checked="form.is_taxable = $event"
                                                 />
                                             </TableCell>
                                         </TableCell>
