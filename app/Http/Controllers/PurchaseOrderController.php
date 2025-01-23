@@ -208,7 +208,7 @@ class PurchaseOrderController extends Controller
             $po = PurchaseOrder::findOrFail($id);
             $po->update([
                 'status' => 'APPROVED',
-                'updated_by' => auth()->user()->name,
+                'approved_by' => auth()->user()->name,
             ]);
 
             DB::commit();
@@ -224,7 +224,8 @@ class PurchaseOrderController extends Controller
     public function print($id)
     {
         $data = PurchaseOrder::with('details')->where('id', $id)->first();
-        $pdf = Pdf::loadView('po', ['data' => $data]);
+        $supplier = Supplier::where('nama_supplier', $data->nama_supplier)->first();
+        $pdf = Pdf::loadView('po', ['data' => $data, 'supplier' => $supplier]);
 
         return $pdf->setPaper('a4')->stream();
     }
