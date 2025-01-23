@@ -281,6 +281,7 @@ class PurchasingController extends Controller
         $perPage = 10;
 
         $data = PurchaseOrder::where('kode_po', 'like', "%{$search}%")
+            ->where('status', 'APPROVED')
             ->paginate($perPage);
 
         return response()->json($data);
@@ -306,7 +307,7 @@ class PurchasingController extends Controller
 
     public function fetchPODetails($id)
     {
-        $data = PurchaseOrder::join('trx_detail_purchase_order', 'trx_purchase_order.id', '=', 'trx_detail_purchase_order.pembelian_id')->where('pembelian_id', $id)->get();
+        $data = PurchaseOrder::join('trx_detail_purchase_order', 'trx_purchase_order.id', '=', 'trx_detail_purchase_order.purchase_order_id')->where('purchase_order_id', $id)->get();
 
         return response()->json($data);
     }

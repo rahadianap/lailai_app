@@ -104,10 +104,11 @@ const onPOSelect = async (po) => {
         form.nama_supplier = poDetails[0].nama_supplier;
         form.keterangan = poDetails[0].keterangan;
         form.details = poDetails.map((detail) => ({
-            ...detail,
-            jumlah:
-                detail.qty * detail.harga -
-                (detail.diskon + detail.diskon_global),
+            kode_barcode: detail.kode_barcode,
+            nama_barang: detail.nama_barang,
+            qty: detail.qty,
+            nama_satuan: detail.nama_satuan,
+            isi_barang: detail.isi,
         }));
 
         calculateTotals();
@@ -979,7 +980,7 @@ const formatPrice = (price) => {
                                 placeholder="Search PO..."
                                 api-endpoint="http://127.0.0.1:8000/api/purchasing/po"
                                 value-field="kode_po"
-                                display-field="kode_po"
+                                :display-fields="['kode_po']"
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
@@ -1078,7 +1079,9 @@ const formatPrice = (price) => {
                                                 placeholder="Search..."
                                                 api-endpoint="http://127.0.0.1:8000/api/purchasing/products"
                                                 value-field="kode_barcode"
-                                                display-field="kode_barcode"
+                                                :display-fields="[
+                                                    'kode_barcode',
+                                                ]"
                                                 search-param="search"
                                                 :per-page="10"
                                                 :debounce-time="300"
