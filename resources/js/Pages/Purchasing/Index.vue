@@ -104,11 +104,18 @@ const onPOSelect = async (po) => {
         form.nama_supplier = poDetails[0].nama_supplier;
         form.keterangan = poDetails[0].keterangan;
         form.details = poDetails.map((detail) => ({
-            kode_barcode: detail.kode_barcode,
-            nama_barang: detail.nama_barang,
-            qty: detail.qty,
-            nama_satuan: detail.nama_satuan,
+            ...detail,
             isi_barang: detail.isi,
+            harga: 0,
+            diskon: 0,
+            diskon_global: 0,
+            dpp: 0,
+            ppn: 0,
+            harga_jual: 0,
+            is_taxable: detail.is_taxable === "1" ? true : false,
+            jumlah:
+                detail.qty * detail.harga -
+                (detail.diskon + detail.diskon_global),
         }));
 
         calculateTotals();
@@ -145,7 +152,8 @@ const onProductSelect = async (product) => {
         currentDetail.diskon = 0;
         currentDetail.diskon_global = 0;
         currentDetail.jumlah = productDetails.harga_beli_karton;
-        currentDetail.is_taxable = productDetails.is_taxable;
+        currentDetail.is_taxable =
+            productDetails.is_taxable === "1" ? true : false;
         currentDetail.exp_date = ""; // You might want to set a default date here
         calculateJumlah(currentDetail);
     } catch (error) {
@@ -1320,7 +1328,10 @@ const formatPrice = (price) => {
                                             <TableCell>
                                                 <Checkbox
                                                     disabled
-                                                    v-model="detail.is_taxable"
+                                                    :checked="detail.is_taxable"
+                                                    @update:checked="
+                                                        form.is_taxable = $event
+                                                    "
                                                 />
                                             </TableCell>
                                         </TableCell>
