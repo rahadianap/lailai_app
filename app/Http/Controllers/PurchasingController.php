@@ -292,7 +292,7 @@ class PurchasingController extends Controller
         $search = $request->input('search', '');
         $perPage = 10;
 
-        $data = Product::where('kode_barcode', 'like', "%{$search}%")
+        $data = Product::with('details')->where('kode_barcode', 'like', "%{$search}%")
             ->paginate($perPage);
 
         return response()->json($data);
@@ -300,7 +300,7 @@ class PurchasingController extends Controller
 
     public function fetchDetails($id)
     {
-        $data = Product::where('kode_barcode', $id)->first();
+        $data = Product::with('details')->where('kode_barcode', $id)->first();
 
         return response()->json($data);
     }

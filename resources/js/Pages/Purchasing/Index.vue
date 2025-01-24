@@ -108,14 +108,11 @@ const onPOSelect = async (po) => {
             isi_barang: detail.isi,
             harga: 0,
             diskon: 0,
-            diskon_global: 0,
             dpp: 0,
             ppn: 0,
             harga_jual: 0,
             is_taxable: detail.is_taxable === "1" ? true : false,
-            jumlah:
-                detail.qty * detail.harga -
-                (detail.diskon + detail.diskon_global),
+            jumlah: detail.qty * detail.harga - (detail.diskon || 0),
         }));
 
         calculateTotals();
@@ -145,12 +142,12 @@ const onProductSelect = async (product) => {
         currentDetail.nama_barang = productDetails.nama_barang;
         currentDetail.nama_satuan = productDetails.nama_satuan;
         currentDetail.isi_barang = productDetails.isi_barang;
-        currentDetail.harga = productDetails.harga_beli_karton;
+        currentDetail.harga = productDetails.details["harga_beli_karton"];
+        currentDetail.harga_jual = productDetails.details["harga_jual_karton"];
 
         // Set default values for other fields
         currentDetail.qty = 1;
         currentDetail.diskon = 0;
-        currentDetail.diskon_global = 0;
         currentDetail.jumlah = productDetails.harga_beli_karton;
         currentDetail.is_taxable =
             productDetails.is_taxable === "1" ? true : false;
@@ -341,7 +338,6 @@ const form = useForm({
             isi_barang: 0,
             harga: 0,
             diskon: 0,
-            diskon_global: 0,
             jumlah: 0,
             dpp: 0,
             ppn: 0,
@@ -360,7 +356,6 @@ const newDetailInput = ref({
     isi_barang: 0,
     harga: 0,
     diskon: 0,
-    diskon_global: 0,
     jumlah: 0,
     dpp: 0,
     ppn: 0,
@@ -395,7 +390,7 @@ const isItemExist = (newItem) => {
 
 const totalDiskon = computed(() => {
     return form.details.reduce(
-        (sum, detail) => sum + (detail.diskon_global || 0),
+        (sum, detail) => sum + (detail.diskon_total || 0),
         0,
     );
 });
@@ -405,8 +400,12 @@ const totalSub = computed(() => {
 });
 
 const calculateJumlah = (detail) => {
+    console.log(detail);
     detail.jumlah = detail.qty * detail.harga - detail.diskon;
     form.subtotal = totalSub;
+    form.total = form.subtotal - form.diskon_total;
+    form.ppn_total = detail.is_taxable == true ? form.total * 0.11 : 0;
+    form.grand_total = form.total + form.ppn_total;
 };
 
 const setDiskonGlobal = (detail) => {
@@ -557,7 +556,6 @@ const onEdit = async (id) => {
                     ppn: detail.nilai_ppn,
                     harga_jual: detail.harga_jual,
                     diskon: detail.diskon,
-                    diskon_global: detail.diskon_global,
                     rebate: detail.rebate,
                     is_taxable: detail.is_taxable,
                 });
@@ -1065,7 +1063,6 @@ const formatPrice = (price) => {
                                         <TableHead>Isi</TableHead>
                                         <TableHead>Harga Beli</TableHead>
                                         <TableHead>Diskon</TableHead>
-                                        <TableHead>Diskon Global</TableHead>
                                         <TableHead>Jumlah</TableHead>
                                         <TableHead>DPP</TableHead>
                                         <TableHead>PPN</TableHead>
@@ -1245,32 +1242,6 @@ const formatPrice = (price) => {
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="diskon_global"
-                                                v-model="detail.diskon_global"
-                                                type="number"
-                                                class="col-span-3 editable-input"
-                                                @input="setDiskonGlobal(detail)"
-                                                required
-                                                min="0"
-                                                step="0"
-                                            />
-                                            <p
-                                                v-if="
-                                                    form.errors[
-                                                        `details.${index}.diskon_global`
-                                                    ]
-                                                "
-                                                class="mt-1 text-sm text-red-500"
-                                            >
-                                                {{
-                                                    form.errors[
-                                                        `details.${index}.diskon_global`
-                                                    ]
-                                                }}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
                                                 id="jumlah"
                                                 v-model="detail.jumlah"
                                                 type="number"
@@ -1372,9 +1343,9 @@ const formatPrice = (price) => {
                                     <div class="flex items-center gap-2">
                                         <Input
                                             v-model="form.diskon_total"
+                                            @input="setDiskonGlobal(detail)"
                                             type="number"
                                             class="w-32 text-right"
-                                            readonly
                                         />
                                     </div>
                                 </div>
