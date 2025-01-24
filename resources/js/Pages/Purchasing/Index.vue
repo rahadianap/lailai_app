@@ -400,11 +400,16 @@ const totalSub = computed(() => {
 });
 
 const calculateJumlah = (detail) => {
-    console.log(detail);
     detail.jumlah = detail.qty * detail.harga - detail.diskon;
     form.subtotal = totalSub;
     form.total = form.subtotal - form.diskon_total;
-    form.ppn_total = detail.is_taxable == true ? form.total * 0.11 : 0;
+    // form.ppn_total = detail.is_taxable == true ? form.total * 0.11 : 0;
+    form.ppn_total =
+        form.purchase_type === "no_ppn"
+            ? 0
+            : detail.is_taxable == true
+              ? form.total * 0.11
+              : 0;
     form.grand_total = form.total + form.ppn_total;
 };
 
@@ -414,7 +419,8 @@ const setDiskonGlobal = (detail) => {
     form.diskon_total = totalDiskon;
     form.dpp_total = form.subtotal - form.diskon_total;
     form.total = form.subtotal - form.diskon_total;
-    form.ppn_total = form.total * 0.11;
+    // form.ppn_total = form.total * 0.11;
+    form.ppn_total = form.purchase_type === "no_ppn" ? 0 : form.total * 0.11;
     form.grand_total = form.dpp_total + form.ppn_total;
 };
 
@@ -454,6 +460,15 @@ watch(
 
 // Add watch effect to recalculate totals when details change
 watch(() => form.details, calculateTotals, { deep: true });
+
+watch(
+    () => form.purchase_type,
+    () => {
+        form.details.forEach(calculateJumlah);
+        setDiskonGlobal(form.details[0]); // Recalculate global totals
+    },
+    { immediate: true },
+);
 
 const removeDetail = (index) => {
     form.details.splice(index, 1);
@@ -1041,7 +1056,7 @@ const formatPrice = (price) => {
                                 >
                             </div>
                             <div class="flex items-center space-x-2">
-                                <RadioGroupItem id="no_ppn" value="type3" />
+                                <RadioGroupItem id="no_ppn" value="no_ppn" />
                                 <Label for="no_ppn" class="text-xs"
                                     >No PPn</Label
                                 >
