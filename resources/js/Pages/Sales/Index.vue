@@ -41,9 +41,12 @@
                         <Table>
                             <TableHeader class="sticky top-0 bg-white z-10">
                                 <TableRow>
-                                    <TableHead class="w-1/3">Product</TableHead>
+                                    <TableHead class="w-1/4">Product</TableHead>
                                     <TableHead>Price</TableHead>
                                     <TableHead>Quantity</TableHead>
+                                    <TableHead>DPP</TableHead>
+                                    <TableHead>PPN</TableHead>
+                                    <TableHead>Taxable</TableHead>
                                     <TableHead>Total</TableHead>
                                     <TableHead>Actions</TableHead>
                                 </TableRow>
@@ -53,7 +56,7 @@
                                     v-for="(item, index) in cart"
                                     :key="index"
                                 >
-                                    <TableCell class="w-1/3">{{
+                                    <TableCell class="w-1/4">{{
                                         item.nama_barang
                                     }}</TableCell>
                                     <TableCell>{{
@@ -63,10 +66,33 @@
                                         <Input
                                             v-model.number="item.quantity"
                                             type="number"
-                                            class="w-20 editable-input"
+                                            class="w-40"
                                             @input="updateCartItem(index)"
                                             min="0"
                                         />
+                                    </TableCell>
+                                    <TableCell>{{
+                                        formatCurrency(item.dpp)
+                                    }}</TableCell>
+                                    <TableCell>{{
+                                        formatCurrency(item.ppn)
+                                    }}</TableCell>
+                                    <TableCell>
+                                        <Checkbox
+                                            disabled
+                                            v-model.number="item.is_taxable"
+                                            :checked="item.is_taxable"
+                                            @update:checked="
+                                                item.is_taxable = $event
+                                            "
+                                        />
+                                        <!-- <Checkbox
+                                            disabled
+                                            :checked="item.is_taxable"
+                                            @update:checked="
+                                                item.is_taxable = $event
+                                            "
+                                        /> -->
                                     </TableCell>
                                     <TableCell>{{
                                         formatCurrency(item.total)
@@ -132,9 +158,25 @@
                 <div class="space-y-4">
                     <div>
                         <Label htmlFor="payment_method">Payment Method</Label>
-                        <Select v-model="paymentMethod">
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
+                        <Select
+                            v-model="paymentMethod"
+                            @update:modelValue="applyMember"
+                            class="col-span-3"
+                        >
+                            <SelectTrigger id="paymentMethod">
+                                <SelectValue
+                                    placeholder="Select a payment method"
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="cash">Cash</SelectItem>
+                                <SelectItem value="card">Card</SelectItem>
+                                <SelectItem value="edc_bca">EDC BCA</SelectItem>
+                                <SelectItem value="edc_mandiri"
+                                    >EDC Mandiri</SelectItem
+                                >
+                                <SelectItem value="edc_uob">EDC UOB</SelectItem>
+                            </SelectContent>
                         </Select>
                     </div>
 
@@ -158,6 +200,17 @@
                             type="text"
                             readonly
                             class="readonly-input"
+                        />
+                    </div>
+
+                    <div v-if="paymentMethod !== 'cash'">
+                        <Label htmlFor="card_number">Card Number</Label>
+                        <Input
+                            v-model.number="cardNumber"
+                            type="number"
+                            id="card_number"
+                            class="editable-input"
+                            @input="updateChange"
                         />
                     </div>
 
@@ -268,7 +321,13 @@ import DeleteConfirmationDialog from "@/components/DeleteCart.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {
     Table,
     TableBody,
@@ -289,6 +348,7 @@ import { Trash2 } from "lucide-vue-next";
 import { usePrinter } from "@/composables/usePrinter";
 import VoucherPopup from "@/components/VoucherPopup.vue";
 import MemberPopup from "@/components/MemberPopup.vue";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const { printReceipt: printReceiptToPrinter } = usePrinter();
 
@@ -442,6 +502,15 @@ const addProductToCart = (product) => {
         nama_barang: product.nama_barang,
         harga_jual_eceran: Number(product.details.harga_jual_eceran),
         quantity: 1,
+        dpp:
+            product.is_taxable === "1"
+                ? Number(product.details.harga_jual_eceran) * (100 / 111)
+                : 0,
+        ppn:
+            product.is_taxable === "1"
+                ? Number(product.details.harga_jual_eceran) * 0.11
+                : 0,
+        is_taxable: product.is_taxable === "1" ? true : false,
         total: Number(product.details.harga_jual_eceran),
     });
     selectedProduct.value = null;
@@ -466,6 +535,12 @@ const updateCartItem = (index) => {
     const item = cart.value[index];
     item.quantity = Math.max(0, item.quantity);
     item.total = Number(item.harga_jual_eceran) * item.quantity;
+    // item.dpp = item.is_taxable
+    //     ? Number(item.harga_jual_eceran) * (100 / 111) * item.quantity
+    //     : 0;
+    item.ppn = item.is_taxable
+        ? Number(item.harga_jual_eceran) * 0.11 * item.quantity
+        : 0;
 };
 
 const removeFromCart = (index) => {
@@ -479,7 +554,11 @@ const subtotal = computed(() => {
 });
 
 const tax = computed(() => {
-    return Number((subtotal.value * 0.11).toFixed(2));
+    return cart.value.reduce((sum, item) => {
+        return (
+            sum + (item.is_taxable ? Number((item.total * 0.11).toFixed(2)) : 0)
+        );
+    }, 0);
 });
 
 const total = computed(() => {
@@ -615,25 +694,3 @@ const removeMember = () => {
     appliedMember.value = null;
 };
 </script>
-
-<style scoped>
-.editable-input {
-    @apply bg-white border border-gray-300 transition-colors duration-200 ease-in-out;
-}
-
-.editable-input:hover {
-    @apply border-gray-400;
-}
-
-.editable-input:focus {
-    @apply border-blue-500 ring-2 ring-blue-200 outline-none;
-}
-
-.readonly-input {
-    @apply bg-gray-100 border border-gray-300 text-gray-600 cursor-not-allowed;
-}
-
-.searchable-select-wrapper {
-    @apply relative z-30;
-}
-</style>
