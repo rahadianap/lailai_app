@@ -6,7 +6,7 @@ use App\Models\DetailPurchaseOrder;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Barryvdh\DomPDF\Facade as Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -264,62 +264,62 @@ class PurchaseOrderController extends Controller
     public function getKodePO()
     {
         try {
-            $id = 'PO'.'/'.date('Ymd').'/'.'000001';
-            $maxId = PurchaseOrder::withTrashed()->where('kode_po', 'LIKE', 'PO'.'/'.date('Ymd').'/%')->max('kode_po');
-            if (! $maxId) {
-                $id = 'PO'.'/'.date('Ymd').'/'.'000001';
+            $id = 'PO' . '/' . date('Ymd') . '/' . '000001';
+            $maxId = PurchaseOrder::withTrashed()->where('kode_po', 'LIKE', 'PO' . '/' . date('Ymd') . '/%')->max('kode_po');
+            if (!$maxId) {
+                $id = 'PO' . '/' . date('Ymd') . '/' . '000001';
             } else {
-                $maxId = str_replace('PO'.'/'.date('Ymd').'/', '', $maxId);
+                $maxId = str_replace('PO' . '/' . date('Ymd') . '/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'PO'.'/'.date('Ymd').'/'.'00000'.$count;
+                    $id = 'PO' . '/' . date('Ymd') . '/' . '00000' . $count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'PO'.'/'.date('Ymd').'/'.'0000'.$count;
+                    $id = 'PO' . '/' . date('Ymd') . '/' . '0000' . $count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'PO'.'/'.date('Ymd').'/'.'000'.$count;
+                    $id = 'PO' . '/' . date('Ymd') . '/' . '000' . $count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'PO'.'/'.date('Ymd').'/'.'00'.$count;
+                    $id = 'PO' . '/' . date('Ymd') . '/' . '00' . $count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'PO'.'/'.date('Ymd').'/'.'0'.$count;
+                    $id = 'PO' . '/' . date('Ymd') . '/' . '0' . $count;
                 } else {
-                    $id = 'PO'.'/'.date('Ymd').'/'.$count;
+                    $id = 'PO' . '/' . date('Ymd') . '/' . $count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'PO/'.Str::uuid()->toString();
+            return 'PO/' . Str::uuid()->toString();
         }
     }
 
     public function getNoFaktur()
     {
         try {
-            $id = 'FKT-PO'.'/'.date('Ymd').'/'.'000001';
-            $maxId = DetailPurchaseOrder::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PO'.'/'.date('Ymd').'/')->max('nomor_faktur');
-            if (! $maxId) {
-                $id = 'FKT-PO'.'/'.date('Ymd').'/'.'000001';
+            $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '000001';
+            $maxId = DetailPurchaseOrder::withTrashed()->where('nomor_faktur', 'LIKE', 'FKT-PO' . '/' . date('Ymd') . '/')->max('nomor_faktur');
+            if (!$maxId) {
+                $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '000001';
             } else {
-                $maxId = str_replace('FKT-PO'.'/'.date('Ymd').'/', '', $maxId);
+                $maxId = str_replace('FKT-PO' . '/' . date('Ymd') . '/', '', $maxId);
                 $count = $maxId + 1;
                 if ($count < 10) {
-                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'00000'.$count;
+                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '00000' . $count;
                 } elseif ($count >= 10 && $count < 100) {
-                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'0000'.$count;
+                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '0000' . $count;
                 } elseif ($count >= 100 && $count < 1000) {
-                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'000'.$count;
+                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '000' . $count;
                 } elseif ($count >= 1000 && $count < 10000) {
-                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'00'.$count;
+                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '00' . $count;
                 } elseif ($count >= 10000 && $count < 100000) {
-                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.'0'.$count;
+                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . '0' . $count;
                 } else {
-                    $id = 'FKT-PO'.'/'.date('Ymd').'/'.$count;
+                    $id = 'FKT-PO' . '/' . date('Ymd') . '/' . $count;
                 }
             }
 
             return $id;
         } catch (\Exception $e) {
-            return 'FKT-PO/'.Str::uuid()->toString();
+            return 'FKT-PO/' . Str::uuid()->toString();
         }
     }
 }

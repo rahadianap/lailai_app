@@ -23,7 +23,7 @@ import {
     useVueTable,
 } from "@tanstack/vue-table";
 import { h, ref, watch, computed } from "vue";
-import DropdownAction from "../Products/components/DataTableDropdown.vue";
+import DropdownAction from "./components/Table.vue";
 import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
@@ -57,15 +57,29 @@ import { Trash2 } from "lucide-vue-next";
 import { Textarea } from "@/components/ui/textarea";
 
 const props = defineProps({
-    data: Array,
+    data: Object,
+    permissions: Object,
 });
+
+const canViewReturBeli = computed(() => props.permissions.retur_beli_view);
+const canCreateReturBeli = computed(() => props.permissions.retur_beli_create);
+const canEditReturBeli = computed(() => props.permissions.retur_beli_edit);
+const canDeleteReturBeli = computed(() => props.permissions.retur_beli_delete);
 
 const data = props.data.data;
 
 const showCreate = ref(false);
 
 const showDialogCreate = () => {
-    showCreate.value = true;
+    if (canCreateReturBeli.value) {
+        showCreate.value = true;
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to create products.",
+            icon: "error",
+        });
+    }
 };
 
 const selectedProduct = ref(null);
@@ -84,13 +98,16 @@ const onPurchasingSelect = async (purchasing) => {
             throw new Error("Failed to fetch purchasing details");
         }
         const poDetails = await response.json();
-
         // Update form with PO details
         form.nama_supplier = poDetails[0].nama_supplier;
         form.keterangan = poDetails[0].keterangan;
         form.details = poDetails.map((detail) => ({
             ...detail,
-            jumlah: detail.qty_beli * detail.harga,
+            qty_beli: detail.qty,
+            nama_satuan_beli: detail.nama_satuan,
+            qty_retur: 0,
+            nama_satuan_retur: "Pcs",
+            jumlah: detail.qty * detail.harga,
         }));
         calculateTotals();
     } catch (error) {
@@ -185,13 +202,13 @@ const columns = [
                 return h(
                     "div",
                     { class: "text-center font-medium" },
-                    h(Badge, "Active"),
+                    h(Badge, "APPROVED"),
                 );
             } else {
                 return h(
                     "div",
                     { class: "text-center font-medium" },
-                    h(Badge, { variant: "outline" }, "Inactive"),
+                    h(Badge, { variant: "outline" }, "CREATED"),
                 );
             }
         },
@@ -200,14 +217,16 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const product = row.original;
+            const returbeli = row.original;
 
             return h(
                 "div",
                 { class: "relative text-right" },
                 h(DropdownAction, {
-                    product,
-                    onEdit: () => onEdit(product.id),
+                    returbeli,
+                    permissions: props.permissions,
+                    onEdit: () => onEdit(returbeli.id),
+                    onDelete: () => onDelete(returbeli.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -426,27 +445,94 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-    //Open Dialog
-    showCreate.value = true;
-    try {
-        const res = await fetch(`/retur-beli/${id}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (!res.ok) {
-            console.error("Error ");
+    if (canEditReturBeli.value) {
+        showCreate.value = true;
+        try {
+            const res = await fetch(`/retur-beli/${id}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            if (!res.ok) {
+                console.error("Error ");
+            }
+            const data = await res.json();
+            // Set to form
+            form.id = data.data.id;
+            form.nama_supplier = data.data.nama_supplier;
+            form.keterangan = data.data.keterangan;
+            form.kode_pembelian = data.data.kode_pembelian || null;
+            form.details = [];
+
+            // Use forEach to populate details
+            data.data.details.forEach((detail) => {
+                form.details.push({
+                    id: detail.id,
+                    kode_barcode: detail.kode_barcode,
+                    nama_barang: detail.nama_barang,
+                    qty_beli: detail.qty_beli,
+                    nama_satuan_beli: detail.nama_satuan_beli,
+                    qty_retur: detail.qty_retur,
+                    nama_satuan_retur: detail.nama_satuan_retur,
+                    harga: detail.harga,
+                    jumlah: detail.jumlah,
+                });
+            });
+        } catch (error) {
+            console.error(error);
         }
-        const data = await res.json();
-        // Set to form
-        form.id = data.data.id;
-        form.kode_barcode = data.data.kode_barcode;
-        form.nama_barang = data.data.nama_barang;
-        form.nama_satuan_retur = data.data.nama_satuan_retur;
-        form.details.kode_barcode = data.data.details["kode_barcode"];
-    } catch (error) {
-        console.error(error);
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to edit data.",
+            icon: "error",
+        });
+    }
+};
+
+const onDelete = (id) => {
+    if (canDeleteReturBeli.value) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = useForm({});
+                form.delete(`/retur-beli/${id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire(
+                            "Deleted!",
+                            "Your data has been deleted.",
+                            "success",
+                        );
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    },
+                    onError: () => {
+                        Swal.fire(
+                            "Error!",
+                            "There was a problem deleting the data.",
+                            "error",
+                        );
+                    },
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to delete products.",
+            icon: "error",
+        });
     }
 };
 
@@ -463,7 +549,7 @@ const formatPrice = (price) => {
         <div class="flex items-center">
             <h1 class="text-lg font-semibold md:text-2xl">Retur Beli</h1>
         </div>
-        <div class="w-full">
+        <div v-if="canViewReturBeli" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
@@ -794,7 +880,7 @@ const formatPrice = (price) => {
                                 placeholder="Search suppliers..."
                                 api-endpoint="http://127.0.0.1:8000/api/retur-beli/suppliers"
                                 value-field="nama_supplier"
-                                display-field="nama_supplier"
+                                :display-fields="['nama_supplier']"
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
@@ -819,7 +905,7 @@ const formatPrice = (price) => {
                                 placeholder="Search purchasing..."
                                 api-endpoint="http://127.0.0.1:8000/api/retur-beli/purchasing"
                                 value-field="kode_pembelian"
-                                display-field="kode_pembelian"
+                                :display-fields="['kode_pembelian']"
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
@@ -889,7 +975,9 @@ const formatPrice = (price) => {
                                                 placeholder="Search..."
                                                 api-endpoint="http://127.0.0.1:8000/api/retur-beli/products"
                                                 value-field="kode_barcode"
-                                                display-field="kode_barcode"
+                                                :display-fields="[
+                                                    'kode_barcode',
+                                                ]"
                                                 search-param="search"
                                                 :per-page="10"
                                                 :debounce-time="300"
@@ -1008,6 +1096,7 @@ const formatPrice = (price) => {
                                                 @input="setDiskonGlobal(detail)"
                                                 min="0"
                                                 step="0"
+                                                readonly
                                             />
                                             <p
                                                 v-if="

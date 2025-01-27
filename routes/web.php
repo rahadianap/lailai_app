@@ -37,7 +37,6 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('/purchasing')->group(function () {
         Route::get('/', [\App\Http\Controllers\PurchasingController::class, 'index'])->name('purchasing.index');
         Route::post('/', [\App\Http\Controllers\PurchasingController::class, 'store'])->name('purchasing.store');
-        Route::post('/', [\App\Http\Controllers\PurchasingController::class, 'store'])->name('purchasing.store');
         Route::get('/{id}', [\App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.edit');  //with GET
         Route::put('/{id}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\PurchasingController::class, 'destroy'])->name('purchasing.destroy');
@@ -45,9 +44,9 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('/retur-beli')->group(function () {
         Route::get('/', [\App\Http\Controllers\ReturBeliController::class, 'index'])->name('retur-beli.index');
         Route::post('/', [\App\Http\Controllers\ReturBeliController::class, 'store'])->name('retur-beli.store');
-        // Route::post('/', [\App\Http\Controllers\PurchasingController::class, 'store'])->name('purchasing.store');
-        // Route::get('/{purchasing}', [\App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.edit');  //with GET
-        // Route::put('/{purchasing}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.update');  //with GET
+        Route::get('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'edit'])->name('retur-beli.edit');  //with GET
+        Route::put('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'update'])->name('retur-beli.update');  //with GET
+        Route::delete('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'destroy'])->name('retur-beli.destroy');
     });
     Route::prefix('/pos')->group(function () {
         Route::get('/', [\App\Http\Controllers\SalesController::class, 'index'])->name('pos.index');

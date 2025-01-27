@@ -28,6 +28,6 @@ class ReturBeli extends Model
 
     public function details()
     {
-        return $this->hasMany(DetailReturBeli::class, 'purchase_order_id');
+        return $this->hasMany(DetailReturBeli::class, 'retur_beli_id');
     }
 }

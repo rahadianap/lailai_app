@@ -16,10 +16,13 @@ class DetailReturBeli extends Model
 
     protected $fillable = [
         'retur_beli_id',
+        'kode_retur_beli',
         'kode_barcode',
         'nama_barang',
-        'qty',
-        'nama_satuan',
+        'qty_beli',
+        'nama_satuan_beli',
+        'qty_retur',
+        'nama_satuan_retur',
         'harga',
         'jumlah',
         'is_aktif',

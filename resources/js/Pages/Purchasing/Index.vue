@@ -536,7 +536,6 @@ const onEdit = async (id) => {
                 console.error("Error ");
             }
             const data = await res.json();
-            console.log(data.data);
             // Set to form
             form.id = data.data.id;
             form.nama_supplier = data.data.nama_supplier;
@@ -645,7 +644,7 @@ const formatPrice = (price) => {
         <div class="flex items-center">
             <h1 class="text-lg font-semibold md:text-2xl">Purchasing</h1>
         </div>
-        <div class="w-full">
+        <div v-if="canViewPurchasing" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="

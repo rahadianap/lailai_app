@@ -13,10 +13,13 @@ return new class extends Migration {
         Schema::create('trx_detail_retur_beli', function (Blueprint $table) {
             $table->id();
             $table->string('retur_beli_id');
+            $table->string('kode_retur_beli');
             $table->string('kode_barcode');
             $table->string('nama_barang');
-            $table->integer('qty');
-            $table->string('nama_satuan');
+            $table->integer('qty_beli');
+            $table->string('nama_satuan_beli');
+            $table->integer('qty_retur');
+            $table->string('nama_satuan_retur');
             $table->integer('harga');
             $table->integer('jumlah');
             $table->boolean('is_aktif')->default(true);
