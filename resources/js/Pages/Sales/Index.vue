@@ -2,10 +2,10 @@
     <PosLayout>
         <div class="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
             <!-- Left side: Product selection and cart -->
-            <div class="w-full lg:w-2/3 p-4 flex flex-col overflow-hidden">
+            <div class="flex flex-col w-full p-4 overflow-hidden lg:w-2/3">
                 <!-- Barcode scanner input -->
                 <div class="flex justify-start gap-4">
-                    <div class="mb-4 w-full">
+                    <div class="w-full mb-4">
                         <Label htmlFor="barcode_input">Scan Barcode</Label>
                         <Input
                             v-model="barcodeInput"
@@ -16,7 +16,7 @@
                         />
                     </div>
                     <!-- Product search -->
-                    <div class="searchable-select-wrapper mb-4 w-full">
+                    <div class="w-full mb-4 searchable-select-wrapper">
                         <Label htmlFor="product_search">Search Products</Label>
                         <SearchableSelect2
                             v-model="selectedProduct"
@@ -39,7 +39,7 @@
                 <div class="flex-grow overflow-hidden border rounded-md">
                     <div class="overflow-x-auto">
                         <Table>
-                            <TableHeader class="sticky top-0 bg-white z-10">
+                            <TableHeader class="sticky top-0 z-10 bg-white">
                                 <TableRow>
                                     <TableHead class="w-1/4">Product</TableHead>
                                     <TableHead>Price</TableHead>
@@ -102,7 +102,7 @@
                                             @click="removeFromCart(index)"
                                             variant="destructive"
                                         >
-                                            <Trash2 class="h-4 w-4" />
+                                            <Trash2 class="w-4 h-4" />
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -114,9 +114,9 @@
 
             <!-- Right side: Payment processing and totals -->
             <div
-                class="w-full lg:w-1/3 p-4 bg-gray-100 flex flex-col overflow-y-auto border rounded-md"
+                class="flex flex-col w-full p-4 overflow-y-auto bg-gray-100 border rounded-md lg:w-1/3"
             >
-                <h2 class="text-2xl font-bold mb-4">Order Summary</h2>
+                <h2 class="mb-4 text-2xl font-bold">Order Summary</h2>
 
                 <div class="flex-grow">
                     <div class="flex justify-between mb-2">
@@ -157,13 +157,13 @@
 
                 <div class="space-y-4">
                     <div>
-                        <Label htmlFor="payment_method">Payment Method</Label>
+                        <Label htmlFor="payment_method" class="text-lg font-bold">Payment Method</Label>
                         <Select
                             v-model="paymentMethod"
                             @update:modelValue="applyMember"
                             class="col-span-3"
                         >
-                            <SelectTrigger id="paymentMethod">
+                            <SelectTrigger id="paymentMethod" class="mt-2 text-lg font-bold">
                                 <SelectValue
                                     placeholder="Select a payment method"
                                 />
@@ -181,35 +181,33 @@
                     </div>
 
                     <div v-if="paymentMethod === 'cash'">
-                        <Label htmlFor="cash_received">Cash Received</Label>
+                        <Label htmlFor="cash_received" class="text-lg font-bold">Cash Received</Label>
                         <Input
                             v-model.number="cashReceived"
                             type="number"
                             id="cash_received"
-                            class="editable-input"
+                            class="mt-2 text-lg font-bold"
                             @input="updateChange"
-                            min="0"
-                            step="0.01"
                         />
                     </div>
 
                     <div v-if="paymentMethod === 'cash'">
-                        <Label>Change</Label>
+                        <Label class="text-lg font-bold">Change</Label>
                         <Input
                             :value="formatCurrency(change)"
                             type="text"
                             readonly
-                            class="readonly-input"
+                            class="mt-2 text-lg font-bold"
                         />
                     </div>
 
                     <div v-if="paymentMethod !== 'cash'">
-                        <Label htmlFor="card_number">Card Number</Label>
+                        <Label htmlFor="card_number" class="text-lg font-bold">Card Number</Label>
                         <Input
                             v-model.number="cardNumber"
                             type="number"
                             id="card_number"
-                            class="editable-input"
+                            class="text-lg font-bold"
                             @input="updateChange"
                         />
                     </div>
