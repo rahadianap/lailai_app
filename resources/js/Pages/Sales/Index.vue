@@ -25,7 +25,7 @@
                             value-field="id"
                             :display-fields="['kode_barcode', 'nama_barang']"
                             :search-fields="['kode_barcode', 'nama_barang']"
-                            :per-page="10"
+                            :per-page="1"
                             :debounce-time="300"
                             loading-text="Loading products..."
                             no-results-text="No products found"
@@ -46,7 +46,6 @@
                                     <TableHead>Quantity</TableHead>
                                     <TableHead>DPP</TableHead>
                                     <TableHead>PPN</TableHead>
-                                    <TableHead>Taxable</TableHead>
                                     <TableHead>Total</TableHead>
                                     <TableHead>Actions</TableHead>
                                 </TableRow>
@@ -77,23 +76,6 @@
                                     <TableCell>{{
                                         formatCurrency(item.ppn)
                                     }}</TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            disabled
-                                            v-model.number="item.is_taxable"
-                                            :checked="item.is_taxable"
-                                            @update:checked="
-                                                item.is_taxable = $event
-                                            "
-                                        />
-                                        <!-- <Checkbox
-                                            disabled
-                                            :checked="item.is_taxable"
-                                            @update:checked="
-                                                item.is_taxable = $event
-                                            "
-                                        /> -->
-                                    </TableCell>
                                     <TableCell>{{
                                         formatCurrency(item.total)
                                     }}</TableCell>
@@ -120,12 +102,12 @@
 
                 <div class="flex-grow">
                     <div class="flex justify-between mb-2">
-                        <span>Subtotal:</span>
-                        <span>{{ formatCurrency(subtotal) }}</span>
+                        <span class="text-lg">Subtotal:</span>
+                        <span class="text-lg">{{ formatCurrency(subtotal) }}</span>
                     </div>
                     <div class="flex justify-between mb-2">
-                        <span>Tax (11%):</span>
-                        <span>{{ formatCurrency(tax) }}</span>
+                        <span class="text-lg">Tax (11%):</span>
+                        <span class="text-lg">{{ formatCurrency(tax) }}</span>
                     </div>
                     <div
                         v-if="appliedVoucher"
@@ -157,13 +139,13 @@
 
                 <div class="space-y-4">
                     <div>
-                        <Label htmlFor="payment_method" class="text-lg font-bold">Payment Method</Label>
+                        <Label htmlFor="payment_method" class="text-xl font-bold">Payment Method</Label>
                         <Select
                             v-model="paymentMethod"
                             @update:modelValue="applyMember"
                             class="col-span-3"
                         >
-                            <SelectTrigger id="paymentMethod" class="mt-2 text-lg font-bold">
+                            <SelectTrigger id="paymentMethod" class="mt-2 text-xl font-bold">
                                 <SelectValue
                                     placeholder="Select a payment method"
                                 />
@@ -181,33 +163,33 @@
                     </div>
 
                     <div v-if="paymentMethod === 'cash'">
-                        <Label htmlFor="cash_received" class="text-lg font-bold">Cash Received</Label>
+                        <Label htmlFor="cash_received" class="text-xl font-bold">Cash Received</Label>
                         <Input
                             v-model.number="cashReceived"
                             type="number"
                             id="cash_received"
-                            class="mt-2 text-lg font-bold"
+                            class="mt-2 text-xl font-bold"
                             @input="updateChange"
                         />
                     </div>
 
                     <div v-if="paymentMethod === 'cash'">
-                        <Label class="text-lg font-bold">Change</Label>
+                        <Label class="text-xl font-bold">Change</Label>
                         <Input
                             :value="formatCurrency(change)"
                             type="text"
                             readonly
-                            class="mt-2 text-lg font-bold"
+                            class="mt-2 text-xl font-bold"
                         />
                     </div>
 
                     <div v-if="paymentMethod !== 'cash'">
-                        <Label htmlFor="card_number" class="text-lg font-bold">Card Number</Label>
+                        <Label htmlFor="card_number" class="text-xl font-bold">Card Number</Label>
                         <Input
                             v-model.number="cardNumber"
                             type="number"
                             id="card_number"
-                            class="text-lg font-bold"
+                            class="text-xl font-bold"
                             @input="updateChange"
                         />
                     </div>
@@ -500,15 +482,8 @@ const addProductToCart = (product) => {
         nama_barang: product.nama_barang,
         harga_jual_eceran: Number(product.details.harga_jual_eceran),
         quantity: 1,
-        dpp:
-            product.is_taxable === "1"
-                ? Number(product.details.harga_jual_eceran) * (100 / 111)
-                : 0,
-        ppn:
-            product.is_taxable === "1"
-                ? Number(product.details.harga_jual_eceran) * 0.11
-                : 0,
-        is_taxable: product.is_taxable === "1" ? true : false,
+        dpp: Number(product.details.harga_jual_eceran) * (11 / 12),
+        ppn: Number(product.details.harga_jual_eceran) * 0.11,
         total: Number(product.details.harga_jual_eceran),
     });
     selectedProduct.value = null;
@@ -533,12 +508,8 @@ const updateCartItem = (index) => {
     const item = cart.value[index];
     item.quantity = Math.max(0, item.quantity);
     item.total = Number(item.harga_jual_eceran) * item.quantity;
-    // item.dpp = item.is_taxable
-    //     ? Number(item.harga_jual_eceran) * (100 / 111) * item.quantity
-    //     : 0;
-    item.ppn = item.is_taxable
-        ? Number(item.harga_jual_eceran) * 0.11 * item.quantity
-        : 0;
+    item.dpp = Number(item.harga_jual_eceran) * (11 / 12) * item.quantity;
+    item.ppn = Number(item.harga_jual_eceran) * 0.11 * item.quantity;
 };
 
 const removeFromCart = (index) => {
@@ -552,11 +523,7 @@ const subtotal = computed(() => {
 });
 
 const tax = computed(() => {
-    return cart.value.reduce((sum, item) => {
-        return (
-            sum + (item.is_taxable ? Number((item.total * 0.11).toFixed(2)) : 0)
-        );
-    }, 0);
+    return Number((subtotal.value * 0.11).toFixed(2));
 });
 
 const total = computed(() => {

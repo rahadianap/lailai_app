@@ -30,7 +30,7 @@ class SalesController extends Controller
             });
         }
 
-        $perPage = $request->input('per_page', 10);
+        $perPage = $request->input('per_page', 1);
         $products = $query->paginate($perPage);
 
         return response()->json($products);
