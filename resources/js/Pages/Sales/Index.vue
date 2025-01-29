@@ -142,7 +142,6 @@
                         <Label htmlFor="payment_method" class="text-xl font-bold">Payment Method</Label>
                         <Select
                             v-model="paymentMethod"
-                            @update:modelValue="applyMember"
                             class="col-span-3"
                         >
                             <SelectTrigger id="paymentMethod" class="mt-2 text-xl font-bold">
@@ -158,6 +157,24 @@
                                     >EDC Mandiri</SelectItem
                                 >
                                 <SelectItem value="edc_uob">EDC UOB</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div>
+                        <Label htmlFor="payment_method" class="text-xl font-bold">Customer Type</Label>
+                        <Select
+                            v-model="customerType"
+                            class="col-span-3"
+                        >
+                            <SelectTrigger id="customerType" class="mt-2 text-xl font-bold">
+                                <SelectValue
+                                    placeholder="Select a customer type"
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="walk_in">Walk In Customer</SelectItem>
+                                <SelectItem value="cafe">Cafe</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -328,13 +345,13 @@ import { Trash2 } from "lucide-vue-next";
 import { usePrinter } from "@/composables/usePrinter";
 import VoucherPopup from "@/components/VoucherPopup.vue";
 import MemberPopup from "@/components/MemberPopup.vue";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const { printReceipt: printReceiptToPrinter } = usePrinter();
 
 const selectedProduct = ref(null);
 const cart = ref([]);
 const paymentMethod = ref("cash");
+const customerType = ref("walk_in");
 const cashReceived = ref(0);
 const showPaymentSuccess = ref(false);
 const barcodeInput = ref("");
@@ -484,7 +501,7 @@ const addProductToCart = (product) => {
         quantity: 1,
         dpp: Number(product.details.harga_jual_eceran) * (11 / 12),
         ppn: Number(product.details.harga_jual_eceran) * 0.11,
-        total: Number(product.details.harga_jual_eceran),
+        total: Number(product.details.harga_jual_eceran) + Number(product.details.harga_jual_eceran) * 0.11,
     });
     selectedProduct.value = null;
     // const existingItem = cart.value.find((item) => item.id === product.id);
@@ -507,9 +524,9 @@ const addProductToCart = (product) => {
 const updateCartItem = (index) => {
     const item = cart.value[index];
     item.quantity = Math.max(0, item.quantity);
-    item.total = Number(item.harga_jual_eceran) * item.quantity;
     item.dpp = Number(item.harga_jual_eceran) * (11 / 12) * item.quantity;
     item.ppn = Number(item.harga_jual_eceran) * 0.11 * item.quantity;
+    item.total = Number(item.harga_jual_eceran) * item.quantity + item.ppn;
 };
 
 const removeFromCart = (index) => {
@@ -519,7 +536,7 @@ const removeFromCart = (index) => {
 };
 
 const subtotal = computed(() => {
-    return cart.value.reduce((sum, item) => sum + Number(item.total), 0);
+    return cart.value.reduce((sum, item) => sum + Number(item.harga_jual_eceran), 0);
 });
 
 const tax = computed(() => {
@@ -589,6 +606,7 @@ const processPayment = async () => {
 const resetTransaction = () => {
     cart.value = [];
     paymentMethod.value = "cash";
+    customerType.value = "walk_in";
     cashReceived.value = 0;
     showPaymentSuccess.value = false;
     selectedProduct.value = null;
@@ -603,6 +621,7 @@ const printReceipt = () => {
         tax: tax.value,
         total: total.value,
         paymentMethod: paymentMethod.value,
+        customerType: customerType.value,
         cashReceived: cashReceived.value,
         change: change.value,
         appliedVoucher: appliedVoucher.value,
