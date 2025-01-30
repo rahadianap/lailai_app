@@ -62,13 +62,14 @@
                                         formatCurrency(item.harga_jual_eceran)
                                     }}</TableCell>
                                     <TableCell>
-                                        <Input
-                                            v-model.number="item.quantity"
-                                            type="number"
-                                            class="w-40"
-                                            @input="updateCartItem(index)"
-                                            min="0"
-                                        />
+                                        <Button
+                                            @click="
+                                                openQuantityChangeModal(index)
+                                            "
+                                            variant="outline"
+                                        >
+                                            {{ item.quantity }}
+                                        </Button>
                                     </TableCell>
                                     <TableCell>{{
                                         formatCurrency(item.dpp)
@@ -102,12 +103,14 @@
 
                 <div class="flex-grow">
                     <div class="flex justify-between mb-2">
-                        <span class="text-lg">Subtotal:</span>
-                        <span class="text-lg">{{ formatCurrency(subtotal) }}</span>
+                        <span class="text-xl">Subtotal:</span>
+                        <span class="text-xl">{{
+                            formatCurrency(subtotal)
+                        }}</span>
                     </div>
                     <div class="flex justify-between mb-2">
-                        <span class="text-lg">Tax (11%):</span>
-                        <span class="text-lg">{{ formatCurrency(tax) }}</span>
+                        <span class="text-xl">Tax (11%):</span>
+                        <span class="text-xl">{{ formatCurrency(tax) }}</span>
                     </div>
                     <div
                         v-if="appliedVoucher"
@@ -130,8 +133,8 @@
                         }}</span>
                     </div>
                     <div class="flex justify-between mb-4">
-                        <span class="text-lg font-bold">Grand Total:</span>
-                        <span class="text-lg font-bold">{{
+                        <span class="text-xl font-bold">Grand Total:</span>
+                        <span class="text-xl font-bold">{{
                             formatCurrency(total)
                         }}</span>
                     </div>
@@ -139,12 +142,16 @@
 
                 <div class="space-y-4">
                     <div>
-                        <Label htmlFor="payment_method" class="text-xl font-bold">Payment Method</Label>
-                        <Select
-                            v-model="paymentMethod"
-                            class="col-span-3"
+                        <Label
+                            htmlFor="payment_method"
+                            class="text-xl font-bold"
+                            >Payment Method</Label
                         >
-                            <SelectTrigger id="paymentMethod" class="mt-2 text-xl font-bold">
+                        <Select v-model="paymentMethod" class="col-span-3">
+                            <SelectTrigger
+                                id="paymentMethod"
+                                class="mt-2 text-xl font-bold"
+                            >
                                 <SelectValue
                                     placeholder="Select a payment method"
                                 />
@@ -162,25 +169,33 @@
                     </div>
 
                     <div>
-                        <Label htmlFor="payment_method" class="text-xl font-bold">Customer Type</Label>
-                        <Select
-                            v-model="customerType"
-                            class="col-span-3"
+                        <Label
+                            htmlFor="payment_method"
+                            class="text-xl font-bold"
+                            >Customer Type</Label
                         >
-                            <SelectTrigger id="customerType" class="mt-2 text-xl font-bold">
+                        <Select v-model="customerType" class="col-span-3">
+                            <SelectTrigger
+                                id="customerType"
+                                class="mt-2 text-xl font-bold"
+                            >
                                 <SelectValue
                                     placeholder="Select a customer type"
                                 />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="walk_in">Walk In Customer</SelectItem>
+                                <SelectItem value="walk_in"
+                                    >Walk In Customer</SelectItem
+                                >
                                 <SelectItem value="cafe">Cafe</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div v-if="paymentMethod === 'cash'">
-                        <Label htmlFor="cash_received" class="text-xl font-bold">Cash Received</Label>
+                        <Label htmlFor="cash_received" class="text-xl font-bold"
+                            >Cash Received</Label
+                        >
                         <Input
                             v-model.number="cashReceived"
                             type="number"
@@ -201,7 +216,9 @@
                     </div>
 
                     <div v-if="paymentMethod !== 'cash'">
-                        <Label htmlFor="card_number" class="text-xl font-bold">Card Number</Label>
+                        <Label htmlFor="card_number" class="text-xl font-bold"
+                            >Card Number</Label
+                        >
                         <Input
                             v-model.number="cardNumber"
                             type="number"
@@ -303,6 +320,12 @@
             @removeMember="removeMember"
         />
     </PosLayout>
+    <QuantityChangeModal
+        :isOpen="showQuantityChangeModal"
+        @update:isOpen="showQuantityChangeModal = $event"
+        @confirm="confirmQuantityChange"
+        @cancel="cancelQuantityChange"
+    />
     <DeleteConfirmationDialog
         :isOpen="showDeleteConfirmation"
         @update:isOpen="showDeleteConfirmation = $event"
@@ -345,6 +368,7 @@ import { Trash2 } from "lucide-vue-next";
 import { usePrinter } from "@/composables/usePrinter";
 import VoucherPopup from "@/components/VoucherPopup.vue";
 import MemberPopup from "@/components/MemberPopup.vue";
+import QuantityChangeModal from "@/components/UpdateCarQty.vue";
 
 const { printReceipt: printReceiptToPrinter } = usePrinter();
 
@@ -361,6 +385,10 @@ const showVoucherPopup = ref(false);
 const appliedVoucher = ref(null);
 const showMemberPopup = ref(false);
 const appliedMember = ref(null);
+const showDeleteConfirmation = ref(false);
+const itemToDeleteIndex = ref(null);
+const showQuantityChangeModal = ref(false);
+const itemToChangeIndex = ref(null);
 
 onMounted(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -370,8 +398,29 @@ onUnmounted(() => {
     window.removeEventListener("keydown", handleKeyDown);
 });
 
-const showDeleteConfirmation = ref(false);
-const itemToDeleteIndex = ref(null);
+const openQuantityChangeModal = (index) => {
+    itemToChangeIndex.value = index;
+    showQuantityChangeModal.value = true;
+};
+
+const confirmQuantityChange = ({ newQuantity, password }) => {
+    if (password === "admin123") {
+        if (itemToChangeIndex.value !== null) {
+            const item = cart.value[itemToChangeIndex.value];
+            item.quantity = newQuantity;
+            updateCartItem(itemToChangeIndex.value);
+            itemToChangeIndex.value = null;
+        }
+        showQuantityChangeModal.value = false;
+    } else {
+        alert("Incorrect password. Quantity change cancelled.");
+    }
+};
+
+const cancelQuantityChange = () => {
+    itemToChangeIndex.value = null;
+    showQuantityChangeModal.value = false;
+};
 
 // const removeFromCart = (index) => {
 //     itemToDeleteIndex.value = index;
@@ -379,8 +428,6 @@ const itemToDeleteIndex = ref(null);
 // };
 
 const confirmDelete = (password) => {
-    // Here you would typically verify the password with your backend
-    // For this example, we'll use a hardcoded password "admin123"
     if (password === "admin123") {
         if (itemToDeleteIndex.value !== null) {
             cart.value.splice(itemToDeleteIndex.value, 1);
@@ -448,6 +495,7 @@ const updateChange = () => {
 
 const onProductSelect = (product) => {
     addProductToCart(product);
+    selectedProduct.value = "";
 };
 
 const onBarcodeEnter = async () => {
@@ -501,7 +549,9 @@ const addProductToCart = (product) => {
         quantity: 1,
         dpp: Number(product.details.harga_jual_eceran) * (11 / 12),
         ppn: Number(product.details.harga_jual_eceran) * 0.11,
-        total: Number(product.details.harga_jual_eceran) + Number(product.details.harga_jual_eceran) * 0.11,
+        total:
+            Number(product.details.harga_jual_eceran) +
+            Number(product.details.harga_jual_eceran) * 0.11,
     });
     selectedProduct.value = null;
     // const existingItem = cart.value.find((item) => item.id === product.id);
@@ -524,10 +574,20 @@ const addProductToCart = (product) => {
 const updateCartItem = (index) => {
     const item = cart.value[index];
     item.quantity = Math.max(0, item.quantity);
-    item.dpp = Number(item.harga_jual_eceran) * (11 / 12) * item.quantity;
-    item.ppn = Number(item.harga_jual_eceran) * 0.11 * item.quantity;
+    item.dpp =
+        Number(item.harga_jual_eceran) *
+        (customerType.value === "cafe" ? 1 : 11 / 12) *
+        item.quantity;
+    item.ppn =
+        customerType.value === "cafe"
+            ? 0
+            : Number(item.harga_jual_eceran) * 0.11 * item.quantity;
     item.total = Number(item.harga_jual_eceran) * item.quantity + item.ppn;
 };
+
+watch(customerType, () => {
+    cart.value.forEach((item, index) => updateCartItem(index));
+});
 
 const removeFromCart = (index) => {
     // cart.value.splice(index, 1);
@@ -536,11 +596,17 @@ const removeFromCart = (index) => {
 };
 
 const subtotal = computed(() => {
-    return cart.value.reduce((sum, item) => sum + Number(item.harga_jual_eceran), 0);
+    return cart.value.reduce(
+        (sum, item) => sum + Number(item.harga_jual_eceran) * item.quantity,
+        0,
+    );
 });
 
 const tax = computed(() => {
-    return Number((subtotal.value * 0.11).toFixed(2));
+    if (customerType.value === "cafe") {
+        return 0;
+    }
+    return cart.value.reduce((sum, item) => sum + item.ppn, 0);
 });
 
 const total = computed(() => {

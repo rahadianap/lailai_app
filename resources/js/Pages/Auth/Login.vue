@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import { Button } from "../../components/ui/button";
 import {
     Card,
@@ -30,7 +30,7 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="mx-auto h-screen w-screen flex justify-center items-center">
+    <div class="flex items-center justify-center w-screen h-screen mx-auto">
         <Card class="w-full max-w-sm">
             <CardHeader>
                 <CardTitle class="text-2xl"> Login </CardTitle>
