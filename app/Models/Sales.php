@@ -15,10 +15,18 @@ class Sales extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'kode_po',
-        'nama_supplier',
-        'status',
-        'keterangan',
+        'kode_penjualan',
+        'kode_voucher',
+        'kode_member',
+        'payment_method',
+        'card_number',
+        'customer_type',
+        'subtotal',
+        'tax',
+        'total',
+        'cash_received',
+        'change',
+        'diskon_global',
         'is_aktif',
         'created_by',
         'updated_by',

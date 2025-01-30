@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('kode_member')->nullable();
             $table->string('payment_method');
             $table->string('card_number')->nullable();
+            $table->string('customer_type')->nullable();
             $table->decimal('subtotal', 10, 2);
+            $table->decimal('diskon_global', 10, 2);
             $table->decimal('tax', 10, 2);
             $table->decimal('total', 10, 2);
             $table->decimal('cash_received', 10, 2);
