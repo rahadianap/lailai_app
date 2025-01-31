@@ -4,19 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\Voucher;
+use App\Models\Sales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use App\Models\Supplier;
 use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class SalesController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request): Response
     {
         return Inertia::render('Sales/Index');
@@ -62,7 +64,6 @@ class SalesController extends Controller
                 'total' => $request->total,
                 'cash_received' => $request->cash_received,
                 'change' => $request->change,
-                'kode_member' => $request->kode_member,
                 'diskon_global' => $request->diskon_global,
                 'customer_type' => $request->customer_type,
                 'created_by' => Auth()->user()->name,
@@ -118,11 +119,11 @@ class SalesController extends Controller
                     $id = 'S' . '/' . date('Ymd') . '/' . '00000' . $count;
                 } elseif ($count >= 10000 && $count < 100000) {
                     $id = 'S' . '/' . date('Ymd') . '/' . '0000' . $count;
-                }  elseif ($count >= 10000 && $count < 1000000) {
+                } elseif ($count >= 10000 && $count < 1000000) {
                     $id = 'S' . '/' . date('Ymd') . '/' . '000' . $count;
-                }  elseif ($count >= 10000 && $count < 1000000) {
+                } elseif ($count >= 10000 && $count < 1000000) {
                     $id = 'S' . '/' . date('Ymd') . '/' . '00' . $count;
-                }  elseif ($count >= 10000 && $count < 1000000) {
+                } elseif ($count >= 10000 && $count < 1000000) {
                     $id = 'S' . '/' . date('Ymd') . '/' . '0' . $count;
                 } else {
                     $id = 'S' . '/' . date('Ymd') . '/' . $count;

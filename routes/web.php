@@ -41,6 +41,13 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\PurchasingController::class, 'destroy'])->name('purchasing.destroy');
     });
+    Route::prefix('/penjualan')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PenjualanController::class, 'index'])->name('penjualan.index');
+        // Route::post('/', [\App\Http\Controllers\PurchasingController::class, 'store'])->name('penjualan.store');
+        // Route::get('/{id}', [\App\Http\Controllers\PurchasingController::class, 'edit'])->name('penjualan.edit');  //with GET
+        // Route::put('/{id}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('penjualan.update');  //with GET
+        // Route::delete('/{id}', [\App\Http\Controllers\PurchasingController::class, 'destroy'])->name('penjualan.destroy');
+    });
     Route::prefix('/retur-beli')->group(function () {
         Route::get('/', [\App\Http\Controllers\ReturBeliController::class, 'index'])->name('retur-beli.index');
         Route::post('/', [\App\Http\Controllers\ReturBeliController::class, 'store'])->name('retur-beli.store');

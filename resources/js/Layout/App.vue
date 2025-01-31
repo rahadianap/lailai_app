@@ -129,6 +129,12 @@ const navigationGroups = [
                 permission: "retur_beli_view",
             },
             {
+                name: "Penjualan",
+                href: "/penjualan",
+                icon: Repeat,
+                permission: "penjualan_view",
+            },
+            {
                 name: "POS",
                 href: "/pos",
                 icon: HandCoins,

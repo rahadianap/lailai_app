@@ -112,6 +112,12 @@
                         <span class="text-xl">Tax (11%):</span>
                         <span class="text-xl">{{ formatCurrency(tax) }}</span>
                     </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-xl">Diskon Global:</span>
+                        <span class="text-xl">{{
+                            formatCurrency(diskon_global)
+                        }}</span>
+                    </div>
                     <div
                         v-if="appliedVoucher"
                         class="flex justify-between mb-2 text-green-600"
@@ -231,9 +237,9 @@
                     <Button
                         @click="processPayment"
                         class="w-full"
-                        :disabled="!canProcessPayment"
+                        :disabled="!canProcessPayment || isProcessing"
                     >
-                        Process Payment
+                        {{ isProcessing ? "Processing..." : "Process Payment" }}
                     </Button>
                 </div>
             </div>
@@ -389,6 +395,8 @@ const showDeleteConfirmation = ref(false);
 const itemToDeleteIndex = ref(null);
 const showQuantityChangeModal = ref(false);
 const itemToChangeIndex = ref(null);
+const diskon_global = ref(0);
+const isProcessing = ref(false); // Added isProcessing ref
 
 onMounted(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -640,32 +648,41 @@ const canProcessPayment = computed(() => {
 });
 
 const processPayment = async () => {
+    if (isProcessing.value) return; // Added loading state check
+    isProcessing.value = true; // Set loading state to true
     try {
-        // const response = await fetch(
-        //     "http://127.0.0.1:8000/api/pos/transactions",
-        //     {
-        //         method: "POST",
-        //         headers: {
-        //             "Content-Type": "application/json",
-        //             // Add your custom authentication header here
-        //             // 'Authorization': `Bearer ${yourAuthToken}`
-        //         },
-        //         body: JSON.stringify({
-        //             items: cart.value,
-        //             total: total.value,
-        //             paymentMethod: paymentMethod.value,
-        //             cashReceived: cashReceived.value,
-        //         }),
-        //     },
-        // );
+        const response = await fetch("http://127.0.0.1:8000/pos", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                // Add your custom authentication header here if needed
+                // 'Authorization': `Bearer ${yourAuthToken}`
+            },
+            body: JSON.stringify({
+                items: cart.value,
+                total: total.value,
+                subtotal: subtotal.value,
+                tax: tax.value,
+                paymentMethod: paymentMethod.value,
+                customerType: customerType.value,
+                cashReceived: cashReceived.value,
+                change: change.value,
+                appliedVoucher: appliedVoucher.value,
+                appliedMember: appliedMember.value,
+            }),
+        });
 
-        // if (!response.ok) throw new Error("Payment processing failed");
+        if (!response.ok) throw new Error("Payment processing failed");
 
-        // const result = await response.json();
+        const result = await response.json();
+        console.log("Transaction submitted successfully:", result);
         showPaymentSuccess.value = true;
     } catch (error) {
         console.error("Error processing payment:", error);
         // Show error message to user
+        alert("Error processing payment. Please try again.");
+    } finally {
+        isProcessing.value = false; // Reset loading state
     }
 };
 
