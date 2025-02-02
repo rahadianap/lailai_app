@@ -26,10 +26,13 @@ class SalesController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('create', Sales::class);
+        // $this->authorize('create', Sales::class);
+
+        dd($request->all());
 
         $validator = Validator::make($request->all(), [
             'payment_method' => 'required|string|max:255',
+            'customer_type' => 'required|string|max:255',
             'subtotal' => 'required|numeric|min:0',
             'tax' => 'required|numeric|min:0',
             'total' => 'required|numeric|min:0',
@@ -38,12 +41,12 @@ class SalesController extends Controller
             'details' => 'required|array|min:1',
             'details.*.kode_barcode' => 'required|string|max:255',
             'details.*.nama_barang' => 'required|string|max:255',
-            'details.*.qty' => 'required|numeric|min:0',
-            'details.*.harga' => 'required|numeric|min:0',
+            'details.*.quantity' => 'required|numeric|min:0',
+            'details.*.harga_jual_eceran' => 'required|numeric|min:0',
             'details.*.diskon' => 'required|numeric|min:0',
             'details.*.dpp' => 'required|numeric|min:0',
             'details.*.ppn' => 'required|numeric|min:0',
-            'details.*.subtotal' => 'required|numeric|min:0',
+            'details.*.total' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -58,32 +61,41 @@ class SalesController extends Controller
                 'kode_voucher' => $request->kode_voucher,
                 'kode_member' => $request->kode_member,
                 'payment_method' => $request->payment_method,
+                'customer_type' => $request->customer_type,
                 'card_number' => $request->card_number,
                 'subtotal' => $request->subtotal,
                 'tax' => $request->tax,
                 'total' => $request->total,
                 'cash_received' => $request->cash_received,
                 'change' => $request->change,
+                'applied_points' => $request->applied_points,
                 'diskon_global' => $request->diskon_global,
-                'customer_type' => $request->customer_type,
                 'created_by' => Auth()->user()->name,
             ]);
 
-            // foreach ($request->details as $detail) {
-            //     $rb->details()->create([
-            //         'penjualan_id' => $rb->id,
-            //         'kode_penjualan' => $rb->kode_penjualan,
-            //         'kode_barcode' => $detail['kode_barcode'],
-            //         'nama_barang' => $detail['nama_barang'],
-            //         'qty_beli' => $detail['qty_beli'],
-            //         'nama_satuan_beli' => $detail['nama_satuan_beli'],
-            //         'qty_retur' => $detail['qty_retur'],
-            //         'nama_satuan_retur' => $detail['nama_satuan_retur'],
-            //         'harga' => $detail['harga'],
-            //         'jumlah' => $detail['jumlah'],
-            //         'created_by' => Auth()->user()->name,
-            //     ]);
-            // }
+            foreach ($request->details as $detail) {
+                $rb->details()->create([
+                    'penjualan_id' => $rb->id,
+                    'kode_penjualan' => $rb->kode_penjualan,
+                    'kode_barcode' => $detail['kode_barcode'],
+                    'nama_barang' => $detail['nama_barang'],
+                    'qty' => $detail['quantity'],
+                    'harga' => $detail['harga_jual_eceran'],
+                    'diskon' => $detail['diskon'],
+                    'dpp' => $detail['dpp'],
+                    'ppn' => $detail['ppn'],
+                    'subtotal' => $detail['total'],
+                    'created_by' => Auth()->user()->name,
+                ]);
+            }
+
+            $voucher = Voucher::where('kode_voucher', $request->kode_voucher)->first();
+            if ($voucher) {
+                $voucher->update([
+                    'status' => 'USED',
+                    'updated_by' => Auth()->user()->name,
+                ]);
+            }
 
             DB::commit();
 

@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -18,13 +17,14 @@ return new class extends Migration
             $table->string('kode_member')->nullable();
             $table->string('payment_method');
             $table->string('card_number')->nullable();
-            $table->string('customer_type')->nullable();
+            $table->string('customer_type');
             $table->decimal('subtotal', 10, 2);
             $table->decimal('diskon_global', 10, 2);
             $table->decimal('tax', 10, 2);
             $table->decimal('total', 10, 2);
             $table->decimal('cash_received', 10, 2);
             $table->decimal('change', 10, 2);
+            $table->integer('applied_points')->default(0);
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();

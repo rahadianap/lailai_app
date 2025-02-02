@@ -25,6 +25,7 @@ return new class extends Migration {
             $table->decimal('hpp_fifo_karton', total: 10, places: 2)->nullable();
             $table->decimal('hpp_fifo_eceran', total: 10, places: 2)->nullable();
             $table->integer('current_stock');
+            $table->decimal('diskon', total: 10, places: 2)->default(0);
             $table->decimal('nilai_akhir', total: 10, places: 2);
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');

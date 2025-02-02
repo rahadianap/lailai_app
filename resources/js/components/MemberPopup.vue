@@ -4,7 +4,8 @@
             <DialogHeader>
                 <DialogTitle>Select Member</DialogTitle>
                 <DialogDescription>
-                    Choose a member to apply their points to the purchase.
+                    Choose a member and optionally apply their points to the
+                    purchase.
                 </DialogDescription>
             </DialogHeader>
             <div class="grid gap-4 py-4">
@@ -16,11 +17,7 @@
                 </div>
                 <div v-else class="flex flex-col items-start gap-2">
                     <Label htmlFor="member" class="text-right"> Member </Label>
-                    <Select
-                        v-model="selectedMemberId"
-                        @update:modelValue="applyMember"
-                        class="col-span-3"
-                    >
+                    <Select v-model="selectedMember" class="col-span-3">
                         <SelectTrigger id="member">
                             <SelectValue placeholder="Select a member" />
                         </SelectTrigger>
@@ -42,14 +39,32 @@
                         </SelectContent>
                     </Select>
                 </div>
+                <div v-if="selectedMember" class="flex flex-col gap-2">
+                    <p>Selected Member: {{ selectedMember.nama_member }}</p>
+                    <p>Member Code: {{ selectedMember.kode_member }}</p>
+                    <p>
+                        Available Points:
+                        {{ formatPoints(selectedMember.point) }}
+                    </p>
+                </div>
             </div>
             <DialogFooter>
                 <Button
                     @click="removeMember"
                     variant="outline"
-                    v-if="selectedMemberId"
-                    >Remove Member</Button
+                    v-if="selectedMember"
                 >
+                    Remove Member
+                </Button>
+                <Button @click="applyMembers" :disabled="!selectedMember">
+                    Apply Member
+                </Button>
+                <Button
+                    @click="applyPoints"
+                    :disabled="!selectedMember || selectedMember.point === 0"
+                >
+                    Apply Points
+                </Button>
                 <Button @click="closePopup">Close</Button>
             </DialogFooter>
         </DialogContent>
@@ -81,10 +96,15 @@ const props = defineProps({
     appliedMember: Object,
 });
 
-const emit = defineEmits(["update:isOpen", "applyMember", "removeMember"]);
+const emit = defineEmits([
+    "update:isOpen",
+    "removeMember",
+    "applyPoints",
+    "applyMembers",
+]);
 
 const members = ref([]);
-const selectedMemberId = ref(null);
+const selectedMember = ref(null);
 const isLoading = ref(false);
 const error = ref(null);
 
@@ -97,9 +117,7 @@ watch(
     async (newValue) => {
         if (newValue) {
             await fetchMembers();
-            selectedMemberId.value = props.appliedMember
-                ? props.appliedMember.id
-                : null;
+            selectedMember.value = props.appliedMember || null;
         }
     },
 );
@@ -107,7 +125,7 @@ watch(
 watch(
     () => props.appliedMember,
     (newValue) => {
-        selectedMemberId.value = newValue ? newValue.id : null;
+        selectedMember.value = newValue || null;
     },
 );
 
@@ -126,15 +144,27 @@ async function fetchMembers() {
     }
 }
 
-const applyMember = () => {
-    if (selectedMemberId.value) {
-        emit("applyMember", selectedMemberId.value);
+const removeMember = () => {
+    selectedMember.value = null;
+    emit("removeMember");
+};
+
+const applyMembers = () => {
+    if (selectedMember.value) {
+        emit("applyMembers", {
+            kode_member: selectedMember.value.kode_member,
+            point: selectedMember.value.point,
+        });
     }
 };
 
-const removeMember = () => {
-    selectedMemberId.value = null;
-    emit("removeMember");
+const applyPoints = () => {
+    if (selectedMember.value && selectedMember.value.point > 0) {
+        emit("applyPoints", {
+            kode_member: selectedMember.value.kode_member,
+            point: selectedMember.value.point,
+        });
+    }
 };
 
 const closePopup = () => {

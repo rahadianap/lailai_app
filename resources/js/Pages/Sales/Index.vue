@@ -46,6 +46,7 @@
                                     <TableHead>Quantity</TableHead>
                                     <TableHead>DPP</TableHead>
                                     <TableHead>PPN</TableHead>
+                                    <TableHead>Diskon</TableHead>
                                     <TableHead>Total</TableHead>
                                     <TableHead>Actions</TableHead>
                                 </TableRow>
@@ -78,6 +79,9 @@
                                         formatCurrency(item.ppn)
                                     }}</TableCell>
                                     <TableCell>{{
+                                        formatCurrency(item.diskon)
+                                    }}</TableCell>
+                                    <TableCell>{{
                                         formatCurrency(item.total)
                                     }}</TableCell>
                                     <TableCell>
@@ -96,7 +100,8 @@
             </div>
 
             <!-- Right side: Payment processing and totals -->
-            <div
+            <form
+                @submit.prevent="processPayment"
                 class="flex flex-col w-full p-4 overflow-y-auto bg-gray-100 border rounded-md lg:w-1/3"
             >
                 <h2 class="mb-4 text-2xl font-bold">Order Summary</h2>
@@ -113,28 +118,25 @@
                         <span class="text-xl">{{ formatCurrency(tax) }}</span>
                     </div>
                     <div class="flex justify-between mb-2">
-                        <span class="text-xl">Diskon Global:</span>
-                        <span class="text-xl">{{
-                            formatCurrency(diskon_global)
+                        <span class="text-xl">Diskon:</span>
+                        <span class="text-xl text-red-500">{{
+                            formatCurrency(diskon_global * -1)
                         }}</span>
                     </div>
                     <div
                         v-if="appliedVoucher"
-                        class="flex justify-between mb-2 text-green-600"
+                        class="flex justify-between mb-2"
                     >
-                        <span
+                        <span class="text-xl"
                             >Voucher ({{ appliedVoucher.kode_voucher }}):</span
                         >
-                        <span>{{
+                        <span class="text-xl text-red-500">{{
                             formatCurrency(appliedVoucher.nominal * -1)
                         }}</span>
                     </div>
-                    <div
-                        v-if="appliedMember"
-                        class="flex justify-between mb-2 text-green-600"
-                    >
+                    <div v-if="appliedMember" class="flex justify-between mb-2">
                         <span>Member Points ({{ appliedMember.point }}):</span>
-                        <span>{{
+                        <span class="text-xl text-red-500">{{
                             formatCurrency(appliedMember.point * 50 * -1)
                         }}</span>
                     </div>
@@ -153,7 +155,10 @@
                             class="text-xl font-bold"
                             >Payment Method</Label
                         >
-                        <Select v-model="paymentMethod" class="col-span-3">
+                        <Select
+                            v-model="form.payment_method"
+                            class="col-span-3"
+                        >
                             <SelectTrigger
                                 id="paymentMethod"
                                 class="mt-2 text-xl font-bold"
@@ -175,12 +180,10 @@
                     </div>
 
                     <div>
-                        <Label
-                            htmlFor="payment_method"
-                            class="text-xl font-bold"
+                        <Label htmlFor="customer_type" class="text-xl font-bold"
                             >Customer Type</Label
                         >
-                        <Select v-model="customerType" class="col-span-3">
+                        <Select v-model="form.customer_type" class="col-span-3">
                             <SelectTrigger
                                 id="customerType"
                                 class="mt-2 text-xl font-bold"
@@ -198,7 +201,7 @@
                         </Select>
                     </div>
 
-                    <div v-if="paymentMethod === 'cash'">
+                    <div v-if="form.payment_method === 'cash'">
                         <Label htmlFor="cash_received" class="text-xl font-bold"
                             >Cash Received</Label
                         >
@@ -211,7 +214,7 @@
                         />
                     </div>
 
-                    <div v-if="paymentMethod === 'cash'">
+                    <div v-if="form.payment_method === 'cash'">
                         <Label class="text-xl font-bold">Change</Label>
                         <Input
                             :value="formatCurrency(change)"
@@ -221,7 +224,7 @@
                         />
                     </div>
 
-                    <div v-if="paymentMethod !== 'cash'">
+                    <div v-if="form.payment_method !== 'cash'">
                         <Label htmlFor="card_number" class="text-xl font-bold"
                             >Card Number</Label
                         >
@@ -235,14 +238,14 @@
                     </div>
 
                     <Button
-                        @click="processPayment"
+                        type="submit"
                         class="w-full"
                         :disabled="!canProcessPayment || isProcessing"
                     >
                         {{ isProcessing ? "Processing..." : "Process Payment" }}
                     </Button>
                 </div>
-            </div>
+            </form>
         </div>
 
         <!-- Payment success dialog -->
@@ -322,8 +325,9 @@
             :isOpen="showMemberPopup"
             :appliedMember="appliedMember"
             @update:isOpen="showMemberPopup = $event"
-            @applyMember="handleApplyMember"
-            @removeMember="removeMember"
+            @apply-members="handleApplyMember"
+            @remove-member="handleRemoveMember"
+            @apply-points="handleApplyPoints"
         />
     </PosLayout>
     <QuantityChangeModal
@@ -347,6 +351,7 @@ import DeleteConfirmationDialog from "@/components/DeleteCart.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useForm } from "@inertiajs/vue3";
 import {
     Select,
     SelectContent,
@@ -376,6 +381,33 @@ import VoucherPopup from "@/components/VoucherPopup.vue";
 import MemberPopup from "@/components/MemberPopup.vue";
 import QuantityChangeModal from "@/components/UpdateCarQty.vue";
 
+const form = useForm({
+    id: null,
+    payment_method: "cash",
+    customer_type: "walk_in",
+    kode_voucher: "",
+    kode_member: "",
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    diskon_global: 0,
+    cash_received: 0,
+    change: 0,
+    applied_points: 0,
+    details: [
+        {
+            kode_barcode: "",
+            nama_barang: "",
+            qty: 0,
+            harga: 0,
+            diskon: "",
+            dpp: "Pcs",
+            ppn: 0,
+            subtotal: 0,
+        },
+    ],
+});
+
 const { printReceipt: printReceiptToPrinter } = usePrinter();
 
 const selectedProduct = ref(null);
@@ -395,8 +427,8 @@ const showDeleteConfirmation = ref(false);
 const itemToDeleteIndex = ref(null);
 const showQuantityChangeModal = ref(false);
 const itemToChangeIndex = ref(null);
-const diskon_global = ref(0);
 const isProcessing = ref(false); // Added isProcessing ref
+const cardNumber = ref(null);
 
 onMounted(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -486,14 +518,40 @@ const handleApplyVoucher = (voucher) => {
     }
 };
 
-const handleApplyMember = (member) => {
-    if (member) {
-        appliedMember.value = member;
-        // showMemberPopup.value = false;
-    } else {
-        console.error("Invalid member selected");
-        // Optionally, show an error message to the user
-    }
+const handleRemoveMember = () => {
+    appliedMember.value = null;
+    console.log("Member removed");
+    // Reset any member-related state here
+};
+
+const handleApplyMember = (memberData) => {
+    appliedMember.value = {
+        kode_member: memberData.kode_member,
+        point: 0,
+    };
+    console.log(
+        `Applying ${memberData.point} points for member ${memberData.kode_member}`,
+    );
+    // Here you would implement the logic to cut the total price
+    // For example:
+    total.value -= 0;
+    if (total.value < 0) total.value = 0;
+    console.log(`New total price after applying points: ${total.value}`);
+};
+
+const handleApplyPoints = (memberData) => {
+    appliedMember.value = {
+        kode_member: memberData.kode_member,
+        point: memberData.point,
+    };
+    console.log(
+        `Applying ${memberData.point} points for member ${memberData.kode_member}`,
+    );
+    // Here you would implement the logic to cut the total price
+    // For example:
+    total.value -= memberData.point;
+    if (total.value < 0) total.value = 0;
+    console.log(`New total price after applying points: ${total.value}`);
 };
 
 const updateChange = () => {
@@ -555,6 +613,7 @@ const addProductToCart = (product) => {
         nama_barang: product.nama_barang,
         harga_jual_eceran: Number(product.details.harga_jual_eceran),
         quantity: 1,
+        diskon: Number(product.details.diskon),
         dpp: Number(product.details.harga_jual_eceran) * (11 / 12),
         ppn: Number(product.details.harga_jual_eceran) * 0.11,
         total:
@@ -610,6 +669,10 @@ const subtotal = computed(() => {
     );
 });
 
+const diskon_global = computed(() => {
+    return cart.value.reduce((sum, item) => sum + Number(item.diskon), 0);
+});
+
 const tax = computed(() => {
     if (customerType.value === "cafe") {
         return 0;
@@ -625,7 +688,11 @@ const total = computed(() => {
     const memberDiscount = appliedMember.value
         ? appliedMember.value.point * 50
         : 0;
-    return Math.max(0, totalBeforeVoucher - voucherDiscount - memberDiscount);
+    const discount = diskon_global.value;
+    return Math.max(
+        0,
+        totalBeforeVoucher - voucherDiscount - memberDiscount - discount,
+    );
 });
 
 const change = computed(() => {
@@ -648,41 +715,43 @@ const canProcessPayment = computed(() => {
 });
 
 const processPayment = async () => {
-    if (isProcessing.value) return; // Added loading state check
-    isProcessing.value = true; // Set loading state to true
+    if (isProcessing.value) return;
+    isProcessing.value = true;
     try {
-        const response = await fetch("http://127.0.0.1:8000/pos", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                // Add your custom authentication header here if needed
-                // 'Authorization': `Bearer ${yourAuthToken}`
+        form.subtotal = subtotal;
+        form.kode_voucher = appliedVoucher.value
+            ? appliedVoucher.value.kode_voucher
+            : null;
+        form.kode_member = appliedMember.value
+            ? appliedMember.value.kode_member
+            : null;
+        form.diskon_global = diskon_global;
+        form.tax = tax;
+        form.total = total;
+        form.cash_received = cashReceived;
+        form.change = change;
+        form.applied_points = appliedMember.value
+            ? appliedMember.value.point
+            : null;
+        form.details = cart;
+        form.post("http://127.0.0.1:8000/pos", {
+            onError: (error) => {
+                console.error("Error processing payment:", error);
+                alert(
+                    error.message ||
+                        "Error processing payment. Please try again.",
+                );
             },
-            body: JSON.stringify({
-                items: cart.value,
-                total: total.value,
-                subtotal: subtotal.value,
-                tax: tax.value,
-                paymentMethod: paymentMethod.value,
-                customerType: customerType.value,
-                cashReceived: cashReceived.value,
-                change: change.value,
-                appliedVoucher: appliedVoucher.value,
-                appliedMember: appliedMember.value,
-            }),
+            onSuccess: () => {
+                showPaymentSuccess.value = true;
+                // resetTransaction();
+            },
         });
-
-        if (!response.ok) throw new Error("Payment processing failed");
-
-        const result = await response.json();
-        console.log("Transaction submitted successfully:", result);
-        showPaymentSuccess.value = true;
     } catch (error) {
         console.error("Error processing payment:", error);
-        // Show error message to user
-        alert("Error processing payment. Please try again.");
+        alert(error.message || "Error processing payment. Please try again.");
     } finally {
-        isProcessing.value = false; // Reset loading state
+        isProcessing.value = false;
     }
 };
 
@@ -695,6 +764,7 @@ const resetTransaction = () => {
     selectedProduct.value = null;
     appliedVoucher.value = null;
     appliedMember.value = null;
+    cardNumber.value = null;
 };
 
 const printReceipt = () => {
