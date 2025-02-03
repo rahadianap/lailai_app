@@ -97,6 +97,19 @@ class SalesController extends Controller
                 ]);
             }
 
+            $member = Member::where('kode_member', $request->kode_member)->first();
+            if ($member && $request->applied_points > 0) {
+                $member->update([
+                    'points' => $member->points - $request->applied_points,
+                    'updated_by' => Auth()->user()->name,
+                ]);
+            } else {
+                $member->update([
+                    'points' => $member->points + $request->applied_points,
+                    'updated_by' => Auth()->user()->name,
+                ]);
+            }
+
             DB::commit();
 
             return redirect()->back()->with('success', 'Sales Create Successfully.');
