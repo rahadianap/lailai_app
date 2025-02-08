@@ -6,7 +6,7 @@ use App\Models\DetailPurchaseOrder;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
-use Barryvdh\DomPDF\Facade as Pdf;
+use Barryvdh\DomPDF\Facade\Pdf as Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

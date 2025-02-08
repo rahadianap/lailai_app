@@ -30,26 +30,32 @@ const emit = defineEmits(["expand", "edit", "delete", "approve", "print"]);
             <DropdownMenuItem @click="$emit('expand')">
                 Expand
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="permissions.po_edit" @click="$emit('edit')">
+            <DropdownMenuItem
+                v-if="
+                    props.permissions.po_edit && props.po.status === 'CREATED'
+                "
+                @click="$emit('edit')"
+            >
                 Edit
             </DropdownMenuItem>
             <DropdownMenuItem
-                v-if="permissions.po_delete"
+                v-if="
+                    props.permissions.po_delete && props.po.status === 'CREATED'
+                "
                 @click="$emit('delete')"
             >
                 Delete
             </DropdownMenuItem>
             <DropdownMenuItem
-                v-if="permissions.po_approve"
+                v-if="
+                    props.permissions.po_approve &&
+                    props.po.status === 'CREATED'
+                "
                 @click="$emit('approve')"
             >
                 Approve
             </DropdownMenuItem>
-            <DropdownMenuItem
-                @click="$emit('print')"
-            >
-                Print
-            </DropdownMenuItem>
+            <DropdownMenuItem @click="$emit('print')"> Print </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>
