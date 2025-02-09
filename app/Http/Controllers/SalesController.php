@@ -28,8 +28,6 @@ class SalesController extends Controller
     {
         // $this->authorize('create', Sales::class);
 
-        dd($request->all());
-
         $validator = Validator::make($request->all(), [
             'payment_method' => 'required|string|max:255',
             'customer_type' => 'required|string|max:255',
@@ -103,7 +101,7 @@ class SalesController extends Controller
                     'points' => $member->points - $request->applied_points,
                     'updated_by' => Auth()->user()->name,
                 ]);
-            } else {
+            } else if($member) {
                 $member->update([
                     'points' => $member->points + $request->applied_points,
                     'updated_by' => Auth()->user()->name,

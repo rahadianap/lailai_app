@@ -73,16 +73,30 @@
                                         </Button>
                                     </TableCell>
                                     <TableCell>{{
-                                        formatCurrency(item.dpp)
+                                        form.customer_type === "cafe"
+                                            ? formatCurrency(
+                                                  item.harga_jual_eceran,
+                                              )
+                                            : formatCurrency(item.dpp)
                                     }}</TableCell>
                                     <TableCell>{{
-                                        formatCurrency(item.ppn)
+                                        form.customer_type === "cafe"
+                                            ? formatCurrency(0)
+                                            : formatCurrency(item.ppn)
                                     }}</TableCell>
                                     <TableCell>{{
                                         formatCurrency(item.diskon)
                                     }}</TableCell>
                                     <TableCell>{{
-                                        formatCurrency(item.total)
+                                        form.customer_type === "cafe"
+                                            ? formatCurrency(
+                                                  item.harga_jual_eceran *
+                                                      item.quantity,
+                                              )
+                                            : formatCurrency(
+                                                  item.harga_jual_eceran *
+                                                      item.quantity,
+                                              )
                                     }}</TableCell>
                                     <TableCell>
                                         <Button
@@ -114,8 +128,12 @@
                         }}</span>
                     </div>
                     <div class="flex justify-between mb-2">
-                        <span class="text-xl">Tax (11%):</span>
-                        <span class="text-xl">{{ formatCurrency(tax) }}</span>
+                        <span class="text-lg"
+                            >Tax ({{
+                                form.customer_type === "cafe" ? "0%" : "11%"
+                            }}):</span
+                        >
+                        <span class="text-lg">{{ formatCurrency(tax) }}</span>
                     </div>
                     <div class="flex justify-between mb-2">
                         <span class="text-xl">Diskon:</span>
@@ -185,7 +203,7 @@
                         >
                         <Select v-model="form.customer_type" class="col-span-3">
                             <SelectTrigger
-                                id="customerType"
+                                id="customer_type"
                                 class="mt-2 text-xl font-bold"
                             >
                                 <SelectValue
@@ -641,18 +659,19 @@ const addProductToCart = (product) => {
 const updateCartItem = (index) => {
     const item = cart.value[index];
     item.quantity = Math.max(0, item.quantity);
-    item.dpp =
-        Number(item.harga_jual_eceran) *
-        (customerType.value === "cafe" ? 1 : 11 / 12) *
-        item.quantity;
-    item.ppn =
-        customerType.value === "cafe"
-            ? 0
-            : Number(item.harga_jual_eceran) * 0.11 * item.quantity;
-    item.total = Number(item.harga_jual_eceran) * item.quantity + item.ppn;
+    if (form.customer_type === "cafe") {
+        item.dpp = Number(item.harga_jual_eceran);
+        item.ppn = 0;
+        item.total = item.dpp + item.ppn;
+    } else {
+        item.dpp = Number(item.harga_jual_eceran) * (11 / 12);
+        item.ppn = Number(item.harga_jual_eceran) * 0.11 * item.quantity;
+        item.total = item.dpp + item.ppn;
+    }
+    // item.total = item.dpp + item.ppn;
 };
 
-watch(customerType, () => {
+watch(form.customer_type, () => {
     cart.value.forEach((item, index) => updateCartItem(index));
 });
 
@@ -674,7 +693,7 @@ const diskon_global = computed(() => {
 });
 
 const tax = computed(() => {
-    if (customerType.value === "cafe") {
+    if (form.customer_type === "cafe") {
         return 0;
     }
     return cart.value.reduce((sum, item) => sum + item.ppn, 0);
@@ -744,7 +763,7 @@ const processPayment = async () => {
             },
             onSuccess: () => {
                 showPaymentSuccess.value = true;
-                // resetTransaction();
+                resetTransaction();
             },
         });
     } catch (error) {
@@ -760,7 +779,6 @@ const resetTransaction = () => {
     paymentMethod.value = "cash";
     customerType.value = "walk_in";
     cashReceived.value = 0;
-    showPaymentSuccess.value = false;
     selectedProduct.value = null;
     appliedVoucher.value = null;
     appliedMember.value = null;
