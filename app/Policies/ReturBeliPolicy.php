@@ -25,4 +25,9 @@ class ReturBeliPolicy
     {
         return $user->role === 'admin';
     }
+
+    public function approve(User $user)
+    {
+        return $user->role === 'admin';
+    }
 }

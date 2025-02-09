@@ -55,6 +55,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'edit'])->name('retur-beli.edit');  //with GET
         Route::put('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'update'])->name('retur-beli.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'destroy'])->name('retur-beli.destroy');
+        Route::put('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'approve'])->name('retur-beli.approve');
     });
     Route::prefix('/pos')->group(function () {
         Route::get('/', [\App\Http\Controllers\SalesController::class, 'index'])->name('pos.index');

@@ -20,8 +20,8 @@ return new class extends Migration {
             $table->string('nama_satuan_beli');
             $table->integer('qty_retur');
             $table->string('nama_satuan_retur');
-            $table->integer('harga');
-            $table->integer('jumlah');
+            $table->decimal('harga', 10, 2);
+            $table->decimal('jumlah', 10, 2);
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();

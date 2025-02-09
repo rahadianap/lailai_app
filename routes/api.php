@@ -30,3 +30,4 @@ Route::get('/retur-beli/purchasing', [ReturBeliController::class, 'getPurchasing
 Route::get('/retur-beli/products', [ReturBeliController::class, 'getProducts']);
 Route::get('/retur-beli/products/{id}', [ReturBeliController::class, 'fetchDetails']);
 Route::get('/retur-beli/purchasing/{id}', [ReturBeliController::class, 'fetchPurchasingDetails']);
+Route::get('/retur-beli/print/{id}', [ReturBeliController::class, 'print']);

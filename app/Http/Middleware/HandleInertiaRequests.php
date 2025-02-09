@@ -65,6 +65,7 @@ class HandleInertiaRequests extends Middleware
             'retur_beli_create' => $value,
             'retur_beli_edit' => $value,
             'retur_beli_delete' => $value,
+            'retur_beli_approve' => $value,
             'vouchers_view' => $value,
             'vouchers_create' => $value,
             'vouchers_edit' => $value,

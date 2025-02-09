@@ -65,6 +65,9 @@ const canViewReturBeli = computed(() => props.permissions.retur_beli_view);
 const canCreateReturBeli = computed(() => props.permissions.retur_beli_create);
 const canEditReturBeli = computed(() => props.permissions.retur_beli_edit);
 const canDeleteReturBeli = computed(() => props.permissions.retur_beli_delete);
+const canApproveReturBeli = computed(
+    () => props.permissions.retur_beli_approve,
+);
 
 const data = props.data.data;
 
@@ -87,6 +90,51 @@ const selectedSupplier = ref(null);
 
 const onSupplierSelect = (supplier) => {
     selectedSupplier.value = supplier.nama_supplier;
+};
+
+const onApprove = (id) => {
+    if (canApproveReturBeli.value) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, approve it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = useForm({});
+                form.put(`/retur-beli/${id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire(
+                            "Approved!",
+                            "Your po has been approved.",
+                            "success",
+                        );
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    },
+                    onError: () => {
+                        Swal.fire(
+                            "Error!",
+                            "There was a problem approving the po.",
+                            "error",
+                        );
+                    },
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to delete products.",
+            icon: "error",
+        });
+    }
 };
 
 const onPurchasingSelect = async (purchasing) => {
@@ -198,7 +246,7 @@ const columns = [
         header: () => h("div", { class: "text-center" }, "Status"),
         cell: ({ row }) => {
             const status = row.getValue("status");
-            if (status == true) {
+            if (status === "APPROVED") {
                 return h(
                     "div",
                     { class: "text-center font-medium" },
@@ -227,6 +275,8 @@ const columns = [
                     permissions: props.permissions,
                     onEdit: () => onEdit(returbeli.id),
                     onDelete: () => onDelete(returbeli.id),
+                    onApprove: () => onApprove(returbeli.id),
+                    onPrint: () => onPrint(returbeli.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -536,6 +586,33 @@ const onDelete = (id) => {
     }
 };
 
+const onPrint = async (id) => {
+    axios({
+        url: `http://127.0.0.1:8000/api/retur-beli/print/${id}`,
+        method: "GET",
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+        responseType: "blob",
+    }).then((response) => {
+        var fileURL = window.open(
+            URL.createObjectURL(
+                new Blob([response.data], { type: "application/pdf" }),
+            ),
+            "name",
+            "width=500,height=500,resizable=yes,scrollbars=yes",
+        );
+        if (window.focus) {
+            fileURL.focus();
+            var fileLink = document.createElement("a");
+            fileLink.href = fileURL;
+            fileLink.setAttribute("stream", "ReturBeli.pdf");
+            document.body.appendChild(fileLink);
+            return false;
+        }
+    });
+};
+
 const formatPrice = (price) => {
     return new Intl.NumberFormat("id-ID", {
         style: "currency",
@@ -616,134 +693,65 @@ const formatPrice = (price) => {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead
-                                                        >Saldo Awal</TableHead
+                                                        >Kode Barcode</TableHead
                                                     >
                                                     <TableHead
-                                                        >Harga Jual
-                                                        (Karton)</TableHead
+                                                        >Nama Barang</TableHead
                                                     >
                                                     <TableHead
-                                                        >Harga Jual
-                                                        (Eceran)</TableHead
+                                                        >Qty Beli</TableHead
                                                     >
                                                     <TableHead
-                                                        >Harga Beli
-                                                        (Karton)</TableHead
+                                                        >Satuan Beli</TableHead
                                                     >
                                                     <TableHead
-                                                        >Harga Beli
-                                                        (Eceran)</TableHead
+                                                        >Qty Retur</TableHead
                                                     >
                                                     <TableHead
-                                                        >HPP (Karton)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >HPP (Eceran)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Current
-                                                        Stock</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Nilai Akhir</TableHead
+                                                        >Satuan Retur</TableHead
                                                     >
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                <TableRow>
+                                                <TableRow
+                                                    v-for="detail in row
+                                                        .original.details"
+                                                    :key="detail.id"
+                                                >
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            row.original
-                                                                .details[
-                                                                "kode_barcode"
-                                                            ]
+                                                            detail.kode_barcode
                                                         }}</TableCell
                                                     >
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_jual_karton"
-                                                                ],
-                                                            )
+                                                            detail.nama_barang
                                                         }}</TableCell
                                                     >
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_jual_eceran"
-                                                                ],
-                                                            )
+                                                            detail.qty_beli
                                                         }}</TableCell
                                                     >
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_beli_karton"
-                                                                ],
-                                                            )
+                                                            detail.nama_satuan_beli
                                                         }}</TableCell
                                                     >
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_beli_eceran"
-                                                                ],
-                                                            )
+                                                            detail.qty_retur
                                                         }}</TableCell
                                                     >
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "hpp_avg_karton"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "hpp_avg_eceran"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            row.original
-                                                                .details[
-                                                                "current_stock"
-                                                            ]
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "nilai_akhir"
-                                                                ],
-                                                            )
+                                                            detail.nama_satuan_retur
                                                         }}</TableCell
                                                     >
                                                 </TableRow>

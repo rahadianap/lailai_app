@@ -15,6 +15,7 @@ use App\Models\Supplier;
 use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Barryvdh\DomPDF\Facade\Pdf as Pdf;
 
 class ReturBeliController extends Controller
 {
@@ -198,6 +199,38 @@ class ReturBeliController extends Controller
         }
     }
 
+    public function approve($id)
+    {
+        $this->authorize('approve', ReturBeli::class);
+
+        DB::beginTransaction();
+
+        try {
+            $po = ReturBeli::findOrFail($id);
+            $po->update([
+                'status' => 'APPROVED',
+                'approved_by' => auth()->user()->name,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'ReturBeli Approved Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while approving the po', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function print($id)
+    {
+        $data = ReturBeli::with('details')->where('id', $id)->first();
+        $supplier = Supplier::where('nama_supplier', $data->nama_supplier)->first();
+        $pdf = Pdf::loadView('returbeli', ['data' => $data, 'supplier' => $supplier]);
+
+        return $pdf->setPaper('a4')->stream();
+    }
+
     public function getSuppliers(Request $request)
     {
         $search = $request->input('search', '');
@@ -215,6 +248,7 @@ class ReturBeliController extends Controller
         $perPage = 10;
 
         $data = Purchasing::where('kode_pembelian', 'like', "%{$search}%")
+            ->where('status', 'APPROVED')
             ->paginate($perPage);
 
         return response()->json($data);
