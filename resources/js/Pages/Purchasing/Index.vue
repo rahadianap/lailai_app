@@ -65,6 +65,9 @@ const canViewPurchasing = computed(() => props.permissions.purchasing_view);
 const canCreatePurchasing = computed(() => props.permissions.purchasing_create);
 const canEditPurchasing = computed(() => props.permissions.purchasing_edit);
 const canDeletePurchasing = computed(() => props.permissions.purchasing_delete);
+const canApprovePurchasing = computed(
+    () => props.permissions.purchasing_approve,
+);
 
 const data = props.data.data;
 
@@ -77,6 +80,51 @@ const showDialogCreate = () => {
         Swal.fire({
             title: "Permission Denied",
             text: "You don't have permission to create products.",
+            icon: "error",
+        });
+    }
+};
+
+const onApprove = (id) => {
+    if (canApprovePurchasing.value) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, approve it!",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = useForm({});
+                form.put(`/purchasing/${id}`, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        Swal.fire(
+                            "Approved!",
+                            "Your po has been approved.",
+                            "success",
+                        );
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    },
+                    onError: () => {
+                        Swal.fire(
+                            "Error!",
+                            "There was a problem approving the po.",
+                            "error",
+                        );
+                    },
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "Permission Denied",
+            text: "You don't have permission to delete products.",
             icon: "error",
         });
     }
@@ -151,7 +199,11 @@ const onProductSelect = async (product) => {
         currentDetail.jumlah = productDetails.harga_beli_karton;
         currentDetail.is_taxable =
             productDetails.is_taxable === "1" ? true : false;
-        currentDetail.exp_date = ""; // You might want to set a default date here
+        currentDetail.exp_date = "";
+        currentDetail.dpp =
+            form.purchase_type === "no_ppn" ? 0 : currentDetail.harga; // You might want to set a default date here
+        currentDetail.ppn =
+            form.purchase_type === "no_ppn" ? 0 : currentDetail.harga * 0.11;
         calculateJumlah(currentDetail);
     } catch (error) {
         console.error("Error fetching product details:", error);
@@ -199,21 +251,21 @@ const columns = [
         },
     },
     {
-        accessorKey: "is_aktif",
+        accessorKey: "status",
         header: () => h("div", { class: "text-center" }, "Status"),
         cell: ({ row }) => {
-            const status = row.getValue("is_aktif");
-            if (status == true) {
+            const status = row.getValue("status");
+            if (status === "APPROVED") {
                 return h(
                     "div",
                     { class: "text-center font-medium" },
-                    h(Badge, "Active"),
+                    h(Badge, "APPROVED"),
                 );
             } else {
                 return h(
                     "div",
                     { class: "text-center font-medium" },
-                    h(Badge, { variant: "outline" }, "Inactive"),
+                    h(Badge, { variant: "outline" }, "CREATED"),
                 );
             }
         },
@@ -232,6 +284,8 @@ const columns = [
                     permissions: props.permissions,
                     onEdit: () => onEdit(purchasing.id),
                     onDelete: () => onDelete(purchasing.id),
+                    onApprove: () => onApprove(purchasing.id),
+                    onPrint: () => onPrint(purchasing.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -388,6 +442,33 @@ const isItemExist = (newItem) => {
     );
 };
 
+const onPrint = async (id) => {
+    axios({
+        url: `http://127.0.0.1:8000/api/purchasing/print/${id}`,
+        method: "GET",
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+        responseType: "blob",
+    }).then((response) => {
+        var fileURL = window.open(
+            URL.createObjectURL(
+                new Blob([response.data], { type: "application/pdf" }),
+            ),
+            "name",
+            "width=500,height=500,resizable=yes,scrollbars=yes",
+        );
+        if (window.focus) {
+            fileURL.focus();
+            var fileLink = document.createElement("a");
+            fileLink.href = fileURL;
+            fileLink.setAttribute("stream", "Purchasing.pdf");
+            document.body.appendChild(fileLink);
+            return false;
+        }
+    });
+};
+
 const totalDiskon = computed(() => {
     return form.details.reduce(
         (sum, detail) => sum + (detail.diskon_total || 0),
@@ -401,27 +482,31 @@ const totalSub = computed(() => {
 
 const calculateJumlah = (detail) => {
     detail.jumlah = detail.qty * detail.harga - detail.diskon;
+    detail.dpp = detail.jumlah;
+    detail.ppn =
+        form.purchase_type === "no_ppn"
+            ? 0
+            : detail.is_taxable
+              ? detail.dpp * 0.11
+              : 0;
     form.subtotal = totalSub;
     form.total = form.subtotal - form.diskon_total;
-    // form.ppn_total = detail.is_taxable == true ? form.total * 0.11 : 0;
     form.ppn_total =
         form.purchase_type === "no_ppn"
             ? 0
-            : detail.is_taxable == true
-              ? form.total * 0.11
-              : 0;
+            : form.details.reduce((sum, d) => sum + d.ppn, 0);
     form.grand_total = form.total + form.ppn_total;
 };
 
-const setDiskonGlobal = (detail) => {
-    detail.jumlah = detail.qty * detail.harga - detail.diskon;
+const setDiskonGlobal = () => {
     form.subtotal = totalSub;
-    form.diskon_total = totalDiskon;
-    form.dpp_total = form.subtotal - form.diskon_total;
-    form.total = form.subtotal - form.diskon_total;
-    // form.ppn_total = form.total * 0.11;
-    form.ppn_total = form.purchase_type === "no_ppn" ? 0 : form.total * 0.11;
-    form.grand_total = form.dpp_total + form.ppn_total;
+    form.dpp_total = form.subtotal - form.diskon_total - (form.rebate || 0);
+    form.total = form.dpp_total;
+    form.ppn_total =
+        form.purchase_type === "no_ppn"
+            ? 0
+            : form.details.reduce((sum, detail) => sum + detail.ppn, 0);
+    form.grand_total = form.total + form.ppn_total;
 };
 
 const calculateTotals = () => {
@@ -463,9 +548,14 @@ watch(() => form.details, calculateTotals, { deep: true });
 
 watch(
     () => form.purchase_type,
-    () => {
-        form.details.forEach(calculateJumlah);
-        setDiskonGlobal(form.details[0]); // Recalculate global totals
+    (newValue) => {
+        form.details.forEach((detail) => {
+            calculateJumlah(detail);
+            if (newValue === "no_ppn") {
+                detail.ppn = 0;
+            }
+        });
+        setDiskonGlobal(); // Recalculate global totals
     },
     { immediate: true },
 );
@@ -544,7 +634,7 @@ const onEdit = async (id) => {
             form.purchase_type = data.data.purchase_type;
             form.rebate = data.data.rebate;
             form.diskon_total = data.data.diskon_total;
-            form.subtotal = data.data.subtotal;
+            // form.subtotal = data.data.subtotal;
             form.dpp_total = data.data.dpp_total;
             form.ppn_total = data.data.ppn_total;
             form.total = data.data.total;
@@ -711,136 +801,106 @@ const formatPrice = (price) => {
                                             <TableHeader>
                                                 <TableRow>
                                                     <TableHead
-                                                        >Saldo Awal</TableHead
+                                                        >Nomor Faktur</TableHead
                                                     >
                                                     <TableHead
-                                                        >Harga Jual
-                                                        (Karton)</TableHead
+                                                        >Nama Barang</TableHead
                                                     >
+                                                    <TableHead>Qty</TableHead>
                                                     <TableHead
-                                                        >Harga Jual
-                                                        (Eceran)</TableHead
+                                                        >Satuan</TableHead
                                                     >
+                                                    <TableHead>Isi</TableHead>
+                                                    <TableHead>Harga</TableHead>
                                                     <TableHead
-                                                        >Harga Beli
-                                                        (Karton)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Harga Beli
-                                                        (Eceran)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >HPP (Karton)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >HPP (Eceran)</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Current
-                                                        Stock</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Nilai Akhir</TableHead
+                                                        >Jumlah</TableHead
                                                     >
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                <TableRow>
+                                                <TableRow
+                                                    v-for="detail in row
+                                                        .original.details"
+                                                    :key="detail.id"
+                                                >
                                                     <TableCell
-                                                        class="font-medium"
+                                                        class="font-normal"
                                                         >{{
-                                                            row.original
-                                                                .details[
-                                                                "kode_barcode"
-                                                            ]
+                                                            detail.nomor_faktur
                                                         }}</TableCell
                                                     >
                                                     <TableCell
-                                                        class="font-medium"
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.nama_barang
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.qty
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.nama_satuan
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.isi
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_jual_karton"
-                                                                ],
+                                                                detail.harga,
                                                             )
                                                         }}</TableCell
                                                     >
                                                     <TableCell
-                                                        class="font-medium"
+                                                        class="font-normal"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_jual_eceran"
-                                                                ],
+                                                                detail.jumlah,
                                                             )
                                                         }}</TableCell
                                                     >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_beli_karton"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "harga_beli_eceran"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "hpp_avg_karton"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "hpp_avg_eceran"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            row.original
-                                                                .details[
-                                                                "current_stock"
-                                                            ]
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            formatPrice(
-                                                                row.original
-                                                                    .details[
-                                                                    "nilai_akhir"
-                                                                ],
-                                                            )
-                                                        }}</TableCell
-                                                    >
+                                                </TableRow>
+                                                <TableRow
+                                                    class="font-bold bg-gray-100"
+                                                >
+                                                    <TableCell>Total</TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell>{{
+                                                        formatPrice(
+                                                            row.original.details
+                                                                .map(
+                                                                    (item) =>
+                                                                        item.jumlah,
+                                                                )
+                                                                .reduce(
+                                                                    (
+                                                                        prev,
+                                                                        current,
+                                                                    ) =>
+                                                                        prev +
+                                                                        parseFloat(
+                                                                            current,
+                                                                            10,
+                                                                        ),
+                                                                    0,
+                                                                    0,
+                                                                ),
+                                                        )
+                                                    }}</TableCell>
                                                 </TableRow>
                                             </TableBody>
                                         </Table>
@@ -976,7 +1036,10 @@ const formatPrice = (price) => {
                                 placeholder="Search suppliers..."
                                 api-endpoint="http://127.0.0.1:8000/api/purchasing/suppliers"
                                 value-field="nama_supplier"
-                                display-field="nama_supplier"
+                                :display-fields="[
+                                    'kode_supplier',
+                                    'nama_supplier',
+                                ]"
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
@@ -992,7 +1055,7 @@ const formatPrice = (price) => {
                                 {{ form.errors.nama_supplier }}
                             </p>
                         </div>
-                        <div>
+                        <div v-if="!form.nama_supplier">
                             <Label for="kode_po"> Nomor PO </Label>
                             <SearchableSelect
                                 class="mt-2 editable-input"
@@ -1046,7 +1109,9 @@ const formatPrice = (price) => {
                         >
                             <div class="flex items-center space-x-2">
                                 <RadioGroupItem id="ppn" value="ppn" />
-                                <Label for="ppn" class="text-xs">PPN</Label>
+                                <Label for="ppn" class="text-xs"
+                                    >Excl. PPN</Label
+                                >
                             </div>
                             <div class="flex items-center space-x-2">
                                 <RadioGroupItem id="inc_ppn" value="inc_ppn" />
@@ -1100,6 +1165,7 @@ const formatPrice = (price) => {
                                                 value-field="kode_barcode"
                                                 :display-fields="[
                                                     'kode_barcode',
+                                                    'nama_barang',
                                                 ]"
                                                 search-param="search"
                                                 :per-page="10"
@@ -1164,7 +1230,7 @@ const formatPrice = (price) => {
                                                 type="number"
                                                 class="col-span-3 editable-input"
                                                 required
-                                                @input="setDiskonGlobal(detail)"
+                                                @input="calculateJumlah(detail)"
                                                 min="0"
                                                 step="0"
                                             />

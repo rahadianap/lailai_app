@@ -40,6 +40,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [\App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.edit');  //with GET
         Route::put('/{id}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\PurchasingController::class, 'destroy'])->name('purchasing.destroy');
+        Route::put('/{id}', [\App\Http\Controllers\PurchasingController::class, 'approve'])->name('purchasing.approve');
     });
     Route::prefix('/penjualan')->group(function () {
         Route::get('/', [\App\Http\Controllers\PenjualanController::class, 'index'])->name('penjualan.index');

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Barryvdh\DomPDF\Facade\Pdf as Pdf;
 
 class PurchasingController extends Controller
 {
@@ -53,7 +54,6 @@ class PurchasingController extends Controller
             'details.*.isi_barang' => 'required|numeric|min:0',
             'details.*.harga' => 'required|numeric|min:0',
             'details.*.diskon' => 'required|numeric|min:0',
-            'details.*.diskon_global' => 'required|numeric|min:0',
             'details.*.jumlah' => 'required|numeric|min:0',
             'details.*.dpp' => 'required|numeric|min:0',
             'details.*.ppn' => 'required|numeric|min:0',
@@ -79,9 +79,10 @@ class PurchasingController extends Controller
                 'purchase_type' => $request->purchase_type,
                 'rebate' => $request->rebate || 0,
                 'diskon_total' => $request->diskon_total || 0,
-                'dpp_total' => $request->dpp_total || 0,
-                'ppn_total' => $request->ppn_total || 0,
+                'dpp_total' => $request->dpp_total,
+                'ppn_total' => $request->ppn_total,
                 'total' => $request->total,
+                'status' => 'CREATED',
                 'created_by' => Auth()->user()->name,
             ]);
 
@@ -98,7 +99,6 @@ class PurchasingController extends Controller
                     'harga' => $detail['harga'],
                     'jumlah' => $detail['jumlah'],
                     'diskon' => $detail['diskon'],
-                    'diskon_global' => $detail['diskon_global'],
                     'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
                     'nilai_dpp' => $detail['dpp'] || 0,
                     'nilai_ppn' => $detail['ppn'] || 0,
@@ -122,10 +122,10 @@ class PurchasingController extends Controller
                     'harga_beli_eceran' => (float) $item['harga'] / $item['isi_barang'],
                     'harga_jual_karton' => $item['harga_jual'],
                     'harga_jual_eceran' => $item['harga_jual'] / $item['isi_barang'],
-                    'hpp_avg_karton' => ($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon'] + $item['diskon_global']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty']),
-                    'hpp_avg_eceran' => (($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon'] + $item['diskon_global']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty'])) / $item['isi_barang'],
+                    'hpp_avg_karton' => ($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty']),
+                    'hpp_avg_eceran' => (($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty'])) / $item['isi_barang'],
                     'current_stock' => $item['qty'] * $item['isi_barang'] + $detailProduct->current_stock,
-                    'nilai_akhir' => ((($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon'] + $item['diskon_global']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty'])) / $item['isi_barang']) * ($item['qty'] * $item['isi_barang'] + $detailProduct->current_stock),
+                    'nilai_akhir' => ((($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty'])) / $item['isi_barang']) * ($item['qty'] * $item['isi_barang'] + $detailProduct->current_stock),
                 ]);
             }
 
@@ -262,6 +262,38 @@ class PurchasingController extends Controller
 
             return response()->json(['message' => 'An error occurred while deleting the po', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    public function approve($id)
+    {
+        $this->authorize('approve', Purchasing::class);
+
+        DB::beginTransaction();
+
+        try {
+            $po = Purchasing::findOrFail($id);
+            $po->update([
+                'status' => 'APPROVED',
+                'approved_by' => auth()->user()->name,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Purchasing Approved Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while approving the po', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function print($id)
+    {
+        $data = Purchasing::with('details')->where('id', $id)->first();
+        $supplier = Supplier::where('nama_supplier', $data->nama_supplier)->first();
+        $pdf = Pdf::loadView('purchasing', ['data' => $data, 'supplier' => $supplier]);
+
+        return $pdf->setPaper('a4')->stream();
     }
 
     public function getSuppliers(Request $request)

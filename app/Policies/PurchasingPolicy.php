@@ -27,4 +27,9 @@ class PurchasingPolicy
     {
         return $user->role === 'admin';
     }
+
+    public function approve(User $user)
+    {
+        return $user->role === 'admin';
+    }
 }

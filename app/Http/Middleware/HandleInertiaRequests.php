@@ -60,6 +60,7 @@ class HandleInertiaRequests extends Middleware
             'purchasing_create' => $value,
             'purchasing_edit' => $value,
             'purchasing_delete' => $value,
+            'purchasing_approve' => $value,
             'retur_beli_view' => $value,
             'retur_beli_create' => $value,
             'retur_beli_edit' => $value,

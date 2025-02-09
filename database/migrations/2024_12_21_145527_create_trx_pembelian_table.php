@@ -22,8 +22,7 @@ return new class extends Migration {
             $table->integer('dpp_total')->nullable();
             $table->integer('ppn_total')->nullable();
             $table->integer('total');
-            $table->string('kode_voucher')->nullable();
-            $table->string('kode_member')->nullable();
+            $table->string('status');
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();

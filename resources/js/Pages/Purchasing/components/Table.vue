@@ -14,7 +14,7 @@ const props = defineProps({
     permissions: Object,
 });
 
-const emit = defineEmits(["expand", "edit", "delete"]);
+const emit = defineEmits(["expand", "edit", "delete", "approve", "print"]);
 </script>
 
 <template>
@@ -30,15 +30,34 @@ const emit = defineEmits(["expand", "edit", "delete"]);
             <DropdownMenuItem @click="$emit('expand')">
                 Expand
             </DropdownMenuItem>
-            <DropdownMenuItem v-if="permissions.purchasing_edit" @click="$emit('edit')">
+            <DropdownMenuItem
+                v-if="
+                    props.permissions.purchasing_edit &&
+                    props.purchasing.status === 'CREATED'
+                "
+                @click="$emit('edit')"
+            >
                 Edit
             </DropdownMenuItem>
             <DropdownMenuItem
-                v-if="permissions.purchasing_delete"
+                v-if="
+                    props.permissions.purchasing_delete &&
+                    props.purchasing.status === 'CREATED'
+                "
                 @click="$emit('delete')"
             >
                 Delete
             </DropdownMenuItem>
+            <DropdownMenuItem
+                v-if="
+                    props.permissions.purchasing_approve &&
+                    props.purchasing.status === 'CREATED'
+                "
+                @click="$emit('approve')"
+            >
+                Approve
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="$emit('print')"> Print </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>

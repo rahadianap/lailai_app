@@ -30,6 +30,7 @@ class Purchasing extends Model
         'kode_voucher',
         'kode_member',
         'is_aktif',
+        'status',
         'created_by',
         'updated_by',
         'deleted_by',
