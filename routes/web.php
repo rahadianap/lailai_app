@@ -83,6 +83,13 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{categories}', [\App\Http\Controllers\CategoryController::class, 'update'])->name('categories.update');  //with GET
         Route::delete('/{categories}', [\App\Http\Controllers\CategoryController::class, 'destroy'])->name('categories.destroy');
     });
+    Route::prefix('/stores')->group(function () {
+        Route::get('/', [\App\Http\Controllers\StoreController::class, 'index'])->name('stores.index');
+        Route::post('/', [\App\Http\Controllers\StoreController::class, 'store'])->name('stores.store');
+        Route::get('/{stores}', [\App\Http\Controllers\StoreController::class, 'edit'])->name('stores.edit');  //with GET
+        Route::put('/{stores}', [\App\Http\Controllers\StoreController::class, 'update'])->name('stores.update');  //with GET
+        Route::delete('/{stores}', [\App\Http\Controllers\StoreController::class, 'destroy'])->name('stores.destroy');
+    });
     Route::prefix('/units')->group(function () {
         Route::get('/', [\App\Http\Controllers\UnitController::class, 'index'])->name('units.index');
         Route::post('/', [\App\Http\Controllers\UnitController::class, 'store'])->name('units.store');

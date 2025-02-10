@@ -33,6 +33,8 @@ import {
     Badge,
     FileChartLine,
     Repeat,
+    Store,
+    Wallet,
 } from "lucide-vue-next";
 import { Link, usePage, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
@@ -105,6 +107,12 @@ const navigationGroups = [
                 icon: Users,
                 permission: "members_view",
             },
+            {
+                name: "Stores",
+                href: "/stores",
+                icon: Store,
+                permission: "stores_view",
+            },
         ],
     },
     {
@@ -131,7 +139,7 @@ const navigationGroups = [
             {
                 name: "Penjualan",
                 href: "/penjualan",
-                icon: Repeat,
+                icon: Wallet,
                 permission: "penjualan_view",
             },
             {
