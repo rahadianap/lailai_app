@@ -14,7 +14,7 @@ const props = defineProps({
     permissions: Object,
 });
 
-const emit = defineEmits(["edit", "delete"]);
+const emit = defineEmits(["expand", "edit", "delete"]);
 </script>
 
 <template>
@@ -27,6 +27,9 @@ const emit = defineEmits(["edit", "delete"]);
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem @click="$emit('expand')">
+                Expand
+            </DropdownMenuItem>
             <DropdownMenuItem
                 v-if="permissions.penjualan_edit"
                 @click="$emit('edit')"

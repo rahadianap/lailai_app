@@ -22,7 +22,7 @@ class PenjualanController extends Controller
 
         $perPage = $request->input('per_page', 10);
 
-        $data = Penjualan::paginate(perPage: $perPage);
+        $data = Penjualan::with('details')->where('is_aktif', 1)->paginate(perPage: $perPage);
 
         return Inertia::render('Penjualan/Index', [
             'data' => $data,

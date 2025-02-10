@@ -96,11 +96,20 @@ const columns = [
         accessorKey: "customer_type",
         header: () => h("div", { class: "text-left" }, "Customer Type"),
         cell: ({ row }) => {
-            return h(
-                "div",
-                { class: "text-left font-medium" },
-                row.getValue("customer_type"),
-            );
+            const status = row.getValue("customer_type");
+            if (status === "walk_in") {
+                return h(
+                    "div",
+                    { class: "text-left font-medium" },
+                    h(Badge, { variant: "outline" }, "Walk In"),
+                );
+            } else {
+                return h(
+                    "div",
+                    { class: "text-left font-medium" },
+                    h(Badge, "Cafe"),
+                );
+            }
         },
     },
     {
@@ -368,6 +377,67 @@ const formatPrice = (price) => {
                                         />
                                     </TableCell>
                                 </TableRow>
+                                <TableRow v-if="row.getIsExpanded()">
+                                    <TableCell
+                                        :colspan="row.getAllCells().length"
+                                    >
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead
+                                                        >Kode Barcode</TableHead
+                                                    >
+                                                    <TableHead
+                                                        >Nama Barang</TableHead
+                                                    >
+                                                    <TableHead>Qty</TableHead>
+                                                    <TableHead
+                                                        >Satuan</TableHead
+                                                    >
+                                                    <TableHead>Isi</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                <TableRow
+                                                    v-for="detail in row
+                                                        .original.details"
+                                                    :key="detail.id"
+                                                >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.kode_barcode
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.nama_barang
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.qty
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.nama_satuan
+                                                        }}</TableCell
+                                                    >
+                                                    <TableCell
+                                                        class="font-normal"
+                                                        >{{
+                                                            detail.isi
+                                                        }}</TableCell
+                                                    >
+                                                </TableRow>
+                                            </TableBody>
+                                        </Table>
+                                    </TableCell>
+                                </TableRow>
                             </template>
                         </template>
 
@@ -460,7 +530,7 @@ const formatPrice = (price) => {
                 </div>
             </div>
         </div>
-        <div v-else class="text-center py-4">
+        <div v-else class="py-4 text-center">
             You don't have permission to view penjualan.
         </div>
     </Layout>
