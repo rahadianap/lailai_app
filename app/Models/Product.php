@@ -30,6 +30,6 @@ class Product extends Model
 
     public function details()
     {
-        return $this->hasOne(DetailProduct::class, 'barang_id');
+        return $this->hasMany(DetailProduct::class, 'barang_id');
     }
 }

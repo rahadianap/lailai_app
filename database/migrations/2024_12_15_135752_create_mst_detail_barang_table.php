@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('mst_detail_barang', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('barang_id');
+            $table->string('kode_toko');
             $table->string('kode_barcode');
             $table->string('nama_barang');
             $table->integer('saldo_awal');

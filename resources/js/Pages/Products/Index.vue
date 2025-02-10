@@ -201,6 +201,7 @@ const columns = [
         enableHiding: false,
         cell: ({ row }) => {
             const product = row.original;
+            console.log(product);
 
             return h(
                 "div",
@@ -585,8 +586,7 @@ const formatPrice = (price) => {
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            row.original
-                                                                .details[
+                                                            row.original[
                                                                 "saldo_awal"
                                                             ]
                                                         }}</TableCell
@@ -595,8 +595,7 @@ const formatPrice = (price) => {
                                                         class="font-medium"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
+                                                                row.original[
                                                                     "harga_jual_karton"
                                                                 ],
                                                             )
@@ -606,8 +605,7 @@ const formatPrice = (price) => {
                                                         class="font-medium"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
+                                                                row.original[
                                                                     "harga_jual_eceran"
                                                                 ],
                                                             )
@@ -617,8 +615,7 @@ const formatPrice = (price) => {
                                                         class="font-medium"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
+                                                                row.original[
                                                                     "harga_beli_karton"
                                                                 ],
                                                             )
@@ -628,8 +625,7 @@ const formatPrice = (price) => {
                                                         class="font-medium"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
+                                                                row.original[
                                                                     "harga_beli_eceran"
                                                                 ],
                                                             )
@@ -639,8 +635,7 @@ const formatPrice = (price) => {
                                                         class="font-medium"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
+                                                                row.original[
                                                                     "hpp_avg_karton"
                                                                 ],
                                                             )
@@ -650,8 +645,7 @@ const formatPrice = (price) => {
                                                         class="font-medium"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
+                                                                row.original[
                                                                     "hpp_avg_eceran"
                                                                 ],
                                                             )
@@ -660,8 +654,7 @@ const formatPrice = (price) => {
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            row.original
-                                                                .details[
+                                                            row.original[
                                                                 "current_stock"
                                                             ]
                                                         }}</TableCell
@@ -670,8 +663,7 @@ const formatPrice = (price) => {
                                                         class="font-medium"
                                                         >{{
                                                             formatPrice(
-                                                                row.original
-                                                                    .details[
+                                                                row.original[
                                                                     "nilai_akhir"
                                                                 ],
                                                             )

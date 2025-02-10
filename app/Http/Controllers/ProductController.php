@@ -23,7 +23,11 @@ class ProductController extends Controller
 
         $perPage = $request->input('per_page', 10);
 
-        $data = Product::with('details')->where('is_aktif', 1)->paginate(perPage: $perPage);
+        $data = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')
+            ->select('mst_barang.*', 'mst_detail_barang.*')
+            ->where('mst_barang.is_aktif', 1)
+            ->where('kode_toko', auth()->user()->kode_toko)
+            ->paginate($perPage);
 
         return Inertia::render('Products/Index', [
             'data' => $data,
