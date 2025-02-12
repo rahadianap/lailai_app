@@ -23,6 +23,7 @@ class HandleInertiaRequests extends Middleware
             'user' => [
                 'name' => auth()->user()->name ?? '',
                 'role' => auth()->user()->role ?? '',
+                'kode_toko' => auth()->user()->kode_toko ?? '',
             ],
             'permissions' => $this->getPermissions(),
         ]);
@@ -37,6 +38,7 @@ class HandleInertiaRequests extends Middleware
         return [
             'name' => auth()->user()->name,
             'role' => auth()->user()->role,
+            'kode_toko' => auth()->user()->kode_toko,
         ];
     }
 

@@ -78,6 +78,7 @@ class ProductController extends Controller
             foreach ($request->details as $detail) {
                 DetailProduct::create([
                     'barang_id' => $product->id,
+                    'kode_toko' => auth()->user()->kode_toko,
                     'kode_barcode' => $product->kode_barcode,
                     'nama_barang' => $product->nama_barang,
                     'saldo_awal' => $detail['saldo_awal'],

@@ -256,7 +256,7 @@ class PurchaseOrderController extends Controller
 
     public function fetchDetails($id)
     {
-        $data = Product::where('kode_barcode', $id)->first();
+        $data = Product::with('details')->where('kode_barcode', $id)->first();
 
         return response()->json($data);
     }

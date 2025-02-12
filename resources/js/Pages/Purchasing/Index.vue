@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/select";
 import { Trash2 } from "lucide-vue-next";
 import { Textarea } from "@/components/ui/textarea";
+import SearchableSelect3 from "@/components/SearchableSelect3.vue";
 
 const props = defineProps({
     data: Object,
@@ -185,13 +186,15 @@ const onProductSelect = async (product) => {
         }
         const productDetails = await response.json();
 
+        console.log(productDetails);
+
         // Update the current detail with the fetched product information
         const currentDetail = form.details[form.details.length - 1];
         currentDetail.nama_barang = productDetails.nama_barang;
         currentDetail.nama_satuan = productDetails.nama_satuan;
         currentDetail.isi_barang = productDetails.isi_barang;
-        currentDetail.harga = productDetails.details["harga_beli_karton"];
-        currentDetail.harga_jual = productDetails.details["harga_jual_karton"];
+        currentDetail.harga = productDetails.harga_beli_karton;
+        currentDetail.harga_jual = productDetails.harga_jual_eceran;
 
         // Set default values for other fields
         currentDetail.qty = 1;

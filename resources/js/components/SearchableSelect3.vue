@@ -1,65 +1,35 @@
 <template>
-    <div class="searchable-select">
-        <div class="relative">
-            <input
-                :id="id"
-                v-model="displayValue"
-                type="text"
-                class="flex w-full px-3 py-1 text-sm transition-colors bg-transparent border border-gray-900 rounded-md shadow-sm h-9 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                :placeholder="placeholder"
-                @focus="onFocus"
-                @input="onInput"
-            />
-            <button
-                type="button"
-                class="absolute inset-y-0 right-0 flex items-center px-2"
-                @click="toggleOptions"
-            >
-                <svg
-                    class="w-5 h-5 text-gray-400"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                >
-                    <path
-                        fill-rule="evenodd"
-                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                        clip-rule="evenodd"
-                    />
-                </svg>
-            </button>
-            <div
-                v-if="showOptions"
-                class="fixed z-10 w-[400px] text-sm mt-1 overflow-auto bg-white border border-gray-300 rounded-md shadow-lg max-h-60"
-            >
+    <div class="inertia-searchable-select" @click.stop>
+        <input
+            :id="id"
+            :placeholder="placeholder"
+            v-model="displayValue"
+            @focus="onFocus"
+            @input="onInput"
+            class="search-input"
+        />
+        <div v-if="showOptions" class="options-container">
+            <div v-if="loading" class="loading-text">{{ loadingText }}</div>
+            <div v-else>
+                <div v-if="options.length === 0" class="no-results-text">
+                    {{ noResultsText }}
+                </div>
                 <ul>
                     <li
                         v-for="option in options"
                         :key="option[valueField]"
                         @click="selectOption(option)"
-                        class="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                        class="option-item"
                     >
                         {{ displayOptionFields(option) }}
                     </li>
                 </ul>
-                <div v-if="loading" class="px-4 py-2 text-gray-500">
-                    {{ loadingText }}
-                </div>
-                <div
-                    v-if="!loading && options.length === 0"
-                    class="px-4 py-2 text-gray-500"
-                >
-                    {{ noResultsText }}
-                </div>
                 <div
                     v-if="pagination.current_page < pagination.last_page"
-                    class="px-4 py-2 text-center"
+                    class="load-more-text"
+                    @click="loadMore"
                 >
-                    <button
-                        @click="loadMore"
-                        class="text-blue-500 hover:text-blue-700"
-                    >
-                        {{ loadMoreText }}
-                    </button>
+                    {{ loadMoreText }}
                 </div>
             </div>
         </div>
@@ -69,6 +39,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { debounce } from "lodash-es";
+import { Inertia } from "@inertiajs/inertia";
 
 const props = defineProps({
     modelValue: {
@@ -81,7 +52,7 @@ const props = defineProps({
     },
     id: {
         type: String,
-        default: "searchable-select",
+        default: "inertia-searchable-select",
     },
     apiEndpoint: {
         type: String,
@@ -172,20 +143,43 @@ const fetchOptions = async (reset = false) => {
         pagination.value.current_page = 0;
         options.value = [];
     }
+    Inertia.get(
+        props.apiEndpoint,
+        {
+            [props.searchParam]: search.value,
+            page: pagination.value.current_page + 1,
+            per_page: props.perPage,
+        },
+        {
+            onSuccess: (response) => {
+                options.value = [...options.value, ...response.props.data];
+                pagination.value = {
+                    current_page: response.props.current_page,
+                    last_page: response.props.last_page,
+                    total: response.props.total,
+                };
+                loading.value = false;
+            },
+            onError: (error) => {
+                console.error("Error fetching options:", error);
+                loading.value = false;
+            },
+        },
+    );
+};
+
+const fetchSelectedOption = async (value) => {
+    loading.value = true;
     try {
-        const response = await fetch(
-            `${props.apiEndpoint}?page=${pagination.value.current_page + 1}&${props.searchParam}=${encodeURIComponent(search.value)}&per_page=${props.perPage}`,
-        );
-        const data = await response.json();
-        options.value = [...options.value, ...data.data];
-        pagination.value = {
-            current_page: data.current_page,
-            last_page: data.last_page,
-            total: data.total,
-        };
+        const response = await Inertia.get(`${props.apiEndpoint}/${value}`);
+        if (response.props && response.props.data) {
+            selectedOption.value = response.props.data;
+        } else {
+            console.error("Unexpected response format:", response);
+        }
+        loading.value = false;
     } catch (error) {
-        console.error("Error fetching options:", error);
-    } finally {
+        console.error("Error fetching selected option:", error);
         loading.value = false;
     }
 };
@@ -222,32 +216,8 @@ const toggleOptions = () => {
 };
 
 const handleClickOutside = (event) => {
-    if (!event.target.closest(".searchable-select")) {
+    if (!event.target.closest(".inertia-searchable-select")) {
         showOptions.value = false;
-    }
-};
-
-const fetchSelectedOption = async (value) => {
-    try {
-        const response = await fetch(
-            `${props.apiEndpoint}?${props.valueField}=${value}`,
-        );
-        const data = await response.json();
-        const option = data.data.find(
-            (item) => item[props.valueField] == value,
-        );
-        if (option) {
-            selectedOption.value = option;
-            search.value = displayOptionFields(option);
-        } else {
-            console.error("Selected option not found in API response");
-            selectedOption.value = null;
-            search.value = "";
-        }
-    } catch (error) {
-        console.error("Error fetching selected option:", error);
-        selectedOption.value = null;
-        search.value = "";
     }
 };
 
@@ -283,9 +253,46 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.searchable-select {
+.inertia-searchable-select {
     position: relative;
     width: 100%;
     max-width: 300px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.options-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.option-item {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.option-item:hover {
+    background: #f0f0f0;
+}
+
+.loading-text,
+.no-results-text,
+.load-more-text {
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
 }
 </style>

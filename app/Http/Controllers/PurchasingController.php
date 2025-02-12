@@ -304,7 +304,12 @@ class PurchasingController extends Controller
         $data = Supplier::where('nama_supplier', 'like', "%{$search}%")
             ->paginate($perPage);
 
-        return response()->json($data);
+        return Inertia::render('Suppliers', [
+            'data' => $data->items(),
+            'current_page' => $data->currentPage(),
+            'last_page' => $data->lastPage(),
+            'total' => $data->total(),
+        ]);
     }
 
     public function getPO(Request $request)
@@ -316,7 +321,12 @@ class PurchasingController extends Controller
             ->where('status', 'APPROVED')
             ->paginate($perPage);
 
-        return response()->json($data);
+        return Inertia::render('PurchaseOrder', [
+            'data' => $data->items(),
+            'current_page' => $data->currentPage(),
+            'last_page' => $data->lastPage(),
+            'total' => $data->total(),
+        ]);
     }
 
     public function getProducts(Request $request)
@@ -324,17 +334,38 @@ class PurchasingController extends Controller
         $search = $request->input('search', '');
         $perPage = 10;
 
-        $data = Product::with('details')->where('kode_barcode', 'like', "%{$search}%")
+        $data = Product::with('details')
+            ->where('kode_barcode', 'like', "%{$search}%")
+            ->orWhere('nama_barang', 'like', "%{$search}%")
             ->paginate($perPage);
 
         return response()->json($data);
+
+        // return Inertia::render('Products', [
+        //     'data' => $data->items(),
+        //     'current_page' => $data->currentPage(),
+        //     'last_page' => $data->lastPage(),
+        //     'total' => $data->total(),
+        //     'user' => $user, // Include user information in the response
+        // ]);
     }
 
-    public function fetchDetails($id)
+    public function fetchDetails(Request $request, $id)
     {
-        $data = Product::with('details')->where('kode_barcode', $id)->first();
+        $user = $request->user;
+
+        // $data = Product::with('details')->where('mst_detail_barang.kode_toko', $user->kode_toko)->where('kode_barcode', $id)->first();
+        $data = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')
+            ->select('mst_barang.*', 'mst_detail_barang.*')
+            ->where('mst_barang.is_aktif', 1)
+            ->where('kode_toko', $user->kode_toko)
+            ->where('mst_barang.kode_barcode', $id)
+            ->first();
 
         return response()->json($data);
+        // return Inertia::render('ProductDetails', [
+        //     'data' => $data,
+        // ]);
     }
 
     public function fetchPODetails($id)

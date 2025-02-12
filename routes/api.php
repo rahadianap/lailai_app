@@ -15,7 +15,9 @@ Route::get('/purchase-order/products', [PurchaseOrderController::class, 'getProd
 Route::get('/purchase-order/products/{id}', [PurchaseOrderController::class, 'fetchDetails']);
 Route::get('/purchase-order/print/{id}', [PurchaseOrderController::class, 'print']);
 Route::get('/purchasing/suppliers', [PurchasingController::class, 'getSuppliers']);
-Route::get('/purchasing/products', [PurchasingController::class, 'getProducts']);
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/purchasing/products', [PurchasingController::class, 'getProducts'])->name('purchasing.products');
+});
 Route::get('/purchasing/po', [PurchasingController::class, 'getPO']);
 Route::get('/purchasing/products/{id}', [PurchasingController::class, 'fetchDetails']);
 Route::get('/purchasing/po/{id}', [PurchasingController::class, 'fetchPODetails']);
