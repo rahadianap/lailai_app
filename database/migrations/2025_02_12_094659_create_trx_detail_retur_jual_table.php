@@ -10,19 +10,18 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('trx_detail_penjualan', function (Blueprint $table) {
+        Schema::create('trx_detail_retur_jual', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('penjualan_id');
-            $table->string('kode_penjualan');
+            $table->string('retur_jual_id');
+            $table->string('kode_retur_jual');
             $table->string('kode_barcode');
             $table->string('nama_barang');
-            $table->string('nama_satuan');
+            $table->integer('qty_jual');
+            $table->string('nama_satuan_jual');
+            $table->integer('qty_retur');
+            $table->string('nama_satuan_retur');
             $table->decimal('harga', 10, 2);
-            $table->decimal('qty', 10, 2);
-            $table->decimal('diskon', 10, 2)->default(0);
-            $table->decimal('dpp', 10, 2);
-            $table->decimal('ppn', 10, 2);
-            $table->decimal('subtotal', 10, 2);
+            $table->decimal('jumlah', 10, 2);
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
             $table->string('updated_by')->nullable();
@@ -37,6 +36,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('trx_detail_penjualan');
+        Schema::dropIfExists('trx_detail_retur_jual');
     }
 };

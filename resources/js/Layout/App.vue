@@ -33,8 +33,14 @@ import {
     Badge,
     FileChartLine,
     Repeat,
+    Repeat1,
     Store,
     Wallet,
+    LayoutDashboard,
+    Database,
+    FolderInput,
+    Settings,
+    UserRound,
 } from "lucide-vue-next";
 import { Link, usePage, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
@@ -47,17 +53,19 @@ const permissions = computed(() => page.props.permissions);
 const navigationGroups = [
     {
         title: "Main",
+        icon: Home,
         items: [
             {
                 name: "Dashboard",
                 href: "/dashboard",
-                icon: Home,
+                icon: LayoutDashboard,
                 permission: null,
             },
         ],
     },
     {
         title: "Master Data",
+        icon: Database,
         items: [
             {
                 name: "Account Group",
@@ -117,6 +125,7 @@ const navigationGroups = [
     },
     {
         title: "Transactions",
+        icon: FolderInput,
         items: [
             {
                 name: "Purchase Order",
@@ -137,6 +146,12 @@ const navigationGroups = [
                 permission: "retur_beli_view",
             },
             {
+                name: "Retur Jual",
+                href: "/retur-jual",
+                icon: Repeat1,
+                permission: "retur_jual_view",
+            },
+            {
                 name: "Penjualan",
                 href: "/penjualan",
                 icon: Wallet,
@@ -152,11 +167,12 @@ const navigationGroups = [
     },
     {
         title: "Settings",
+        icon: Settings,
         items: [
             {
                 name: "Users",
                 href: "/users",
-                icon: Scroll,
+                icon: UserRound,
                 permission: "users_view",
             },
         ],
@@ -239,9 +255,15 @@ const logout = () => {
                                 @update:open="toggleCollapsible(groupIndex)"
                             >
                                 <CollapsibleTrigger
-                                    class="flex w-full items-center justify-between py-2 px-4 text-sm font-semibold"
+                                    class="flex w-full items-center justify-between py-2 px-4 text-sm font-semibold hover:bg-gray-100"
                                 >
-                                    {{ group.title }}
+                                    <div class="flex items-center">
+                                        <component
+                                            :is="group.icon"
+                                            class="w-4 h-4 mr-2"
+                                        />
+                                        {{ group.title }}
+                                    </div>
                                     <ChevronDown
                                         v-if="collapsibleStates[groupIndex]"
                                         class="h-4 w-4"
@@ -263,7 +285,7 @@ const logout = () => {
                                                     ? 'bg-emerald-500 text-gray-100'
                                                     : 'text-muted-foreground'
                                             "
-                                            class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:text-gray-700"
+                                            class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:bg-gray-100 hover:text-gray-700"
                                         >
                                             <component
                                                 :is="item.icon"
@@ -307,9 +329,15 @@ const logout = () => {
                                     @update:open="toggleCollapsible(groupIndex)"
                                 >
                                     <CollapsibleTrigger
-                                        class="flex w-full items-center justify-between py-2 px-4 text-sm font-semibold"
+                                        class="flex w-full items-center justify-between py-2 px-4 text-sm font-semibold hover:bg-gray-100"
                                     >
-                                        {{ group.title }}
+                                        <div class="flex items-center">
+                                            <component
+                                                :is="group.icon"
+                                                class="w-4 h-4 mr-2"
+                                            />
+                                            {{ group.title }}
+                                        </div>
                                         <ChevronDown
                                             v-if="collapsibleStates[groupIndex]"
                                             class="h-4 w-4"
@@ -329,7 +357,7 @@ const logout = () => {
                                                         ? 'bg-muted text-primary'
                                                         : 'text-muted-foreground'
                                                 "
-                                                class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:text-primary"
+                                                class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:bg-gray-100 hover:text-primary"
                                             >
                                                 <component
                                                     :is="item.icon"

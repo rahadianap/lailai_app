@@ -68,6 +68,11 @@ class HandleInertiaRequests extends Middleware
             'retur_beli_edit' => $value,
             'retur_beli_delete' => $value,
             'retur_beli_approve' => $value,
+            'retur_jual_view' => $value,
+            'retur_jual_create' => $value,
+            'retur_jual_edit' => $value,
+            'retur_jual_delete' => $value,
+            'retur_jual_approve' => $value,
             'vouchers_view' => $value,
             'vouchers_create' => $value,
             'vouchers_edit' => $value,
@@ -129,6 +134,7 @@ class HandleInertiaRequests extends Middleware
         $permissions['users_delete'] = false;
         $permissions['retur_beli_delete'] = false;
         $permissions['penjualan_delete'] = false;
+        $permissions['retur_jual_delete'] = false;
 
         return $permissions;
     }

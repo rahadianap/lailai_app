@@ -77,6 +77,7 @@ class SalesController extends Controller
                     'kode_penjualan' => $rb->kode_penjualan,
                     'kode_barcode' => $detail['kode_barcode'],
                     'nama_barang' => $detail['nama_barang'],
+                    'nama_satuan' => $detail['nama_satuan'],
                     'qty' => $detail['quantity'],
                     'harga' => $detail['harga_jual_eceran'],
                     'diskon' => $detail['diskon'],
@@ -101,7 +102,7 @@ class SalesController extends Controller
                     'points' => $member->points - $request->applied_points,
                     'updated_by' => Auth()->user()->name,
                 ]);
-            } else if($member) {
+            } else if ($member) {
                 $member->update([
                     'points' => $member->points + $request->applied_points,
                     'updated_by' => Auth()->user()->name,
@@ -161,14 +162,19 @@ class SalesController extends Controller
 
     public function search(Request $request)
     {
-        $query = Product::with('details')->where('is_aktif', 1);
+        $user = $request->user;
+
+        $query = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')
+            ->select('mst_barang.*', 'mst_detail_barang.*')
+            ->where('mst_barang.is_aktif', 1)
+            ->where('kode_toko', $user->kode_toko);
 
         if ($request->has('search')) {
             $searchParams = $request->input('search');
 
             $query->where(function ($q) use ($searchParams) {
                 foreach ($searchParams as $field => $value) {
-                    $q->orWhere($field, 'LIKE', "%{$value}%");
+                    $q->orWhere('mst_barang.' . $field, 'LIKE', "%{$value}%");
                 }
             });
         }

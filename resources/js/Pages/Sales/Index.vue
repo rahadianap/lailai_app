@@ -14,6 +14,12 @@
                             autofocus
                             class="editable-input"
                         />
+                        <p
+                            v-if="validationErrors.barcodeInput"
+                            class="text-red-500"
+                        >
+                            {{ validationErrors.barcodeInput }}
+                        </p>
                     </div>
                     <!-- Product search -->
                     <div class="w-full mb-4 searchable-select-wrapper">
@@ -33,6 +39,12 @@
                             class="relative z-20"
                             :default-open="false"
                         />
+                        <p
+                            v-if="validationErrors.selectedProduct"
+                            class="text-red-500"
+                        >
+                            {{ validationErrors.selectedProduct }}
+                        </p>
                     </div>
                 </div>
                 <!-- Shopping cart -->
@@ -44,6 +56,7 @@
                                     <TableHead class="w-1/4">Product</TableHead>
                                     <TableHead>Price</TableHead>
                                     <TableHead>Quantity</TableHead>
+                                    <TableHead>Unit</TableHead>
                                     <TableHead>DPP</TableHead>
                                     <TableHead>PPN</TableHead>
                                     <TableHead>Diskon</TableHead>
@@ -73,6 +86,9 @@
                                         </Button>
                                     </TableCell>
                                     <TableCell>{{
+                                        item.nama_satuan
+                                    }}</TableCell>
+                                    <TableCell>{{
                                         form.customer_type === "cafe"
                                             ? formatCurrency(
                                                   item.harga_jual_eceran,
@@ -91,11 +107,14 @@
                                         form.customer_type === "cafe"
                                             ? formatCurrency(
                                                   item.harga_jual_eceran *
-                                                      item.quantity,
+                                                      item.quantity -
+                                                      item.diskon,
                                               )
                                             : formatCurrency(
                                                   item.harga_jual_eceran *
-                                                      item.quantity,
+                                                      item.quantity +
+                                                      item.ppn -
+                                                      item.diskon,
                                               )
                                     }}</TableCell>
                                     <TableCell>
@@ -230,6 +249,12 @@
                             class="mt-2 text-xl font-bold"
                             @input="updateChange"
                         />
+                        <p
+                            v-if="validationErrors.cashReceived"
+                            class="text-red-500"
+                        >
+                            {{ validationErrors.cashReceived }}
+                        </p>
                     </div>
 
                     <div v-if="form.payment_method === 'cash'">
@@ -253,6 +278,12 @@
                             class="text-xl font-bold"
                             @input="updateChange"
                         />
+                        <p
+                            v-if="validationErrors.cardNumber"
+                            class="text-red-500"
+                        >
+                            {{ validationErrors.cardNumber }}
+                        </p>
                     </div>
 
                     <Button
@@ -353,6 +384,11 @@
         @update:isOpen="showQuantityChangeModal = $event"
         @confirm="confirmQuantityChange"
         @cancel="cancelQuantityChange"
+        :errorMessage="quantityValidationErrors[itemToChangeIndex]"
+        :passwordErrorMessage="passwordValidationErrors[itemToChangeIndex]"
+        :initialQuantity="
+            itemToChangeIndex !== null ? cart[itemToChangeIndex].quantity : 1
+        "
     />
     <DeleteConfirmationDialog
         :isOpen="showDeleteConfirmation"
@@ -416,6 +452,7 @@ const form = useForm({
         {
             kode_barcode: "",
             nama_barang: "",
+            nama_satuan: "",
             qty: 0,
             harga: 0,
             diskon: "",
@@ -424,6 +461,13 @@ const form = useForm({
             subtotal: 0,
         },
     ],
+});
+
+const validationErrors = ref({
+    barcodeInput: "",
+    selectedProduct: "",
+    cashReceived: "",
+    cardNumber: "",
 });
 
 const { printReceipt: printReceiptToPrinter } = usePrinter();
@@ -456,26 +500,43 @@ onUnmounted(() => {
     window.removeEventListener("keydown", handleKeyDown);
 });
 
+const quantityValidationErrors = ref({});
+const passwordValidationErrors = ref({});
+
 const openQuantityChangeModal = (index) => {
     itemToChangeIndex.value = index;
     showQuantityChangeModal.value = true;
 };
 
 const confirmQuantityChange = ({ newQuantity, password }) => {
-    if (password === "admin123") {
-        if (itemToChangeIndex.value !== null) {
-            const item = cart.value[itemToChangeIndex.value];
-            item.quantity = newQuantity;
-            updateCartItem(itemToChangeIndex.value);
-            itemToChangeIndex.value = null;
-        }
-        showQuantityChangeModal.value = false;
-    } else {
-        alert("Incorrect password. Quantity change cancelled.");
+    if (password !== "admin123") {
+        quantityValidationErrors.value[itemToChangeIndex.value] = "";
+        passwordValidationErrors.value[itemToChangeIndex.value] =
+            "Incorrect password.";
+        return;
     }
+    if (newQuantity <= 0) {
+        quantityValidationErrors.value[itemToChangeIndex.value] =
+            "Quantity cannot be 0.";
+        passwordValidationErrors.value[itemToChangeIndex.value] = "";
+        return;
+    }
+    if (itemToChangeIndex.value !== null) {
+        const item = cart.value[itemToChangeIndex.value];
+        item.quantity = newQuantity;
+        updateCartItem(itemToChangeIndex.value);
+        itemToChangeIndex.value = null;
+        quantityValidationErrors.value[itemToChangeIndex.value] = ""; // Clear the error message
+        passwordValidationErrors.value[itemToChangeIndex.value] = ""; // Clear the password error message
+    }
+    showQuantityChangeModal.value = false;
 };
 
 const cancelQuantityChange = () => {
+    if (itemToChangeIndex.value !== null) {
+        quantityValidationErrors.value[itemToChangeIndex.value] = "";
+        passwordValidationErrors.value[itemToChangeIndex.value] = "";
+    }
     itemToChangeIndex.value = null;
     showQuantityChangeModal.value = false;
 };
@@ -583,6 +644,11 @@ const onProductSelect = (product) => {
 };
 
 const onBarcodeEnter = async () => {
+    if (!barcodeInput.value) {
+        validationErrors.value.barcodeInput = "Please enter a barcode.";
+        return;
+    }
+    validationErrors.value.barcodeInput = "";
     try {
         const response = await fetch(
             `http://127.0.0.1:8000/api/pos/products/barcode/${barcodeInput.value}`,
@@ -602,6 +668,7 @@ const addProductToCart2 = (product) => {
         id: product.id,
         kode_barcode: product.kode_barcode,
         nama_barang: product.nama_barang,
+        nama_satuan: product.nama_satuan,
         harga_jual_eceran: Number(product.harga_jual_eceran),
         quantity: 1,
         total: Number(product.harga_jual_eceran),
@@ -625,18 +692,24 @@ const addProductToCart2 = (product) => {
 };
 
 const addProductToCart = (product) => {
+    if (!product) {
+        validationErrors.value.selectedProduct = "Please select a product.";
+        return;
+    }
+    validationErrors.value.selectedProduct = "";
     cart.value.push({
         id: product.id,
         kode_barcode: product.kode_barcode,
         nama_barang: product.nama_barang,
-        harga_jual_eceran: Number(product.details.harga_jual_eceran),
+        nama_satuan: product.nama_satuan,
+        harga_jual_eceran: Number(product.harga_jual_eceran),
         quantity: 1,
-        diskon: Number(product.details.diskon),
-        dpp: Number(product.details.harga_jual_eceran) * (11 / 12),
-        ppn: Number(product.details.harga_jual_eceran) * 0.11,
+        diskon: Number(product.diskon),
+        dpp: Number(product.harga_jual_eceran) * (11 / 12),
+        ppn: Number(product.harga_jual_eceran) * 0.11,
         total:
-            Number(product.details.harga_jual_eceran) +
-            Number(product.details.harga_jual_eceran) * 0.11,
+            Number(product.harga_jual_eceran) +
+            Number(product.harga_jual_eceran) * 0.11,
     });
     selectedProduct.value = null;
     // const existingItem = cart.value.find((item) => item.id === product.id);
@@ -736,6 +809,24 @@ const canProcessPayment = computed(() => {
 const processPayment = async () => {
     if (isProcessing.value) return;
     isProcessing.value = true;
+
+    // Validate cash received
+    if (form.payment_method === "cash" && cashReceived.value < total.value) {
+        validationErrors.value.cashReceived =
+            "Cash received is less than the total amount.";
+        isProcessing.value = false;
+        return;
+    }
+    validationErrors.value.cashReceived = "";
+
+    // Validate card number
+    if (form.payment_method !== "cash" && !cardNumber.value) {
+        validationErrors.value.cardNumber = "Please enter a card number.";
+        isProcessing.value = false;
+        return;
+    }
+    validationErrors.value.cardNumber = "";
+
     try {
         form.subtotal = subtotal;
         form.kode_voucher = appliedVoucher.value

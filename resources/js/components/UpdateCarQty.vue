@@ -17,6 +17,12 @@
                         min="1"
                     />
                 </div>
+                <p
+                    v-if="errorMessage"
+                    class="text-red-500 bg-red-100 border border-red-400 rounded p-2 mt-2"
+                >
+                    {{ errorMessage }}
+                </p>
                 <div class="grid items-center grid-cols-4 gap-4">
                     <Label for="password" class="text-right"> Password </Label>
                     <Input
@@ -27,6 +33,12 @@
                         placeholder="Enter password to confirm"
                     />
                 </div>
+                <p
+                    v-if="passwordErrorMessage"
+                    class="text-red-500 bg-red-100 border border-red-400 rounded p-2 mt-2"
+                >
+                    {{ passwordErrorMessage }}
+                </p>
             </div>
             <DialogFooter>
                 <Button @click="cancel">Cancel</Button>
@@ -53,12 +65,21 @@ import {
 
 const props = defineProps({
     isOpen: Boolean,
+    errorMessage: String,
+    passwordErrorMessage: String,
+    initialQuantity: Number,
 });
 
 const emit = defineEmits(["update:isOpen", "confirm", "cancel"]);
 
-const newQuantity = ref(1);
+const newQuantity = ref(props.initialQuantity);
 const password = ref("");
+
+watch(props, (newProps) => {
+    if (newProps.isOpen) {
+        newQuantity.value = newProps.initialQuantity;
+    }
+});
 
 const confirm = () => {
     emit("confirm", {
@@ -70,6 +91,7 @@ const confirm = () => {
 
 const cancel = () => {
     emit("cancel");
-    password.value = ""; // Clear the password after cancellation
+    password.value = "";
+    newQuantity.value = props.initialQuantity; // Reset to initial quantity
 };
 </script>
