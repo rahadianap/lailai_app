@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\MutasiKeluarController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchasingController;
@@ -18,9 +19,12 @@ Route::get('/purchase-order/print/{id}', [PurchaseOrderController::class, 'print
 Route::get('/purchasing/suppliers', [PurchasingController::class, 'getSuppliers']);
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/purchasing/products', [PurchasingController::class, 'getProducts'])->name('purchasing.products');
+    Route::get('/mutasi-keluar/tujuan', [MutasiKeluarController::class, 'getTujuan'])->name('mutasi-keluar.tujuans');
+    Route::get('/mutasi-keluar/products', [MutasiKeluarController::class, 'getProducts'])->name('mutasi-keluar.products');
 });
 Route::get('/purchasing/po', [PurchasingController::class, 'getPO']);
 Route::get('/purchasing/products/{id}', [PurchasingController::class, 'fetchDetails']);
+Route::get('/mutasi-keluar/products/{id}', [MutasiKeluarController::class, 'fetchDetails']);
 Route::get('/purchasing/po/{id}', [PurchasingController::class, 'fetchPODetails']);
 Route::get('/purchasing/print/{id}', [PurchasingController::class, 'print']);
 Route::get('/pos/products', [SalesController::class, 'search']);

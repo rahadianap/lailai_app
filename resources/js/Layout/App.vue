@@ -41,6 +41,8 @@ import {
     FolderInput,
     Settings,
     UserRound,
+    ArrowUpFromDot,
+    ArrowDownToDot,
 } from "lucide-vue-next";
 import { Link, usePage, useForm } from "@inertiajs/vue3";
 import { ref, computed } from "vue";
@@ -163,6 +165,18 @@ const navigationGroups = [
                 icon: HandCoins,
                 permission: "pos_view",
             },
+            {
+                name: "Mutasi Keluar",
+                href: "/mutasi-keluar",
+                icon: ArrowUpFromDot,
+                permission: "mutasi_keluar_view",
+            },
+            {
+                name: "Mutasi Masuk",
+                href: "/mutasi-masuk",
+                icon: ArrowDownToDot,
+                permission: "mutasi_masuk_view",
+            },
         ],
     },
     {
@@ -212,7 +226,7 @@ const logout = () => {
                     class="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6"
                 >
                     <Link
-                        href="/"
+                        href="/dashboard"
                         class="flex items-center gap-2 font-semibold"
                     >
                         <Package2 class="w-6 h-6" />
@@ -233,9 +247,6 @@ const logout = () => {
                             <DropdownMenuLabel>{{
                                 user.name
                             }}</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>Settings</DropdownMenuItem>
-                            <DropdownMenuItem>Support</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem @click="logout"
                                 >Logout</DropdownMenuItem

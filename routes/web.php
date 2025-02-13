@@ -65,6 +65,22 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{id}', [\App\Http\Controllers\ReturJualController::class, 'destroy'])->name('retur-jual.destroy');
         Route::put('/approve/{id}', [\App\Http\Controllers\ReturJualController::class, 'approve'])->name('retur-jual.approve');
     });
+    Route::prefix('/mutasi-masuk')->group(function () {
+        Route::get('/', [\App\Http\Controllers\MutasiMasukController::class, 'index'])->name('mutasi-masuk.index');
+        Route::post('/', [\App\Http\Controllers\MutasiMasukController::class, 'store'])->name('mutasi-masuk.store');
+        Route::get('/{id}', [\App\Http\Controllers\MutasiMasukController::class, 'edit'])->name('mutasi-masuk.edit');  //with GET
+        Route::put('/{id}', [\App\Http\Controllers\MutasiMasukController::class, 'update'])->name('mutasi-masuk.update');  //with GET
+        Route::delete('/{id}', [\App\Http\Controllers\MutasiMasukController::class, 'destroy'])->name('mutasi-masuk.destroy');
+        Route::put('/approve/{id}', [\App\Http\Controllers\MutasiMasukController::class, 'approve'])->name('mutasi-masuk.approve');
+    });
+    Route::prefix('/mutasi-keluar')->group(function () {
+        Route::get('/', [\App\Http\Controllers\MutasiKeluarController::class, 'index'])->name('mutasi-keluar.index');
+        Route::post('/', [\App\Http\Controllers\MutasiKeluarController::class, 'store'])->name('mutasi-keluar.store');
+        Route::get('/{id}', [\App\Http\Controllers\MutasiKeluarController::class, 'edit'])->name('mutasi-keluar.edit');  //with GET
+        Route::put('/{id}', [\App\Http\Controllers\MutasiKeluarController::class, 'update'])->name('mutasi-keluar.update');  //with GET
+        Route::delete('/{id}', [\App\Http\Controllers\MutasiKeluarController::class, 'destroy'])->name('mutasi-keluar.destroy');
+        Route::put('/approve/{id}', [\App\Http\Controllers\MutasiKeluarController::class, 'approve'])->name('mutasi-keluar.approve');
+    });
     Route::prefix('/pos')->group(function () {
         Route::get('/', [\App\Http\Controllers\SalesController::class, 'index'])->name('pos.index');
         Route::post('/', [\App\Http\Controllers\SalesController::class, 'store'])->name('pos.store');

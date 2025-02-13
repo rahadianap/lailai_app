@@ -113,6 +113,16 @@ class HandleInertiaRequests extends Middleware
             'penjualan_create' => $value,
             'penjualan_edit' => $value,
             'penjualan_delete' => $value,
+            'mutasi_keluar_view' => $value,
+            'mutasi_keluar_create' => $value,
+            'mutasi_keluar_edit' => $value,
+            'mutasi_keluar_delete' => $value,
+            'mutasi_keluar_approve' => $value,
+            'mutasi_masuk_view' => $value,
+            'mutasi_masuk_create' => $value,
+            'mutasi_masuk_edit' => $value,
+            'mutasi_masuk_delete' => $value,
+            'mutasi_masuk_approve' => $value,
         ];
     }
 
@@ -135,6 +145,8 @@ class HandleInertiaRequests extends Middleware
         $permissions['retur_beli_delete'] = false;
         $permissions['penjualan_delete'] = false;
         $permissions['retur_jual_delete'] = false;
+        $permissions['mutasi_keluar_delete'] = false;
+        $permissions['mutasi_masuk_delete'] = false;
 
         return $permissions;
     }
