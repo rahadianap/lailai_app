@@ -32,7 +32,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'edit'])->name('purchase-order.edit');  //with GET
         Route::put('/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'update'])->name('purchase-order.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'destroy'])->name('purchase-order.destroy');
-        Route::put('/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'approve'])->name('purchase-order.approve');
+        Route::put('/approve/{id}', [\App\Http\Controllers\PurchaseOrderController::class, 'approve'])->name('purchase-order.approve');
     });
     Route::prefix('/purchasing')->group(function () {
         Route::get('/', [\App\Http\Controllers\PurchasingController::class, 'index'])->name('purchasing.index');
@@ -40,7 +40,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [\App\Http\Controllers\PurchasingController::class, 'edit'])->name('purchasing.edit');  //with GET
         Route::put('/{id}', [\App\Http\Controllers\PurchasingController::class, 'update'])->name('purchasing.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\PurchasingController::class, 'destroy'])->name('purchasing.destroy');
-        Route::put('/{id}', [\App\Http\Controllers\PurchasingController::class, 'approve'])->name('purchasing.approve');
+        Route::put('/approve/{id}', [\App\Http\Controllers\PurchasingController::class, 'approve'])->name('purchasing.approve');
     });
     Route::prefix('/penjualan')->group(function () {
         Route::get('/', [\App\Http\Controllers\PenjualanController::class, 'index'])->name('penjualan.index');
@@ -55,7 +55,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'edit'])->name('retur-beli.edit');  //with GET
         Route::put('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'update'])->name('retur-beli.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'destroy'])->name('retur-beli.destroy');
-        Route::put('/{id}', [\App\Http\Controllers\ReturBeliController::class, 'approve'])->name('retur-beli.approve');
+        Route::put('/approve/{id}', [\App\Http\Controllers\ReturBeliController::class, 'approve'])->name('retur-beli.approve');
     });
     Route::prefix('/retur-jual')->group(function () {
         Route::get('/', [\App\Http\Controllers\ReturJualController::class, 'index'])->name('retur-jual.index');
@@ -63,7 +63,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}', [\App\Http\Controllers\ReturJualController::class, 'edit'])->name('retur-jual.edit');  //with GET
         Route::put('/{id}', [\App\Http\Controllers\ReturJualController::class, 'update'])->name('retur-jual.update');  //with GET
         Route::delete('/{id}', [\App\Http\Controllers\ReturJualController::class, 'destroy'])->name('retur-jual.destroy');
-        Route::put('/{id}', [\App\Http\Controllers\ReturJualController::class, 'approve'])->name('retur-jual.approve');
+        Route::put('/approve/{id}', [\App\Http\Controllers\ReturJualController::class, 'approve'])->name('retur-jual.approve');
     });
     Route::prefix('/pos')->group(function () {
         Route::get('/', [\App\Http\Controllers\SalesController::class, 'index'])->name('pos.index');

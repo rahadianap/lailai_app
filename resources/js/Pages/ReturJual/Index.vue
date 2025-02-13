@@ -105,7 +105,7 @@ const onApprove = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.put(`/retur-jual/${id}`, {
+                form.put(`/retur-jual/approve/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
@@ -163,34 +163,6 @@ const onSalesSelect = async (sales) => {
         Swal.fire({
             title: "Error",
             text: "Failed to fetch PO details",
-            icon: "error",
-        });
-    }
-};
-
-const onProductSelect = async (product) => {
-    selectedProduct.value = product;
-    try {
-        const response = await fetch(
-            `http://127.0.0.1:8000/api/retur-jual/products/${product.kode_barcode}`,
-        );
-        if (!response.ok) {
-            throw new Error("Failed to fetch product details");
-        }
-        const productDetails = await response.json();
-
-        // Update the current detail with the fetched product information
-        const currentDetail = form.details[form.details.length - 1];
-        currentDetail.nama_barang = productDetails.nama_barang;
-        currentDetail.qty_jual = productDetails.qty;
-        currentDetail.nama_satuan_jual = productDetails.nama_satuan;
-        calculateJumlah(currentDetail);
-    } catch (error) {
-        console.error("Error fetching product details:", error);
-        // Optionally, show an error message to the user
-        Swal.fire({
-            title: "Error",
-            text: "Failed to fetch product details",
             icon: "error",
         });
     }
@@ -254,18 +226,18 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const returbeli = row.original;
+            const returjual = row.original;
 
             return h(
                 "div",
                 { class: "relative text-right" },
                 h(DropdownAction, {
-                    returbeli,
+                    returjual,
                     permissions: props.permissions,
-                    onEdit: () => onEdit(returbeli.id),
-                    onDelete: () => onDelete(returbeli.id),
-                    onApprove: () => onApprove(returbeli.id),
-                    onPrint: () => onPrint(returbeli.id),
+                    onEdit: () => onEdit(returjual.id),
+                    onDelete: () => onDelete(returjual.id),
+                    onApprove: () => onApprove(returjual.id),
+                    onPrint: () => onPrint(returjual.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -351,7 +323,6 @@ const errors = ref({});
 
 const form = useForm({
     id: null,
-    nama_supplier: "",
     kode_penjualan: "",
     keterangan: "",
     details: [
@@ -384,7 +355,12 @@ const calculateJumlah = (detail) => {
     form.subtotal = totalSub;
 };
 
-const setDiskonGlobal = (detail) => {
+const setDiskonGlobal = (detail, index) => {
+    if (detail.qty_retur > detail.qty_jual) {
+        validationErrors.value[index] = "Qty Retur cannot exceed Qty Jual.";
+    } else {
+        validationErrors.value[index] = "";
+    }
     detail.jumlah = detail.qty_jual * detail.harga - detail.diskon;
     form.subtotal = totalSub;
     form.diskon_total = totalDiskon;
@@ -427,6 +403,8 @@ watch(
     calculateTotals,
     { deep: true },
 );
+
+const validationErrors = ref({});
 
 // Add watch effect to recalculate totals when details change
 watch(() => form.details, calculateTotals, { deep: true });
@@ -979,7 +957,6 @@ const formatPrice = (price) => {
                                                 type="number"
                                                 class="col-span-3 editable-input"
                                                 required
-                                                @input="setDiskonGlobal(detail)"
                                                 min="0"
                                                 step="0"
                                                 readonly
@@ -1017,7 +994,12 @@ const formatPrice = (price) => {
                                                 type="number"
                                                 class="col-span-3 editable-input"
                                                 required
-                                                @input="setDiskonGlobal(detail)"
+                                                @input="
+                                                    setDiskonGlobal(
+                                                        detail,
+                                                        index,
+                                                    )
+                                                "
                                                 min="0"
                                                 step="0"
                                             />
@@ -1034,6 +1016,12 @@ const formatPrice = (price) => {
                                                         `details.${index}.qty_retur`
                                                     ]
                                                 }}
+                                            </p>
+                                            <p
+                                                v-if="validationErrors[index]"
+                                                class="mt-1 text-sm text-red-500"
+                                            >
+                                                {{ validationErrors[index] }}
                                             </p>
                                         </TableCell>
                                         <TableCell>

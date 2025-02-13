@@ -31,8 +31,8 @@ class DetailReturJual extends Model
         'deleted_by',
     ];
 
-    public function returbeli()
+    public function returjual()
     {
-        return $this->belongsTo(ReturBeli::class);
+        return $this->belongsTo(ReturJual::class);
     }
 }

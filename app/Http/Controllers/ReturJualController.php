@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DetailReturJual;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -33,6 +34,198 @@ class ReturJualController extends Controller
         ]);
     }
 
+    public function store(Request $request)
+    {
+        $this->authorize('create', ReturJual::class);
+
+        $validator = Validator::make($request->all(), [
+            'keterangan' => 'required|string|max:255',
+            'details' => 'required|array|min:1',
+            'details.*.kode_barcode' => 'required|string|max:255',
+            'details.*.nama_barang' => 'required|string|max:255',
+            'details.*.qty_jual' => 'required|numeric|min:0',
+            'details.*.nama_satuan_jual' => 'required|string|max:255',
+            'details.*.qty_retur' => 'required|numeric|min:0',
+            'details.*.nama_satuan_retur' => 'required|string|max:255',
+            'details.*.harga' => 'required|numeric|min:0',
+            'details.*.jumlah' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $rb = ReturJual::create([
+                'kode_retur_jual' => $this->getKodeReturJual(),
+                'kode_penjualan' => $request->kode_penjualan,
+                'status' => 'CREATED',
+                'keterangan' => $request->keterangan,
+                'created_by' => Auth()->user()->name,
+            ]);
+
+            foreach ($request->details as $detail) {
+                $rb->details()->create([
+                    'retur_jual_id' => $rb->id,
+                    'kode_retur_jual' => $rb->kode_retur_jual,
+                    'kode_barcode' => $detail['kode_barcode'],
+                    'nama_barang' => $detail['nama_barang'],
+                    'qty_jual' => $detail['qty_jual'],
+                    'nama_satuan_jual' => $detail['nama_satuan_jual'],
+                    'qty_retur' => $detail['qty_retur'],
+                    'nama_satuan_retur' => $detail['nama_satuan_retur'],
+                    'harga' => $detail['harga'],
+                    'jumlah' => $detail['jumlah'],
+                    'created_by' => Auth()->user()->name,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'ReturJual Create Successfully.');
+        } catch (ValidationException $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while creating the po', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function edit($id)
+    {
+        $retur = ReturJual::with('details')->findOrFail($id);
+
+        return response()->json(['data' => $retur]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $this->authorize('update', ReturJual::class);
+
+        $validator = Validator::make($request->all(), [
+            'keterangan' => 'required|string|max:255',
+            'details' => 'required|array|min:1',
+            'details.*.kode_barcode' => 'required|string|max:255',
+            'details.*.nama_barang' => 'required|string|max:255',
+            'details.*.qty_jual' => 'required|numeric|min:0',
+            'details.*.nama_satuan_jual' => 'required|string|max:255',
+            'details.*.qty_retur' => 'required|numeric|min:0',
+            'details.*.nama_satuan_retur' => 'required|string|max:255',
+            'details.*.harga' => 'required|numeric|min:0',
+            'details.*.jumlah' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $retur = ReturJual::findOrFail($id);
+            $retur->update([
+                'kode_penjualan' => $request->kode_penjualan,
+                'keterangan' => $request->keterangan,
+                'updated_by' => auth()->user()->name,
+            ]);
+
+            foreach ($request->details as $detail) {
+                DetailReturJual::where('retur_jual_id', $retur->id)->update([
+                    'retur_jual_id' => $retur->id,
+                    'kode_retur_jual' => $retur->kode_retur_jual,
+                    'kode_barcode' => $detail['kode_barcode'],
+                    'nama_barang' => $detail['nama_barang'],
+                    'qty_jual' => $detail['qty_jual'],
+                    'nama_satuan_jual' => $detail['nama_satuan_jual'],
+                    'qty_retur' => $detail['qty_retur'],
+                    'nama_satuan_retur' => $detail['nama_satuan_retur'],
+                    'harga' => $detail['harga'],
+                    'jumlah' => $detail['jumlah'],
+                    'updated_by' => auth()->user()->name,
+
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'ReturJual Update Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'An error occurred while updating the data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $this->authorize('delete', ReturJual::class);
+
+        DB::beginTransaction();
+
+        try {
+            $retur = ReturJual::findOrFail($id);
+            $retur->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $retur->details()->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $retur->details()->delete();
+            $retur->delete();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'ReturJual Delete Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while deleting the data', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function approve($id)
+    {
+        $this->authorize('approve', ReturJual::class);
+
+        DB::beginTransaction();
+
+        try {
+            $po = ReturJual::findOrFail($id);
+            $po->update([
+                'status' => 'APPROVED',
+                'approved_by' => auth()->user()->name,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'ReturJual Approved Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while approving the po', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function print($id)
+    {
+        $data = ReturJual::with('details')->where('id', $id)->first();
+        $pdf = Pdf::loadView('returbeli', ['data' => $data]);
+
+        return $pdf->setPaper('a4')->stream();
+    }
+
     public function getSales(Request $request)
     {
         $search = $request->input('search', '');
@@ -50,5 +243,36 @@ class ReturJualController extends Controller
         $data = Sales::join('trx_detail_penjualan', 'trx_penjualan.id', '=', 'trx_detail_penjualan.penjualan_id')->where('penjualan_id', $id)->get();
 
         return response()->json($data);
+    }
+
+    public function getKodeReturJual()
+    {
+        try {
+            $id = 'RJ' . '/' . date('Ymd') . '/' . '000001';
+            $maxId = ReturJual::withTrashed()->where('kode_retur_jual', 'LIKE', 'RJ' . '/' . date('Ymd') . '/%')->max('kode_retur_jual');
+            if (!$maxId) {
+                $id = 'RJ' . '/' . date('Ymd') . '/' . '000001';
+            } else {
+                $maxId = str_replace('RJ' . '/' . date('Ymd') . '/', '', $maxId);
+                $count = $maxId + 1;
+                if ($count < 10) {
+                    $id = 'RJ' . '/' . date('Ymd') . '/' . '00000' . $count;
+                } elseif ($count >= 10 && $count < 100) {
+                    $id = 'RJ' . '/' . date('Ymd') . '/' . '0000' . $count;
+                } elseif ($count >= 100 && $count < 1000) {
+                    $id = 'RJ' . '/' . date('Ymd') . '/' . '000' . $count;
+                } elseif ($count >= 1000 && $count < 10000) {
+                    $id = 'RJ' . '/' . date('Ymd') . '/' . '00' . $count;
+                } elseif ($count >= 10000 && $count < 100000) {
+                    $id = 'RJ' . '/' . date('Ymd') . '/' . '0' . $count;
+                } else {
+                    $id = 'RJ' . '/' . date('Ymd') . '/' . $count;
+                }
+            }
+
+            return $id;
+        } catch (\Exception $e) {
+            return 'RJ/' . Str::uuid()->toString();
+        }
     }
 }
