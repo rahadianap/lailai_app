@@ -113,7 +113,7 @@ const onApprove = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.put(`/mutasi-keluar/${id}`, {
+                form.put(`/mutasi-keluar/approve/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
@@ -146,7 +146,7 @@ const onApprove = (id) => {
 };
 
 const onProductSelect = async (product) => {
-    selectedProduct.value = product;
+    // selectedProduct.value = product;
     try {
         const response = await fetch(
             `http://127.0.0.1:8000/api/mutasi-keluar/products/${product.kode_barcode}`,
@@ -159,7 +159,7 @@ const onProductSelect = async (product) => {
         // Update the current detail with the fetched product information
         const currentDetail = form.details[form.details.length - 1];
         currentDetail.nama_barang = productDetails.nama_barang;
-        currentDetail.qty = productDetails.qty;
+        currentDetail.qty = 0;
         currentDetail.nama_satuan = "Pcs";
         calculateJumlah(currentDetail);
     } catch (error) {
@@ -231,18 +231,18 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const returbeli = row.original;
+            const mutasikeluar = row.original;
 
             return h(
                 "div",
                 { class: "relative text-right" },
                 h(DropdownAction, {
-                    returbeli,
+                    mutasikeluar,
                     permissions: props.permissions,
-                    onEdit: () => onEdit(returbeli.id),
-                    onDelete: () => onDelete(returbeli.id),
-                    onApprove: () => onApprove(returbeli.id),
-                    onPrint: () => onPrint(returbeli.id),
+                    onEdit: () => onEdit(mutasikeluar.id),
+                    onDelete: () => onDelete(mutasikeluar.id),
+                    onApprove: () => onApprove(mutasikeluar.id),
+                    onPrint: () => onPrint(mutasikeluar.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -329,18 +329,13 @@ const errors = ref({});
 const form = useForm({
     id: null,
     tujuan_gudang: "",
-    kode_pembelian: "",
     keterangan: "",
     details: [
         {
             kode_barcode: "",
             nama_barang: "",
             qty: 0,
-            qty_retur: 0,
-            nama_satuan: "",
-            nama_satuan_retur: "Pcs",
-            harga: 0,
-            jumlah: 0,
+            nama_satuan: "Pcs",
         },
     ],
 });
@@ -724,17 +719,9 @@ const validateQty = (detail, index) => {
                                                     <TableHead
                                                         >Nama Barang</TableHead
                                                     >
+                                                    <TableHead>Qty</TableHead>
                                                     <TableHead
-                                                        >Qty Beli</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Satuan Beli</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Qty Retur</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Satuan Retur</TableHead
+                                                        >Satuan</TableHead
                                                     >
                                                 </TableRow>
                                             </TableHeader>
@@ -766,18 +753,6 @@ const validateQty = (detail, index) => {
                                                         class="font-medium"
                                                         >{{
                                                             detail.nama_satuan
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            detail.qty_retur
-                                                        }}</TableCell
-                                                    >
-                                                    <TableCell
-                                                        class="font-medium"
-                                                        >{{
-                                                            detail.nama_satuan_retur
                                                         }}</TableCell
                                                     >
                                                 </TableRow>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MutasiKeluar;
+use App\Models\DetailMutasiKeluar;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -89,6 +90,128 @@ class MutasiKeluarController extends Controller
         }
     }
 
+    public function edit($id)
+    {
+        $retur = MutasiKeluar::with('details')->findOrFail($id);
+
+        return response()->json(['data' => $retur]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $this->authorize('update', MutasiKeluar::class);
+
+        $validator = Validator::make($request->all(), [
+            'keterangan' => 'required|string|max:255',
+            'details' => 'required|array|min:1',
+            'details.*.kode_barcode' => 'required|string|max:255',
+            'details.*.nama_barang' => 'required|string|max:255',
+            'details.*.qty' => 'required|numeric|min:0',
+            'details.*.nama_satuan' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $retur = MutasiKeluar::findOrFail($id);
+            $retur->update([
+                'keterangan' => $request->keterangan,
+                'updated_by' => auth()->user()->name,
+            ]);
+
+            foreach ($request->details as $detail) {
+                DetailMutasiKeluar::where('mutasi_keluar_id', $retur->id)->update([
+                    'mutasi_keluar_id' => $retur->id,
+                    'kode_mutasi_keluar' => $retur->kode_mutasi_keluar,
+                    'kode_barcode' => $detail['kode_barcode'],
+                    'nama_barang' => $detail['nama_barang'],
+                    'qty' => $detail['qty'],
+                    'nama_satuan' => $detail['nama_satuan'],
+                    'updated_by' => auth()->user()->name,
+
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'MutasiKeluar Update Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'An error occurred while updating the data',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $this->authorize('delete', MutasiKeluar::class);
+
+        DB::beginTransaction();
+
+        try {
+            $retur = MutasiKeluar::findOrFail($id);
+            $retur->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $retur->details()->update([
+                'is_aktif' => 0,
+                'deleted_by' => auth()->user()->name,
+            ]);
+            $retur->details()->delete();
+            $retur->delete();
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'MutasiKeluar Delete Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while deleting the data', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function approve($id)
+    {
+        $this->authorize('approve', MutasiKeluar::class);
+
+        DB::beginTransaction();
+
+        try {
+            $po = MutasiKeluar::findOrFail($id);
+            $po->update([
+                'status' => 'APPROVED',
+                'approved_by' => auth()->user()->name,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', 'MutasiKeluar Approved Successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['message' => 'An error occurred while approving the po', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function print($id)
+    {
+        $data = MutasiKeluar::with('details')->where('id', $id)->first();
+        $supplier = Supplier::where('nama_supplier', $data->nama_supplier)->first();
+        $pdf = Pdf::loadView('returbeli', ['data' => $data, 'supplier' => $supplier]);
+
+        return $pdf->setPaper('a4')->stream();
+    }
+
     public function getTujuan(Request $request)
     {
         $user = $request->user;
@@ -132,7 +255,7 @@ class MutasiKeluarController extends Controller
             ->select('mst_barang.*', 'mst_detail_barang.*')
             ->where('mst_barang.is_aktif', 1)
             ->where('kode_toko', $user->kode_toko)
-            ->where('mst_barang.kode_barcode', $id)
+            ->where('mst_detail_barang.kode_barcode', $id)
             ->first();
 
         return response()->json($data);

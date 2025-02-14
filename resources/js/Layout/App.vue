@@ -194,7 +194,7 @@ const navigationGroups = [
 ];
 
 // State for collapsible groups
-const collapsibleStates = ref(navigationGroups.map(() => true));
+const collapsibleStates = ref(navigationGroups.map(() => false));
 
 const toggleCollapsible = (index) => {
     collapsibleStates.value[index] = !collapsibleStates.value[index];
@@ -237,7 +237,7 @@ const logout = () => {
                             <Button
                                 variant="secondary"
                                 size="icon"
-                                class="rounded-full ml-auto"
+                                class="ml-auto rounded-full"
                             >
                                 <CircleUser class="w-5 h-5" />
                                 <span class="sr-only">Toggle user menu</span>
@@ -266,7 +266,7 @@ const logout = () => {
                                 @update:open="toggleCollapsible(groupIndex)"
                             >
                                 <CollapsibleTrigger
-                                    class="flex w-full items-center justify-between py-2 px-4 text-sm font-semibold hover:bg-gray-100"
+                                    class="flex items-center justify-between w-full px-4 py-2 text-sm font-semibold hover:bg-gray-100"
                                 >
                                     <div class="flex items-center">
                                         <component
@@ -277,9 +277,9 @@ const logout = () => {
                                     </div>
                                     <ChevronDown
                                         v-if="collapsibleStates[groupIndex]"
-                                        class="h-4 w-4"
+                                        class="w-4 h-4"
                                     />
-                                    <ChevronRight v-else class="h-4 w-4" />
+                                    <ChevronRight v-else class="w-4 h-4" />
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                     <div
@@ -296,7 +296,7 @@ const logout = () => {
                                                     ? 'bg-emerald-500 text-gray-100'
                                                     : 'text-muted-foreground'
                                             "
-                                            class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:bg-gray-100 hover:text-gray-700"
+                                            class="flex items-center gap-3 px-4 py-2 transition-all rounded-lg hover:bg-gray-100 hover:text-gray-700"
                                         >
                                             <component
                                                 :is="item.icon"
@@ -340,7 +340,7 @@ const logout = () => {
                                     @update:open="toggleCollapsible(groupIndex)"
                                 >
                                     <CollapsibleTrigger
-                                        class="flex w-full items-center justify-between py-2 px-4 text-sm font-semibold hover:bg-gray-100"
+                                        class="flex items-center justify-between w-full px-4 py-2 text-sm font-semibold hover:bg-gray-100"
                                     >
                                         <div class="flex items-center">
                                             <component
@@ -351,9 +351,9 @@ const logout = () => {
                                         </div>
                                         <ChevronDown
                                             v-if="collapsibleStates[groupIndex]"
-                                            class="h-4 w-4"
+                                            class="w-4 h-4"
                                         />
-                                        <ChevronRight v-else class="h-4 w-4" />
+                                        <ChevronRight v-else class="w-4 h-4" />
                                     </CollapsibleTrigger>
                                     <CollapsibleContent>
                                         <div
@@ -368,7 +368,7 @@ const logout = () => {
                                                         ? 'bg-muted text-primary'
                                                         : 'text-muted-foreground'
                                                 "
-                                                class="flex items-center gap-3 rounded-lg px-4 py-2 transition-all hover:bg-gray-100 hover:text-primary"
+                                                class="flex items-center gap-3 px-4 py-2 transition-all rounded-lg hover:bg-gray-100 hover:text-primary"
                                             >
                                                 <component
                                                     :is="item.icon"
@@ -384,7 +384,7 @@ const logout = () => {
                     </SheetContent>
                 </Sheet>
             </header>
-            <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+            <main class="flex flex-col flex-1 gap-4 p-4 md:gap-8 md:p-6">
                 <slot />
             </main>
         </div>

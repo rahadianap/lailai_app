@@ -526,7 +526,7 @@ const onApprove = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.put(`/purchase-order/${id}`, {
+                form.put(`/purchase-order/approve/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {

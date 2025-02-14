@@ -105,7 +105,7 @@ const onApprove = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.put(`/retur-beli/${id}`, {
+                form.put(`/retur-beli/approve/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
