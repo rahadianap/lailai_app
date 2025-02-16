@@ -61,12 +61,16 @@ const props = defineProps({
     permissions: Object,
 });
 
-const canViewReturBeli = computed(() => props.permissions.retur_beli_view);
-const canCreateReturBeli = computed(() => props.permissions.retur_beli_create);
-const canEditReturBeli = computed(() => props.permissions.retur_beli_edit);
-const canDeleteReturBeli = computed(() => props.permissions.retur_beli_delete);
-const canApproveReturBeli = computed(
-    () => props.permissions.retur_beli_approve,
+const canViewMutasiMasuk = computed(() => props.permissions.mutasi_masuk_view);
+const canCreateMutasiMasuk = computed(
+    () => props.permissions.mutasi_masuk_create,
+);
+const canEditMutasiMasuk = computed(() => props.permissions.mutasi_masuk_edit);
+const canDeleteMutasiMasuk = computed(
+    () => props.permissions.mutasi_masuk_delete,
+);
+const canApproveMutasiMasuk = computed(
+    () => props.permissions.mutasi_masuk_approve,
 );
 
 const data = props.data.data;
@@ -74,7 +78,7 @@ const data = props.data.data;
 const showCreate = ref(false);
 
 const showDialogCreate = () => {
-    if (canCreateReturBeli.value) {
+    if (canCreateMutasiMasuk.value) {
         showCreate.value = true;
     } else {
         Swal.fire({
@@ -93,7 +97,7 @@ const onSupplierSelect = (supplier) => {
 };
 
 const onApprove = (id) => {
-    if (canApproveReturBeli.value) {
+    if (canApproveMutasiMasuk.value) {
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -105,7 +109,7 @@ const onApprove = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.put(`/retur-beli/approve/${id}`, {
+                form.put(`/mutasi-masuk/approve/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
@@ -137,25 +141,20 @@ const onApprove = (id) => {
     }
 };
 
-const onPurchasingSelect = async (purchasing) => {
+const onMutasiKeluarSelect = async (mutasikeluar) => {
     try {
         const response = await fetch(
-            `http://127.0.0.1:8000/api/retur-beli/purchasing/${purchasing.id}`,
+            `http://127.0.0.1:8000/api/mutasi-masuk/asal/${mutasikeluar.id}`,
         );
         if (!response.ok) {
-            throw new Error("Failed to fetch purchasing details");
+            throw new Error("Failed to fetch mutasikeluar details");
         }
         const poDetails = await response.json();
         // Update form with PO details
-        form.nama_supplier = poDetails[0].nama_supplier;
-        form.keterangan = poDetails[0].keterangan;
         form.details = poDetails.map((detail) => ({
             ...detail,
-            qty_beli: detail.qty,
-            nama_satuan_beli: detail.nama_satuan,
-            qty_retur: 0,
-            nama_satuan_retur: "Pcs",
-            jumlah: detail.qty * detail.harga,
+            qty: detail.qty,
+            nama_satuan: detail.nama_satuan,
         }));
         calculateTotals();
     } catch (error) {
@@ -172,7 +171,7 @@ const onProductSelect = async (product) => {
     selectedProduct.value = product;
     try {
         const response = await fetch(
-            `http://127.0.0.1:8000/api/retur-beli/products/${product.kode_barcode}`,
+            `http://127.0.0.1:8000/api/mutasi-masuk/products/${product.kode_barcode}`,
         );
         if (!response.ok) {
             throw new Error("Failed to fetch product details");
@@ -182,8 +181,8 @@ const onProductSelect = async (product) => {
         // Update the current detail with the fetched product information
         const currentDetail = form.details[form.details.length - 1];
         currentDetail.nama_barang = productDetails.nama_barang;
-        currentDetail.qty_beli = productDetails.qty;
-        currentDetail.nama_satuan_beli = productDetails.nama_satuan;
+        currentDetail.qty = productDetails.qty;
+        currentDetail.nama_satuan = productDetails.nama_satuan;
         calculateJumlah(currentDetail);
     } catch (error) {
         console.error("Error fetching product details:", error);
@@ -198,35 +197,24 @@ const onProductSelect = async (product) => {
 
 const columns = [
     {
-        accessorKey: "kode_retur_beli",
+        accessorKey: "kode_mutasi_masuk",
         header: () => h("div", { class: "text-left" }, "Kode Mutasi Masuk"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kode_retur_beli"),
+                row.getValue("kode_mutasi_masuk"),
             );
         },
     },
     {
-        accessorKey: "kode_pembelian",
-        header: () => h("div", { class: "text-left" }, "Kode Pembelian"),
+        accessorKey: "asal_gudang",
+        header: () => h("div", { class: "text-left" }, "Asal"),
         cell: ({ row }) => {
             return h(
                 "div",
                 { class: "text-left font-medium" },
-                row.getValue("kode_pembelian"),
-            );
-        },
-    },
-    {
-        accessorKey: "nama_supplier",
-        header: () => h("div", { class: "text-left" }, "Supplier"),
-        cell: ({ row }) => {
-            return h(
-                "div",
-                { class: "text-left font-medium" },
-                row.getValue("nama_supplier"),
+                row.getValue("asal_gudang"),
             );
         },
     },
@@ -265,18 +253,18 @@ const columns = [
         id: "actions",
         enableHiding: false,
         cell: ({ row }) => {
-            const returbeli = row.original;
+            const mutasimasuk = row.original;
 
             return h(
                 "div",
                 { class: "relative text-right" },
                 h(DropdownAction, {
-                    returbeli,
+                    mutasimasuk,
                     permissions: props.permissions,
-                    onEdit: () => onEdit(returbeli.id),
-                    onDelete: () => onDelete(returbeli.id),
-                    onApprove: () => onApprove(returbeli.id),
-                    onPrint: () => onPrint(returbeli.id),
+                    onEdit: () => onEdit(mutasimasuk.id),
+                    onDelete: () => onDelete(mutasimasuk.id),
+                    onApprove: () => onApprove(mutasimasuk.id),
+                    onPrint: () => onPrint(mutasimasuk.id),
                     onExpand: row.toggleExpanded,
                 }),
             );
@@ -312,7 +300,7 @@ const table = useVueTable({
             pagination.value = updater;
         }
         router.get(
-            "/retur-beli",
+            "/mutasi-masuk",
             {
                 page: pagination.value.pageIndex + 1,
                 per_page: pagination.value.pageSize,
@@ -363,15 +351,15 @@ const errors = ref({});
 const form = useForm({
     id: null,
     nama_supplier: "",
-    kode_pembelian: "",
+    kode_mutasi_keluar: "",
     keterangan: "",
     details: [
         {
             kode_barcode: "",
             nama_barang: "",
-            qty_beli: 0,
+            qty: 0,
             qty_retur: 0,
-            nama_satuan_beli: "",
+            nama_satuan: "",
             nama_satuan_retur: "Pcs",
             harga: 0,
             jumlah: 0,
@@ -391,12 +379,12 @@ const totalSub = computed(() => {
 });
 
 const calculateJumlah = (detail) => {
-    detail.jumlah = detail.qty_beli * detail.harga - detail.diskon;
+    detail.jumlah = detail.qty * detail.harga - detail.diskon;
     form.subtotal = totalSub;
 };
 
 const setDiskonGlobal = (detail) => {
-    detail.jumlah = detail.qty_beli * detail.harga - detail.diskon;
+    detail.jumlah = detail.qty * detail.harga - detail.diskon;
     form.subtotal = totalSub;
     form.diskon_total = totalDiskon;
     form.dpp_total = form.subtotal - form.diskon_total;
@@ -466,7 +454,7 @@ const resetForm = () => {
 };
 
 const submit = () => {
-    const url = form.id ? `/retur-beli/${form.id}` : "/retur-beli";
+    const url = form.id ? `/mutasi-masuk/${form.id}` : "/mutasi-masuk";
     const method = form.id ? "put" : "post";
     form[method](url, {
         preserveState: true,
@@ -495,10 +483,10 @@ const submit = () => {
 };
 
 const onEdit = async (id) => {
-    if (canEditReturBeli.value) {
+    if (canEditMutasiMasuk.value) {
         showCreate.value = true;
         try {
-            const res = await fetch(`/retur-beli/${id}`, {
+            const res = await fetch(`/mutasi-masuk/${id}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -512,7 +500,7 @@ const onEdit = async (id) => {
             form.id = data.data.id;
             form.nama_supplier = data.data.nama_supplier;
             form.keterangan = data.data.keterangan;
-            form.kode_pembelian = data.data.kode_pembelian || null;
+            form.kode_mutasi_keluar = data.data.kode_mutasi_keluar || null;
             form.details = [];
 
             // Use forEach to populate details
@@ -521,8 +509,8 @@ const onEdit = async (id) => {
                     id: detail.id,
                     kode_barcode: detail.kode_barcode,
                     nama_barang: detail.nama_barang,
-                    qty_beli: detail.qty_beli,
-                    nama_satuan_beli: detail.nama_satuan_beli,
+                    qty: detail.qty,
+                    nama_satuan: detail.nama_satuan,
                     qty_retur: detail.qty_retur,
                     nama_satuan_retur: detail.nama_satuan_retur,
                     harga: detail.harga,
@@ -542,7 +530,7 @@ const onEdit = async (id) => {
 };
 
 const onDelete = (id) => {
-    if (canDeleteReturBeli.value) {
+    if (canDeleteMutasiMasuk.value) {
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -554,7 +542,7 @@ const onDelete = (id) => {
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
-                form.delete(`/retur-beli/${id}`, {
+                form.delete(`/mutasi-masuk/${id}`, {
                     preserveState: true,
                     preserveScroll: true,
                     onSuccess: () => {
@@ -588,7 +576,7 @@ const onDelete = (id) => {
 
 const onPrint = async (id) => {
     axios({
-        url: `http://127.0.0.1:8000/api/retur-beli/print/${id}`,
+        url: `http://127.0.0.1:8000/api/mutasi-masuk/print/${id}`,
         method: "GET",
         headers: {
             "Content-Type": "multipart/form-data",
@@ -626,17 +614,17 @@ const formatPrice = (price) => {
         <div class="flex items-center">
             <h1 class="text-lg font-semibold md:text-2xl">Mutasi Masuk</h1>
         </div>
-        <div v-if="canViewReturBeli" class="w-full">
+        <div v-if="canViewMutasiMasuk" class="w-full">
             <div class="flex items-center justify-between py-4">
                 <Input
                     :model-value="
-                        table.getColumn('kode_retur_beli')?.getFilterValue()
+                        table.getColumn('kode_mutasi_masuk')?.getFilterValue()
                     "
                     class="max-w-sm"
-                    placeholder="Filter kode retur..."
+                    placeholder="Filter kode mutasi..."
                     @update:model-value="
                         table
-                            .getColumn('kode_retur_beli')
+                            .getColumn('kode_mutasi_masuk')
                             ?.setFilterValue($event)
                     "
                 />
@@ -698,17 +686,9 @@ const formatPrice = (price) => {
                                                     <TableHead
                                                         >Nama Barang</TableHead
                                                     >
+                                                    <TableHead>Qty</TableHead>
                                                     <TableHead
-                                                        >Qty Beli</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Satuan Beli</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Qty Retur</TableHead
-                                                    >
-                                                    <TableHead
-                                                        >Satuan Retur</TableHead
+                                                        >Satuan</TableHead
                                                     >
                                                 </TableRow>
                                             </TableHeader>
@@ -733,13 +713,13 @@ const formatPrice = (price) => {
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            detail.qty_beli
+                                                            detail.qty
                                                         }}</TableCell
                                                     >
                                                     <TableCell
                                                         class="font-medium"
                                                         >{{
-                                                            detail.nama_satuan_beli
+                                                            detail.nama_satuan
                                                         }}</TableCell
                                                     >
                                                     <TableCell
@@ -872,61 +852,39 @@ const formatPrice = (price) => {
                 >
                     <DialogHeader>
                         <DialogTitle
-                            >{{ form.id ? "Edit" : "Create" }} Data Retur
-                            Beli</DialogTitle
+                            >{{ form.id ? "Edit" : "Create" }} Data Mutasi
+                            Masuk</DialogTitle
                         >
                         <DialogDescription>
-                            Data master retur beli
+                            Data master mutasi masuk
                         </DialogDescription>
                     </DialogHeader>
                     <div class="flex flex-row justify-start gap-4">
                         <div>
-                            <Label for="nama_supplier"> Supplier </Label>
-                            <SearchableSelect
-                                class="mt-2 editable-input"
-                                v-model="form.nama_supplier"
-                                placeholder="Search suppliers..."
-                                api-endpoint="http://127.0.0.1:8000/api/retur-beli/suppliers"
-                                value-field="nama_supplier"
-                                :display-fields="['nama_supplier']"
-                                search-param="search"
-                                :per-page="10"
-                                :debounce-time="300"
-                                loading-text="Loading suppliers..."
-                                no-results-text="No suppliers found"
-                                load-more-text="Load more suppliers"
-                                @select="onSupplierSelect"
-                            />
-                            <p
-                                v-if="form.errors.nama_supplier"
-                                class="mt-1 text-sm text-red-500"
-                            >
-                                {{ form.errors.nama_supplier }}
-                            </p>
-                        </div>
-                        <div>
-                            <Label for="kode_pembelian"> Kode Pembelian </Label>
+                            <Label for="kode_mutasi_keluar">
+                                Kode Pembelian
+                            </Label>
                             <SearchableSelect
                                 class="mt-2 editable-input"
                                 required
-                                v-model="form.kode_pembelian"
-                                placeholder="Search purchasing..."
-                                api-endpoint="http://127.0.0.1:8000/api/retur-beli/purchasing"
-                                value-field="kode_pembelian"
-                                :display-fields="['kode_pembelian']"
+                                v-model="form.kode_mutasi_keluar"
+                                placeholder="Search mutasi keluar..."
+                                api-endpoint="http://127.0.0.1:8000/api/mutasi-masuk/asal"
+                                value-field="kode_mutasi_keluar"
+                                :display-fields="['kode_mutasi_keluar']"
                                 search-param="search"
                                 :per-page="10"
                                 :debounce-time="300"
-                                loading-text="Loading purchasing..."
-                                no-results-text="No purchasing found"
-                                load-more-text="Load more purchasing"
-                                @select="onPurchasingSelect"
+                                loading-text="Loading code..."
+                                no-results-text="No code found"
+                                load-more-text="Load more code"
+                                @select="onMutasiKeluarSelect"
                             />
                             <p
-                                v-if="form.errors.kode_pembelian"
+                                v-if="form.errors.kode_mutasi_keluar"
                                 class="mt-1 text-sm text-red-500"
                             >
-                                {{ form.errors.kode_pembelian }}
+                                {{ form.errors.kode_mutasi_keluar }}
                             </p>
                         </div>
                     </div>
@@ -949,7 +907,7 @@ const formatPrice = (price) => {
                     <DialogHeader class="mt-4">
                         <DialogTitle>Data Detail Mutasi Masuk</DialogTitle>
                         <DialogDescription>
-                            Data detail retur beli
+                            Data detail mutasi masuk
                         </DialogDescription>
                     </DialogHeader>
                     <div class="flex-grow">
@@ -961,13 +919,8 @@ const formatPrice = (price) => {
                                     <TableRow>
                                         <TableHead>Kode Barcode</TableHead>
                                         <TableHead>Nama Barang</TableHead>
-                                        <TableHead>Qty Beli</TableHead>
-                                        <TableHead>Satuan Beli</TableHead>
-                                        <TableHead>Qty Retur</TableHead>
-                                        <TableHead>Satuan Retur</TableHead>
-                                        <TableHead>Harga Beli</TableHead>
-                                        <TableHead>Jumlah</TableHead>
-                                        <TableHead>Actions</TableHead>
+                                        <TableHead>Qty</TableHead>
+                                        <TableHead>Satuan</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -976,39 +929,17 @@ const formatPrice = (price) => {
                                         :key="index"
                                     >
                                         <TableCell>
-                                            <SearchableSelect
-                                                class="editable-input"
-                                                required
-                                                v-model="detail.kode_barcode"
-                                                placeholder="Search..."
-                                                api-endpoint="http://127.0.0.1:8000/api/retur-beli/products"
-                                                value-field="kode_barcode"
-                                                :display-fields="[
-                                                    'kode_barcode',
-                                                ]"
-                                                search-param="search"
-                                                :per-page="10"
-                                                :debounce-time="300"
-                                                loading-text="Loading products..."
-                                                no-results-text="No products found"
-                                                load-more-text="Load more products"
-                                                @select="onProductSelect"
-                                                :append-to-body="true"
-                                            />
-                                            <p
-                                                v-if="
-                                                    form.errors[
-                                                        `details.${index}.kode_barcode`
-                                                    ]
-                                                "
-                                                class="mt-1 text-sm text-red-500"
-                                            >
-                                                {{
-                                                    form.errors[
-                                                        `details.${index}.kode_barcode`
-                                                    ]
-                                                }}
-                                            </p>
+                                            <TableCell>
+                                                <Input
+                                                    id="kode_barcode"
+                                                    v-model="
+                                                        detail.kode_barcode
+                                                    "
+                                                    class="col-span-3"
+                                                    required
+                                                    readonly
+                                                />
+                                            </TableCell>
                                         </TableCell>
                                         <TableCell>
                                             <Input
@@ -1021,8 +952,8 @@ const formatPrice = (price) => {
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="qty_beli"
-                                                v-model="detail.qty_beli"
+                                                id="qty"
+                                                v-model="detail.qty"
                                                 type="number"
                                                 class="col-span-3 editable-input"
                                                 required
@@ -1034,109 +965,26 @@ const formatPrice = (price) => {
                                             <p
                                                 v-if="
                                                     form.errors[
-                                                        `details.${index}.qty_beli`
+                                                        `details.${index}.qty`
                                                     ]
                                                 "
                                                 class="mt-1 text-sm text-red-500"
                                             >
                                                 {{
                                                     form.errors[
-                                                        `details.${index}.qty_beli`
+                                                        `details.${index}.qty`
                                                     ]
                                                 }}
                                             </p>
                                         </TableCell>
                                         <TableCell>
                                             <Input
-                                                id="nama_satuan_beli"
-                                                v-model="
-                                                    detail.nama_satuan_beli
-                                                "
+                                                id="nama_satuan"
+                                                v-model="detail.nama_satuan"
                                                 class="col-span-3"
                                                 required
                                                 readonly
                                             />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="qty_retur"
-                                                v-model="detail.qty_retur"
-                                                type="number"
-                                                class="col-span-3 editable-input"
-                                                required
-                                                @input="setDiskonGlobal(detail)"
-                                                min="0"
-                                                step="0"
-                                            />
-                                            <p
-                                                v-if="
-                                                    form.errors[
-                                                        `details.${index}.qty_retur`
-                                                    ]
-                                                "
-                                                class="mt-1 text-sm text-red-500"
-                                            >
-                                                {{
-                                                    form.errors[
-                                                        `details.${index}.qty_retur`
-                                                    ]
-                                                }}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="nama_satuan_retur"
-                                                v-model="
-                                                    detail.nama_satuan_retur
-                                                "
-                                                class="col-span-3"
-                                                required
-                                                readonly
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="harga"
-                                                v-model="detail.harga"
-                                                type="number"
-                                                class="col-span-3 editable-input"
-                                                required
-                                                @input="setDiskonGlobal(detail)"
-                                                min="0"
-                                                step="0"
-                                                readonly
-                                            />
-                                            <p
-                                                v-if="
-                                                    form.errors[
-                                                        `details.${index}.harga`
-                                                    ]
-                                                "
-                                                class="mt-1 text-sm text-red-500"
-                                            >
-                                                {{
-                                                    form.errors[
-                                                        `details.${index}.harga`
-                                                    ]
-                                                }}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                id="jumlah"
-                                                v-model="detail.jumlah"
-                                                type="number"
-                                                class="col-span-3"
-                                                required
-                                                readonly
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Button
-                                                @click="removeDetail(index)"
-                                                variant="destructive"
-                                                ><Trash2
-                                            /></Button>
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>

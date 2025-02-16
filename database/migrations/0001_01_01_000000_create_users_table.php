@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->string('password');
             $table->string('role')->default('admin');
             $table->json('permissions')->nullable();
-            $table->json('kode_toko')->nullable();
+            $table->json('nama_toko')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

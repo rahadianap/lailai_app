@@ -57,7 +57,7 @@ class MutasiKeluarController extends Controller
         try {
             $rb = MutasiKeluar::create([
                 'kode_mutasi_keluar' => $this->getKodeMutasiKeluar(),
-                'asal_gudang' => Auth()->user()->kode_toko,
+                'asal_gudang' => Auth()->user()->nama_toko,
                 'tujuan_gudang' => $request->tujuan_gudang,
                 'status' => 'CREATED',
                 'keterangan' => $request->keterangan,
@@ -219,7 +219,7 @@ class MutasiKeluarController extends Controller
         $search = $request->input('search', '');
         $perPage = 10;
 
-        $data = Store::where('kode_toko', '!=', $user->kode_toko)->where('nama_toko', 'like', "%{$search}%")
+        $data = Store::where('nama_toko', '!=', $user->nama_toko)->where('nama_toko', 'like', "%{$search}%")
             ->paginate($perPage);
 
         return response()->json($data);
@@ -250,11 +250,11 @@ class MutasiKeluarController extends Controller
     {
         $user = $request->user;
 
-        // $data = Product::with('details')->where('mst_detail_barang.kode_toko', $user->kode_toko)->where('kode_barcode', $id)->first();
+        // $data = Product::with('details')->where('mst_detail_barang.nama_toko', $user->nama_toko)->where('kode_barcode', $id)->first();
         $data = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')
             ->select('mst_barang.*', 'mst_detail_barang.*')
             ->where('mst_barang.is_aktif', 1)
-            ->where('kode_toko', $user->kode_toko)
+            ->where('nama_toko', $user->nama_toko)
             ->where('mst_detail_barang.kode_barcode', $id)
             ->first();
 

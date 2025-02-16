@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\MutasiKeluarController;
+use App\Http\Controllers\MutasiMasukController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchasingController;
@@ -23,6 +24,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/mutasi-keluar/products', [MutasiKeluarController::class, 'getProducts'])->name('mutasi-keluar.products');
     Route::get('/purchasing/products/{id}', [PurchasingController::class, 'fetchDetails']);
     Route::get('/mutasi-keluar/products/{id}', [MutasiKeluarController::class, 'fetchDetails']);
+    Route::get('/mutasi-masuk/asal', [MutasiMasukController::class, 'getMutasiKeluar'])->name('mutasi-masuk.asals');
+    Route::get('/mutasi-masuk/asal/{id}', [MutasiMasukController::class, 'fetchMutasiKeluarDetails']);
 });
 Route::get('/purchasing/po', [PurchasingController::class, 'getPO']);
 Route::get('/purchasing/po/{id}', [PurchasingController::class, 'fetchPODetails']);

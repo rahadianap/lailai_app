@@ -26,7 +26,7 @@ class ProductController extends Controller
         $data = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')
             ->select('mst_barang.*', 'mst_detail_barang.*')
             ->where('mst_barang.is_aktif', 1)
-            ->where('kode_toko', auth()->user()->kode_toko)
+            ->where('nama_toko', auth()->user()->nama_toko)
             ->paginate($perPage);
 
         return Inertia::render('Products/Index', [
@@ -78,7 +78,7 @@ class ProductController extends Controller
             foreach ($request->details as $detail) {
                 DetailProduct::create([
                     'barang_id' => $product->id,
-                    'kode_toko' => auth()->user()->kode_toko,
+                    'nama_toko' => auth()->user()->nama_toko,
                     'kode_barcode' => $product->kode_barcode,
                     'nama_barang' => $product->nama_barang,
                     'saldo_awal' => $detail['saldo_awal'],

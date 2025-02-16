@@ -167,7 +167,7 @@ class SalesController extends Controller
         $query = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')
             ->select('mst_barang.*', 'mst_detail_barang.*')
             ->where('mst_barang.is_aktif', 1)
-            ->where('kode_toko', $user->kode_toko);
+            ->where('nama_toko', $user->nama_toko);
 
         if ($request->has('search')) {
             $searchParams = $request->input('search');

@@ -354,11 +354,11 @@ class PurchasingController extends Controller
     {
         $user = $request->user;
 
-        // $data = Product::with('details')->where('mst_detail_barang.kode_toko', $user->kode_toko)->where('kode_barcode', $id)->first();
+        // $data = Product::with('details')->where('mst_detail_barang.nama_toko', $user->nama_toko)->where('kode_barcode', $id)->first();
         $data = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')
             ->select('mst_barang.*', 'mst_detail_barang.*')
             ->where('mst_barang.is_aktif', 1)
-            ->where('kode_toko', $user->kode_toko)
+            ->where('nama_toko', $user->nama_toko)
             ->where('mst_barang.kode_barcode', $id)
             ->first();
 
