@@ -304,12 +304,7 @@ class PurchasingController extends Controller
         $data = Supplier::where('nama_supplier', 'like', "%{$search}%")
             ->paginate($perPage);
 
-        return Inertia::render('Suppliers', [
-            'data' => $data->items(),
-            'current_page' => $data->currentPage(),
-            'last_page' => $data->lastPage(),
-            'total' => $data->total(),
-        ]);
+        return response()->json($data);
     }
 
     public function getPO(Request $request)
@@ -321,12 +316,7 @@ class PurchasingController extends Controller
             ->where('status', 'APPROVED')
             ->paginate($perPage);
 
-        return Inertia::render('PurchaseOrder', [
-            'data' => $data->items(),
-            'current_page' => $data->currentPage(),
-            'last_page' => $data->lastPage(),
-            'total' => $data->total(),
-        ]);
+        return response()->json($data);
     }
 
     public function getProducts(Request $request)

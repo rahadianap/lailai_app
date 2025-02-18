@@ -1278,7 +1278,7 @@ const formatPrice = (price) => {
                                                 type="number"
                                                 class="col-span-3 editable-input"
                                                 required
-                                                @input="setDiskonGlobal(detail)"
+                                                @input="calculateJumlah(detail)"
                                                 min="0"
                                                 step="0"
                                             />
