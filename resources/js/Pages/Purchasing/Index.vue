@@ -80,7 +80,7 @@ const showDialogCreate = () => {
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to create products.",
+            text: "You don't have permission to create data.",
             icon: "error",
         });
     }
@@ -89,13 +89,13 @@ const showDialogCreate = () => {
 const onApprove = (id) => {
     if (canApprovePurchasing.value) {
         Swal.fire({
-            title: "Are you sure?",
-            text: "You won't be able to revert this!",
+            title: "Apakah anda yakin?",
+            text: "Make sure the data you enter is correct and valid. You won't be able to revert this!",
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, approve it!",
+            confirmButtonText: "Yes, approve it",
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
@@ -105,7 +105,7 @@ const onApprove = (id) => {
                     onSuccess: () => {
                         Swal.fire(
                             "Approved!",
-                            "Your po has been approved.",
+                            "Your data has been approved.",
                             "success",
                         );
                         setTimeout(() => {
@@ -115,7 +115,7 @@ const onApprove = (id) => {
                     onError: () => {
                         Swal.fire(
                             "Error!",
-                            "There was a problem approving the po.",
+                            "There was a problem approving the data.",
                             "error",
                         );
                     },
@@ -125,7 +125,7 @@ const onApprove = (id) => {
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to delete products.",
+            text: "You don't have permission to delete data.",
             icon: "error",
         });
     }
@@ -147,7 +147,6 @@ const onPOSelect = async (po) => {
             throw new Error("Failed to fetch PO details");
         }
         const poDetails = await response.json();
-        console.log(poDetails);
 
         // Update form with PO details
         form.nama_supplier = poDetails[0].nama_supplier;
@@ -169,14 +168,26 @@ const onPOSelect = async (po) => {
         console.error("Error fetching PO details:", error);
         Swal.fire({
             title: "Error",
-            text: "Failed to fetch PO details",
+            text: "Failed to fetch data details",
             icon: "error",
         });
     }
 };
 
-const onProductSelect = async (product) => {
-    selectedProduct.value = product;
+const onProductSelect = async (product, index) => {
+    if (form.details.length > 1 && isItemExist(product, index)) {
+        Swal.fire({
+            title: "Item Already Exists",
+            text: "This item is already in the details table.",
+            icon: "warning",
+            showConfirmButton: false,
+            timer: 2000,
+        });
+        // Clear the kode_barcode field
+        form.details[index].kode_barcode = "";
+        return;
+    }
+
     try {
         const response = await fetch(
             `http://127.0.0.1:8000/api/purchasing/products/${product.kode_barcode}`,
@@ -186,35 +197,39 @@ const onProductSelect = async (product) => {
         }
         const productDetails = await response.json();
 
-        console.log(productDetails);
-
         // Update the current detail with the fetched product information
-        const currentDetail = form.details[form.details.length - 1];
-        currentDetail.nama_barang = productDetails.nama_barang;
-        currentDetail.nama_satuan = productDetails.nama_satuan;
-        currentDetail.isi_barang = productDetails.isi_barang;
-        currentDetail.harga = productDetails.harga_beli_karton;
-        currentDetail.harga_jual = productDetails.harga_jual_eceran;
+        const newDetail = {
+            kode_barcode: productDetails.kode_barcode,
+            nama_barang: productDetails.nama_barang,
+            nama_satuan: productDetails.nama_satuan,
+            isi_barang: productDetails.isi_barang,
+            harga: productDetails.harga_beli_karton,
+            harga_jual: productDetails.harga_jual_eceran,
+            qty: 1,
+            diskon: 0,
+            jumlah: productDetails.harga_beli_karton,
+            is_taxable: productDetails.is_taxable === "1" ? true : false,
+            exp_date: "",
+            dpp:
+                form.purchase_type === "no_ppn"
+                    ? 0
+                    : productDetails.harga_beli_karton,
+            ppn:
+                form.purchase_type === "no_ppn"
+                    ? 0
+                    : productDetails.harga_beli_karton * 0.11,
+        };
 
-        // Set default values for other fields
-        currentDetail.qty = 1;
-        currentDetail.diskon = 0;
-        currentDetail.jumlah = productDetails.harga_beli_karton;
-        currentDetail.is_taxable =
-            productDetails.is_taxable === "1" ? true : false;
-        currentDetail.exp_date = "";
-        currentDetail.dpp =
-            form.purchase_type === "no_ppn" ? 0 : currentDetail.harga; // You might want to set a default date here
-        currentDetail.ppn =
-            form.purchase_type === "no_ppn" ? 0 : currentDetail.harga * 0.11;
-        calculateJumlah(currentDetail);
+        form.details[index] = newDetail;
+        calculateJumlah(newDetail);
     } catch (error) {
         console.error("Error fetching product details:", error);
-        // Optionally, show an error message to the user
         Swal.fire({
             title: "Error",
             text: "Failed to fetch product details",
             icon: "error",
+            showConfirmButton: false,
+            timer: 2000,
         });
     }
 };
@@ -382,6 +397,7 @@ const form = useForm({
     diskon_total: 0,
     subtotal: 0,
     dpp_total: 0,
+    dpp_lain_total: 0,
     ppn_total: 0,
     total: 0,
     grand_total: 0,
@@ -421,27 +437,19 @@ const newDetailInput = ref({
 });
 
 const addNewDetailFromInput = () => {
-    if (isItemExist(newDetailInput.value)) {
-        Swal.fire({
-            title: "Item Already Exists",
-            text: "This item is already in the details table.",
-            icon: "warning",
-            showConfirmButton: false,
-            timer: 2000,
-        });
-    } else {
-        form.details.push({ ...newDetailInput.value });
-        calculateJumlah(newDetail);
-        // Reset the input after adding
-        Object.keys(newDetailInput.value).forEach((key) => {
-            newDetailInput.value[key] = 0;
-        });
-    }
+    form.details.push({ ...newDetailInput.value });
+    calculateJumlah(newDetailInput);
+    // Reset the input after adding
+    Object.keys(newDetailInput.value).forEach((key) => {
+        newDetailInput.value[key] = 0;
+    });
 };
 
-const isItemExist = (newItem) => {
+const isItemExist = (newItem, currentIndex) => {
     return form.details.some(
-        (item) => item.kode_barcode === newItem.kode_barcode,
+        (item, index) =>
+            item.kode_barcode === newItem.kode_barcode &&
+            index !== currentIndex,
     );
 };
 
@@ -483,17 +491,56 @@ const totalSub = computed(() => {
     return form.details.reduce((sum, detail) => sum + (detail.jumlah || 0), 0);
 });
 
+// const calculateJumlah = (detail) => {
+//     detail.qty = parseFloat(detail.qty);
+//     detail.harga = parseFloat(detail.harga);
+//     detail.diskon = parseFloat(detail.diskon);
+
+//     detail.jumlah = detail.qty * detail.harga - detail.diskon;
+//     detail.dpp = detail.jumlah;
+//     detail.ppn =
+//         form.purchase_type === "no_ppn"
+//             ? 0
+//             : detail.is_taxable
+//               ? detail.dpp * 0.11
+//               : 0;
+
+//     form.subtotal = totalSub;
+//     form.total = form.subtotal - form.diskon_total;
+//     form.dpp_total = form.total;
+//     form.dpp_lain_total = parseFloat((form.dpp_total * (11 / 12)).toFixed(2));
+//     form.ppn_total =
+//         form.purchase_type === "no_ppn"
+//             ? 0
+//             : form.details.reduce((sum, d) => sum + d.ppn, 0);
+//     form.grand_total = form.total + form.ppn_total;
+
+//     // Format the form fields to currency
+//     // form.subtotal = formatCurrency(form.subtotal);
+//     form.total = formatCurrency(form.total);
+//     form.dpp_total = formatCurrency(form.dpp_total);
+//     form.dpp_lain_total = formatCurrency(form.dpp_lain_total);
+//     form.ppn_total = formatCurrency(form.ppn_total);
+//     form.grand_total = formatCurrency(form.grand_total);
+// };
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(value);
+};
+
 const calculateJumlah = (detail) => {
     detail.jumlah = detail.qty * detail.harga - detail.diskon;
     detail.dpp = detail.jumlah;
-    detail.ppn =
-        form.purchase_type === "no_ppn"
-            ? 0
-            : detail.is_taxable
-              ? detail.dpp * 0.11
-              : 0;
+    detail.ppn = form.purchase_type === "no_ppn" ? 0 : detail.jumlah * 0.11;
     form.subtotal = totalSub;
     form.total = form.subtotal - form.diskon_total;
+    form.dpp_total = form.total;
+    form.dpp_lain_total = form.dpp_total * (11 / 12);
     form.ppn_total =
         form.purchase_type === "no_ppn"
             ? 0
@@ -504,6 +551,7 @@ const calculateJumlah = (detail) => {
 const setDiskonGlobal = () => {
     form.subtotal = totalSub;
     form.dpp_total = form.subtotal - form.diskon_total - (form.rebate || 0);
+    form.dpp_lain_total = (form.dpp_total * (11 / 12)).toFixed(2);
     form.total = form.dpp_total;
     form.ppn_total =
         form.purchase_type === "no_ppn"
@@ -639,6 +687,7 @@ const onEdit = async (id) => {
             form.diskon_total = data.data.diskon_total;
             // form.subtotal = data.data.subtotal;
             form.dpp_total = data.data.dpp_total;
+            form.dpp_lain_total = data.data.dpp_lain_total;
             form.ppn_total = data.data.ppn_total;
             form.total = data.data.total;
             form.grand_total = data.data.grand_total;
@@ -673,7 +722,7 @@ const onEdit = async (id) => {
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to edit products.",
+            text: "You don't have permission to edit data.",
             icon: "error",
         });
     }
@@ -688,7 +737,7 @@ const onDelete = (id) => {
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!",
+            confirmButtonText: "Yes, delete it",
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = useForm({});
@@ -698,7 +747,7 @@ const onDelete = (id) => {
                     onSuccess: () => {
                         Swal.fire(
                             "Deleted!",
-                            "Your po has been deleted.",
+                            "Your data has been deleted.",
                             "success",
                         );
                         setTimeout(() => {
@@ -708,7 +757,7 @@ const onDelete = (id) => {
                     onError: () => {
                         Swal.fire(
                             "Error!",
-                            "There was a problem deleting the po.",
+                            "There was a problem deleting the data.",
                             "error",
                         );
                     },
@@ -718,7 +767,7 @@ const onDelete = (id) => {
     } else {
         Swal.fire({
             title: "Permission Denied",
-            text: "You don't have permission to delete products.",
+            text: "You don't have permission to delete data.",
             icon: "error",
         });
     }
@@ -872,6 +921,14 @@ const formatPrice = (price) => {
                                                             )
                                                         }}</TableCell
                                                     >
+                                                    <TableCell
+                                                        class="font-normal hidden"
+                                                        >{{
+                                                            formatPrice(
+                                                                detail.grand_total,
+                                                            )
+                                                        }}</TableCell
+                                                    >
                                                 </TableRow>
                                                 <TableRow
                                                     class="font-bold bg-gray-100"
@@ -897,6 +954,142 @@ const formatPrice = (price) => {
                                                                         prev +
                                                                         parseFloat(
                                                                             current,
+                                                                            10,
+                                                                        ),
+                                                                    0,
+                                                                    0,
+                                                                ),
+                                                        )
+                                                    }}</TableCell>
+                                                </TableRow>
+                                                <TableRow
+                                                    class="font-bold bg-gray-100"
+                                                >
+                                                    <TableCell>DPP</TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell>{{
+                                                        formatPrice(
+                                                            row.original.details
+                                                                .map(
+                                                                    (item) =>
+                                                                        item.jumlah,
+                                                                )
+                                                                .reduce(
+                                                                    (
+                                                                        prev,
+                                                                        current,
+                                                                    ) =>
+                                                                        prev +
+                                                                        parseFloat(
+                                                                            current,
+                                                                            10,
+                                                                        ),
+                                                                    0,
+                                                                    0,
+                                                                ),
+                                                        )
+                                                    }}</TableCell>
+                                                </TableRow>
+                                                <TableRow
+                                                    class="font-bold bg-gray-100"
+                                                >
+                                                    <TableCell
+                                                        >DPP Lain</TableCell
+                                                    >
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell>{{
+                                                        formatPrice(
+                                                            row.original.details
+                                                                .map(
+                                                                    (item) =>
+                                                                        item.jumlah *
+                                                                        (11 /
+                                                                            12),
+                                                                )
+                                                                .reduce(
+                                                                    (
+                                                                        prev,
+                                                                        current,
+                                                                    ) =>
+                                                                        prev +
+                                                                        parseFloat(
+                                                                            current,
+                                                                            10,
+                                                                        ),
+                                                                    0,
+                                                                    0,
+                                                                ),
+                                                        )
+                                                    }}</TableCell>
+                                                </TableRow>
+                                                <TableRow
+                                                    class="font-bold bg-gray-100"
+                                                >
+                                                    <TableCell>PPN</TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell>{{
+                                                        formatPrice(
+                                                            row.original.details
+                                                                .map(
+                                                                    (item) =>
+                                                                        item.jumlah *
+                                                                        0.11,
+                                                                )
+                                                                .reduce(
+                                                                    (
+                                                                        prev,
+                                                                        current,
+                                                                    ) =>
+                                                                        prev +
+                                                                        parseFloat(
+                                                                            current,
+                                                                            10,
+                                                                        ),
+                                                                    0,
+                                                                    0,
+                                                                ),
+                                                        )
+                                                    }}</TableCell>
+                                                </TableRow>
+                                                <TableRow
+                                                    class="font-bold bg-gray-100"
+                                                >
+                                                    <TableCell
+                                                        >Grand Total</TableCell
+                                                    >
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell></TableCell>
+                                                    <TableCell>{{
+                                                        formatPrice(
+                                                            row.original.details
+                                                                .map(
+                                                                    (item) =>
+                                                                        item.grand_total,
+                                                                )
+                                                                .reduce(
+                                                                    (
+                                                                        prev,
+                                                                        current,
+                                                                    ) =>
+                                                                        prev +
+                                                                        parseFloat(
+                                                                            current -
+                                                                                prev,
                                                                             10,
                                                                         ),
                                                                     0,
@@ -1176,7 +1369,13 @@ const formatPrice = (price) => {
                                                 loading-text="Loading products..."
                                                 no-results-text="No products found"
                                                 load-more-text="Load more products"
-                                                @select="onProductSelect"
+                                                @select="
+                                                    (product) =>
+                                                        onProductSelect(
+                                                            product,
+                                                            index,
+                                                        )
+                                                "
                                                 :append-to-body="true"
                                             />
                                             <p
@@ -1414,7 +1613,7 @@ const formatPrice = (price) => {
                                         <Input
                                             v-model="form.rebate"
                                             type="number"
-                                            class="w-32 text-right"
+                                            class="w-48 text-right"
                                             @input="calculateTotals"
                                         />
                                     </div>
@@ -1428,7 +1627,7 @@ const formatPrice = (price) => {
                                             v-model="form.diskon_total"
                                             @input="setDiskonGlobal(detail)"
                                             type="number"
-                                            class="w-32 text-right"
+                                            class="w-48 text-right"
                                         />
                                     </div>
                                 </div>
@@ -1440,7 +1639,7 @@ const formatPrice = (price) => {
                                         <Input
                                             v-model="form.subtotal"
                                             type="number"
-                                            class="w-32 text-right"
+                                            class="w-48 text-right"
                                             readonly
                                         />
                                     </div>
@@ -1459,7 +1658,18 @@ const formatPrice = (price) => {
                                     <Input
                                         v-model="form.dpp_total"
                                         type="number"
-                                        class="w-32 text-right"
+                                        class="w-48 text-right"
+                                        readonly
+                                    />
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium"
+                                        >DPP Lain</span
+                                    >
+                                    <Input
+                                        v-model="form.dpp_lain_total"
+                                        type="number"
+                                        class="w-48 text-right"
                                         readonly
                                     />
                                 </div>
@@ -1470,7 +1680,7 @@ const formatPrice = (price) => {
                                     <Input
                                         v-model="form.ppn_total"
                                         type="number"
-                                        class="w-32 text-right"
+                                        class="w-48 text-right"
                                         readonly
                                     />
                                 </div>
@@ -1481,7 +1691,7 @@ const formatPrice = (price) => {
                                     <Input
                                         v-model="form.total"
                                         type="number"
-                                        class="w-32 font-bold text-right"
+                                        class="w-48 font-bold text-right"
                                         readonly
                                     />
                                 </div>
@@ -1492,7 +1702,7 @@ const formatPrice = (price) => {
                                     <Input
                                         v-model="form.grand_total"
                                         type="number"
-                                        class="w-32 font-bold text-right"
+                                        class="w-48 font-bold text-right"
                                         readonly
                                     />
                                 </div>

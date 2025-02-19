@@ -36,6 +36,7 @@ class DetailPurchasing extends Model
         'diskon_global',
         'exp_date',
         'rebate',
+        'grand_total',
         'is_taxable',
         'is_aktif',
         'created_by',

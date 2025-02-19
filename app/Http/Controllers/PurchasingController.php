@@ -44,6 +44,7 @@ class PurchasingController extends Controller
             'rebate' => 'required|numeric|min:0',
             'diskon_total' => 'required|numeric|min:0',
             'dpp_total' => 'required|numeric|min:0',
+            'dpp_lain_total' => 'required|numeric|min:0',
             'ppn_total' => 'required|numeric|min:0',
             'total' => 'required|numeric|min:0',
             'details' => 'required|array|min:1',
@@ -80,8 +81,10 @@ class PurchasingController extends Controller
                 'rebate' => $request->rebate || 0,
                 'diskon_total' => $request->diskon_total || 0,
                 'dpp_total' => $request->dpp_total,
+                'dpp_lain_total' => $request->dpp_total * (11 / 12),
                 'ppn_total' => $request->ppn_total,
                 'total' => $request->total,
+                'grand_total' => $request->total + $request->ppn_total,
                 'status' => 'CREATED',
                 'created_by' => Auth()->user()->name,
             ]);
@@ -100,32 +103,21 @@ class PurchasingController extends Controller
                     'jumlah' => $detail['jumlah'],
                     'diskon' => $detail['diskon'],
                     'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
-                    'nilai_dpp' => $detail['dpp'] || 0,
-                    'nilai_ppn' => $detail['ppn'] || 0,
+                    'nilai_dpp' => $detail['jumlah'],
+                    'nilai_ppn' => $detail['jumlah'] * 0.11,
                     'harga_jual' => $detail['harga_jual'],
                     'exp_date' => $detail['exp_date'],
-                    'is_taxable' => $detail['taxable'],
+                    'is_taxable' => $detail['is_taxable'],
+                    'grand_total' => $purchase->grand_total,
                     'created_by' => Auth()->user()->name,
                 ]);
             }
 
-            foreach ($request->details as $item) {
+            foreach ($purchase->details as $item) {
                 $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('mst_detail_barang.kode_barcode', $item['kode_barcode'])->first();
                 DetailPurchasing::where('kode_barcode', $item['kode_barcode'])->where('pembelian_id', $purchase->id)->update([
                     'current_hpp_satuan_besar' => $detailProduct['hpp_avg_karton'],
                     'current_hpp_satuan_kecil' => $detailProduct['hpp_avg_eceran'],
-                ]);
-
-                // Update stock di tabel mst_detail_barang & HPP
-                DetailProduct::where('kode_barcode', $item['kode_barcode'])->update([
-                    'harga_beli_karton' => (float) $item['harga'],
-                    'harga_beli_eceran' => (float) $item['harga'] / $item['isi_barang'],
-                    'harga_jual_karton' => $item['harga_jual'],
-                    'harga_jual_eceran' => $item['harga_jual'] / $item['isi_barang'],
-                    'hpp_avg_karton' => ($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty']),
-                    'hpp_avg_eceran' => (($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty'])) / $item['isi_barang'],
-                    'current_stock' => $item['qty'] * $item['isi_barang'] + $detailProduct->current_stock,
-                    'nilai_akhir' => ((($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi_barang']) + $item['qty'])) / $item['isi_barang']) * ($item['qty'] * $item['isi_barang'] + $detailProduct->current_stock),
                 ]);
             }
 
@@ -213,8 +205,8 @@ class PurchasingController extends Controller
                     'diskon' => $detail['diskon'],
                     'diskon_global' => $detail['diskon_global'],
                     'harga_satuan_kecil' => $detail['harga'] / $detail['isi_barang'],
-                    'nilai_dpp' => $detail['dpp'] || 0,
-                    'nilai_ppn' => $detail['ppn'] || 0,
+                    'nilai_dpp' => $detail['dpp'],
+                    'nilai_ppn' => $detail['ppn'],
                     'harga_jual' => $detail['harga_jual'],
                     'exp_date' => $detail['exp_date'],
                     'is_taxable' => $detail['is_taxable'],
@@ -276,6 +268,22 @@ class PurchasingController extends Controller
                 'status' => 'APPROVED',
                 'approved_by' => auth()->user()->name,
             ]);
+
+            foreach ($po->details as $item) {
+                $detailProduct = Product::join('mst_detail_barang', 'mst_barang.id', '=', 'mst_detail_barang.barang_id')->where('mst_detail_barang.kode_barcode', $item['kode_barcode'])->first();
+
+                // Update stock di tabel mst_detail_barang & HPP
+                DetailProduct::where('kode_barcode', $item['kode_barcode'])->update([
+                    'harga_beli_karton' => (float) $item['harga'],
+                    'harga_beli_eceran' => (float) $item['harga'] / $item['isi'],
+                    'harga_jual_karton' => $item['harga_jual'] * $item['isi'],
+                    'harga_jual_eceran' => $item['harga_jual'],
+                    'hpp_avg_karton' => ($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi']) + $item['qty']),
+                    'hpp_avg_eceran' => (($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi']) + $item['qty'])) / $item['isi'],
+                    'current_stock' => $item['qty'] * $item['isi'] + $detailProduct->current_stock,
+                    'nilai_akhir' => ((($detailProduct->nilai_akhir + ($item['harga'] * $item['qty'] - ($item['diskon']))) / (($detailProduct->current_stock / $item['isi']) + $item['qty'])) / $item['isi']) * ($item['qty'] * $item['isi'] + $detailProduct->current_stock),
+                ]);
+            }
 
             DB::commit();
 

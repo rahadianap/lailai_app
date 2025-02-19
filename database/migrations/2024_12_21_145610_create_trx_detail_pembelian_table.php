@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -30,6 +29,7 @@ return new class extends Migration
             $table->decimal('nilai_ppn', total: 10, places: 2)->nullable();
             $table->decimal('harga_jual', 10, 2);
             $table->decimal('diskon', 10, 2)->nullable();
+            $table->decimal('grand_total', 10, 2);
             $table->date('exp_date');
             $table->integer('rebate')->nullable();
             $table->boolean('is_taxable')->default(false);

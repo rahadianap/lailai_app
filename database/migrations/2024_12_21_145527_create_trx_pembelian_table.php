@@ -17,11 +17,13 @@ return new class extends Migration {
             $table->string('kode_po')->nullable();
             $table->string('keterangan')->nullable();
             $table->string('purchase_type');
-            $table->integer('rebate')->nullable();
-            $table->integer('diskon_total')->nullable();
-            $table->integer('dpp_total')->nullable();
-            $table->integer('ppn_total')->nullable();
-            $table->integer('total');
+            $table->decimal('rebate', 10, 2)->nullable();
+            $table->decimal('diskon_total', 10, 2)->nullable();
+            $table->decimal('dpp_total', 10, 2)->nullable();
+            $table->decimal('dpp_lain_total', 10, 2)->nullable();
+            $table->decimal('ppn_total', 10, 2)->nullable();
+            $table->decimal('total', 10, 2);
+            $table->decimal('grand_total', 10, 2);
             $table->string('status');
             $table->boolean('is_aktif')->default(true);
             $table->string('created_by');
